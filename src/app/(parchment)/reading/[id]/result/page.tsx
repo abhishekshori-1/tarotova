@@ -64,9 +64,9 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       <h1 className="prose-measure title mt-1">{result.question ?? "A general reading"}</h1>
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
-        <ol className="flex justify-center gap-3 lg:justify-start" aria-label="Your three cards">
+        <ol className="flex min-w-0 justify-center gap-3 lg:justify-start" aria-label="Your three cards">
           {result.cards.map((c, i) => (
-            <li key={c.position} className="reveal-card w-24 sm:w-28" style={{ animationDelay: `${i * 140}ms` }}>
+            <li key={c.position} className="reveal-card min-w-0 flex-1 max-w-24 sm:max-w-28" style={{ animationDelay: `${i * 140}ms` }}>
               <div className="card-frame relative aspect-[5/8] w-full">
                 <Image src={`/cards/${c.id}.svg`} alt={`${c.name}, ${POSITION_LABEL[c.position]}`} fill sizes="112px" priority className="rounded-[0.6rem]" />
               </div>
@@ -74,7 +74,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
             </li>
           ))}
         </ol>
-        <div className="panel p-5 sm:p-6">
+        <div className="panel min-w-0 p-5 sm:p-6">
           <p className="eyebrow">Your perspective</p>
           <p className="prose-measure mt-2 text-lg leading-relaxed">{result.overview}</p>
         </div>
