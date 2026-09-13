@@ -9,9 +9,13 @@ practitioner review PLAN.md section 9 requires as a release gate.
 Planning docs live in [`docs/`](./docs): [`docs/PLAN.md`](./docs/PLAN.md) is
 the full product/engineering plan this build follows (`PLAN.md section N`
 below refers to it), [`docs/DOMAIN-RESEARCH.md`](./docs/DOMAIN-RESEARCH.md)
-is the domain-name research it cites, and
+is the domain-name research it cites,
 [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) is the current
-done/incomplete/limitations status of this build specifically.
+done/incomplete/limitations status of this build specifically,
+[`docs/INFRA.md`](./docs/INFRA.md) documents the actual live deployment
+(domain, DNS, Vercel, Supabase, Resend, Turnstile — how they're wired
+together), and [`docs/ISSUES.md`](./docs/ISSUES.md) tracks open bugs found
+in the deployed app.
 
 ## Running it
 
