@@ -5,12 +5,16 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getStatus, sendOtp, type ReadingStatus } from "@/lib/api";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
+
+const TURNSTILE_CONFIGURED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function EmailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [status, setStatus] = useState<ReadingStatus | null>(null);
   const [email, setEmail] = useState("");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
@@ -37,7 +41,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
     setBusy(true);
     setError(null);
     try {
-      const res = await sendOtp(id, status.revision, email, "send");
+      const res = await sendOtp(id, status.revision, email, "send", turnstileToken);
       if (res.devCode) {
         // Dev-mode-only convenience (no email account configured): stash the
         // code so the confirm page can display it. Never set in a
@@ -105,6 +109,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
           onChange={(e) => setEmail(e.target.value)}
           className="min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white/60 px-3 text-base"
         />
+        <TurnstileWidget onToken={setTurnstileToken} />
         {error && (
           <p role="alert" className="text-sm text-red-700">
             {error}
@@ -112,7 +117,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
         )}
         <button
           type="submit"
-          disabled={busy}
+          disabled={busy || (TURNSTILE_CONFIGURED && !turnstileToken)}
           className="min-h-11 w-full rounded-lg bg-[var(--color-plum)] px-6 text-sm font-medium text-[var(--color-ivory)] disabled:opacity-60"
         >
           {busy ? "Sending…" : "Send my code"}

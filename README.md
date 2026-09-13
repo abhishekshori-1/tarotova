@@ -31,23 +31,25 @@ This project reserves a fixed, non-default port block instead of 3000/8000/8080:
 | Port  | Service |
 | ----- | ------- |
 | 47100 | Next.js app (`npm run dev` / `npm run start`) |
-| 47101 | `npm run db:studio` (Drizzle Studio, browses the local SQLite file) |
+| 47101 | `npm run db:studio` (Drizzle Studio, browses the local database) |
 
 Keep new local services in the same `471xx` block so they never collide with
 whatever else is running on a dev machine.
 
 ## What's real vs. stood in for a missing account
 
-No external accounts exist yet (Supabase, Resend, Turnstile, a purchased
+No external accounts exist yet (Supabase, Resend, Cloudflare, a purchased
 domain — see PLAN.md section 13). Rather than leave the app unrunnable, this
 build swaps in local-dev stand-ins, all isolated behind the same interfaces
-the real integrations would use:
+the real integrations would use — the database and bot-check paths are the
+*actual* production code, just pointed at a local backend or left
+unconfigured:
 
 | PLAN.md calls for | This build uses | Where |
 | --- | --- | --- |
-| Supabase-hosted Postgres, Drizzle + postgres.js | Local SQLite file (`./data/tarotova.db`), same Drizzle schema | `src/server/db/` |
+| Supabase-hosted Postgres, Drizzle + postgres.js | Real Postgres via `postgres.js` when `DATABASE_URL` is set (point it at Supabase — no code changes needed); embedded `pglite` (WASM Postgres, same schema/migrations) when it isn't, so dev/tests need no account | `src/server/db/client.ts` |
 | Resend transactional email | `ConsoleEmailProvider` — logs the code to the terminal and, only outside a production build, echoes it back to the browser | `src/server/email/` |
-| Cloudflare Turnstile bot check | Skipped with a logged warning when `TURNSTILE_SECRET_KEY` is unset | `src/server/turnstile.ts` |
+| Cloudflare Turnstile bot check | The real client widget and server verification call both exist; both stay inert (no widget renders, server skips with a logged warning) until `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` are set | `src/components/TurnstileWidget.tsx`, `src/server/turnstile.ts` |
 
 A real `ResendEmailProvider` (plain `fetch`, no extra dependency) is already
 written and wired up — set `EMAIL_PROVIDER=resend` and `RESEND_API_KEY` in
@@ -61,15 +63,15 @@ wired in (see the `TODO` in that file) before it's exposed publicly.
 - **22 cards, one deck page.** PLAN.md's 78-card, three-page paginated deck
   collapses to a single 22-slot grid since the whole fallback deck fits on
   one screen. Re-introduce pagination if/when the deck grows back to 78.
-- **Rate limiting and the OTP transaction** run against a single-process,
-  synchronous SQLite connection (`better-sqlite3`), which incidentally
-  serializes writes. A Postgres deployment needs the explicit transactions
-  PLAN.md section 6 describes — the write patterns here are shaped to port
-  directly, but the concurrency guarantee itself is currently accidental,
-  not enforced.
+- **Rate limiting and OTP verification use real atomic Postgres operations**
+  (`INSERT ... ON CONFLICT DO UPDATE`, conditional `UPDATE ... WHERE
+  consumed_at IS NULL`) rather than relying on any one process being
+  single-connection — see `docs/IMPLEMENTATION.md` for the specific races
+  this closes and the one residual gap (concurrent send+resend on the same
+  reading isn't fully serialized, though the 60s cooldown covers normal use).
 - **Unit and integration tests exist; browser/accessibility/load tests
-  don't.** `npm test` runs Vitest against an in-memory SQLite database and
-  covers the domain/unit and database-integration rows of PLAN.md section
+  don't.** `npm test` runs Vitest against an in-memory pglite (Postgres)
+  database and covers the domain/unit and database-integration rows of PLAN.md section
   9's matrix: deck composition and RWS numbering, OTP digest binding and
   leading-zero preservation, shuffle uniformity, wrong-owner and
   unverified-read denial, revision conflicts, locked-draw immutability,
@@ -93,9 +95,14 @@ code rejected and attempt counted → correct code verified → result returned
 with the right cards in the right positions → repeat verify is idempotent →
 a request with no session cookie is denied ownership → private responses
 carry `Cache-Control: private, no-store` → a stale revision is rejected with
-`409` → no card identity appears in the pre-verification page HTML. Open it
-in an actual browser to check the visual/interaction layer (shuffle
-animation, focus states, mobile layout) before trusting this further.
+`409` → no card identity appears in the pre-verification page HTML. Also
+re-verified after the Postgres migration with a real `next build && next
+start` run (production mode) — same flow, plus confirmed `devCode` is
+correctly absent from the API response outside dev (the terminal log still
+shows it, by design, for local testing). Open it in an actual browser to
+check the visual/interaction layer (shuffle animation, focus states, mobile
+layout, the Turnstile widget once a site key is set) before trusting this
+further.
 
 ## Layout
 

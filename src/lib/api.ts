@@ -60,11 +60,17 @@ export function updateSelection(
   }).then((r) => asJson<ReadingStatus>(r));
 }
 
-export function sendOtp(id: string, revision: number, email: string, intent: "send" | "resend" | "change") {
+export function sendOtp(
+  id: string,
+  revision: number,
+  email: string,
+  intent: "send" | "resend" | "change",
+  turnstileToken?: string | null,
+) {
   return fetch(`/api/readings/${id}/otp`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ revision, email, intent }),
+    body: JSON.stringify({ revision, email, intent, turnstileToken: turnstileToken ?? undefined }),
   }).then((r) => asJson<{ sendStatus: string; devCode?: string }>(r));
 }
 

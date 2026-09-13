@@ -33,7 +33,7 @@ export async function resolveSession(): Promise<Session> {
 
   if (existingToken) {
     const hash = hashToken(existingToken);
-    const row = db.select().from(browserSessions).where(eq(browserSessions.tokenHash, hash)).get();
+    const [row] = await db.select().from(browserSessions).where(eq(browserSessions.tokenHash, hash)).limit(1);
     if (row && row.expiresAt > Date.now()) {
       return { id: row.id, isNew: false };
     }
@@ -42,9 +42,7 @@ export async function resolveSession(): Promise<Session> {
   const token = randomBytes(32).toString("base64url");
   const id = randomId();
   const now = Date.now();
-  db.insert(browserSessions)
-    .values({ id, tokenHash: hashToken(token), createdAt: now, expiresAt: now + SESSION_TTL_MS })
-    .run();
+  await db.insert(browserSessions).values({ id, tokenHash: hashToken(token), createdAt: now, expiresAt: now + SESSION_TTL_MS });
 
   store.set(COOKIE_NAME, token, {
     httpOnly: true,

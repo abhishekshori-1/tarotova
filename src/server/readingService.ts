@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "./db/client";
 import { readings, emailChallenges, verifiedEmails, suppressedEmails } from "./db/schema";
 import { randomId } from "./ids";
@@ -56,53 +56,48 @@ function requireOwnership(sessionId: string, readingBrowserSessionId: string) {
   if (sessionId !== readingBrowserSessionId) throw new OwnershipError();
 }
 
-export function createReading(sessionId: string) {
+export async function createReading(sessionId: string) {
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
   const id = randomId();
   const t = now();
-  db.insert(readings)
-    .values({
-      id,
-      browserSessionId: sessionId,
-      state: "drafting",
-      revision: 0,
-      focus: DEFAULT_FOCUS,
-      shuffleMapping: JSON.stringify(mapping),
-      selectedSlots: "[]",
-      deckVersion: DECK_VERSION,
-      spreadVersion: SPREAD_VERSION,
-      contentVersion: CONTENT_VERSION,
-      draftExpiresAt: t + DRAFT_TTL_MS,
-      createdAt: t,
-      updatedAt: t,
-    })
-    .run();
-  return safeStatus(getOwnedReading(id, sessionId));
+  await db.insert(readings).values({
+    id,
+    browserSessionId: sessionId,
+    state: "drafting",
+    revision: 0,
+    focus: DEFAULT_FOCUS,
+    shuffleMapping: JSON.stringify(mapping),
+    selectedSlots: "[]",
+    deckVersion: DECK_VERSION,
+    spreadVersion: SPREAD_VERSION,
+    contentVersion: CONTENT_VERSION,
+    draftExpiresAt: t + DRAFT_TTL_MS,
+    createdAt: t,
+    updatedAt: t,
+  });
+  return safeStatus(await getOwnedReading(id, sessionId));
 }
 
-function getReadingRow(id: string) {
-  return db.select().from(readings).where(eq(readings.id, id)).get();
+async function getReadingRow(id: string) {
+  const [row] = await db.select().from(readings).where(eq(readings.id, id)).limit(1);
+  return row;
 }
 
-function getOwnedReading(id: string, sessionId: string) {
-  const row = getReadingRow(id);
+async function getOwnedReading(id: string, sessionId: string) {
+  const row = await getReadingRow(id);
   if (!row) throw new OwnershipError();
   requireOwnership(sessionId, row.browserSessionId);
   return row;
 }
 
-export function safeStatus(row: NonNullable<ReturnType<typeof getReadingRow>>) {
+export async function safeStatus(row: NonNullable<Awaited<ReturnType<typeof getReadingRow>>>) {
   let maskedEmail: string | undefined;
   if (row.verifiedEmailId) {
-    const ve = db.select().from(verifiedEmails).where(eq(verifiedEmails.id, row.verifiedEmailId)).get();
+    const [ve] = await db.select().from(verifiedEmails).where(eq(verifiedEmails.id, row.verifiedEmailId)).limit(1);
     if (ve) maskedEmail = maskEmail(ve.email);
   }
-  const latestChallenge = db
-    .select()
-    .from(emailChallenges)
-    .where(eq(emailChallenges.readingId, row.id))
-    .all()
-    .sort((a, b) => b.generation - a.generation)[0];
+  const challenges = await db.select().from(emailChallenges).where(eq(emailChallenges.readingId, row.id));
+  const latestChallenge = challenges.sort((a, b) => b.generation - a.generation)[0];
 
   return {
     id: row.id,
@@ -124,26 +119,26 @@ export function safeStatus(row: NonNullable<ReturnType<typeof getReadingRow>>) {
   };
 }
 
-export function getStatus(readingId: string, sessionId: string) {
-  return safeStatus(getOwnedReading(readingId, sessionId));
+export async function getStatus(readingId: string, sessionId: string) {
+  return safeStatus(await getOwnedReading(readingId, sessionId));
 }
 
-export function reshuffle(readingId: string, sessionId: string, expectedRevision: number) {
-  const row = getOwnedReading(readingId, sessionId);
+export async function reshuffle(readingId: string, sessionId: string, expectedRevision: number) {
+  const row = await getOwnedReading(readingId, sessionId);
   if (row.revision !== expectedRevision) throw new ConflictError(row.revision);
   if (row.state !== "drafting") throw new ValidationError("already_locked");
   const selected = JSON.parse(row.selectedSlots) as number[];
   if (selected.length > 0) throw new ValidationError("selection_not_empty");
 
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
-  db.update(readings)
+  await db
+    .update(readings)
     .set({ shuffleMapping: JSON.stringify(mapping), revision: row.revision + 1, updatedAt: now() })
-    .where(eq(readings.id, readingId))
-    .run();
-  return safeStatus(getOwnedReading(readingId, sessionId));
+    .where(eq(readings.id, readingId));
+  return safeStatus(await getOwnedReading(readingId, sessionId));
 }
 
-export function updateSelection(
+export async function updateSelection(
   readingId: string,
   sessionId: string,
   expectedRevision: number,
@@ -151,7 +146,7 @@ export function updateSelection(
   lock: boolean,
   focus: Focus | undefined,
 ) {
-  const row = getOwnedReading(readingId, sessionId);
+  const row = await getOwnedReading(readingId, sessionId);
   if (row.revision !== expectedRevision) throw new ConflictError(row.revision);
 
   // Locking is idempotent: an identical retry against an already-locked
@@ -205,8 +200,8 @@ export function updateSelection(
     patch.state = "locked";
   }
 
-  db.update(readings).set(patch).where(eq(readings.id, readingId)).run();
-  return safeStatus(getOwnedReading(readingId, sessionId));
+  await db.update(readings).set(patch).where(eq(readings.id, readingId));
+  return safeStatus(await getOwnedReading(readingId, sessionId));
 }
 
 export async function requestOtp(
@@ -216,28 +211,28 @@ export async function requestOtp(
   email: string,
   ip: string,
 ) {
-  const row = getOwnedReading(readingId, sessionId);
+  const row = await getOwnedReading(readingId, sessionId);
   if (row.revision !== expectedRevision) throw new ConflictError(row.revision);
   if (row.state !== "locked") throw new ValidationError("reading_not_locked");
 
   const normalized = normalizeEmail(email);
   const lookupHash = hashEmailForLookup(normalized);
 
-  const suppressed = db
+  const [suppressed] = await db
     .select()
     .from(suppressedEmails)
     .where(eq(suppressedEmails.normalizedLookupHash, lookupHash))
-    .get();
+    .limit(1);
   if (suppressed) throw new ValidationError("address_suppressed");
 
-  const perEmailHour = checkAndIncrement(`email:${normalized}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 3 });
+  const perEmailHour = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 3 });
   if (!perEmailHour.allowed) throw new RateLimitedError(perEmailHour.retryAfterMs);
-  const perEmailDay = checkAndIncrement(`email:${normalized}`, { action: "otp_send_day", windowMs: 24 * 60 * 60 * 1000, limit: 5 });
+  const perEmailDay = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_day", windowMs: 24 * 60 * 60 * 1000, limit: 5 });
   if (!perEmailDay.allowed) throw new RateLimitedError(perEmailDay.retryAfterMs);
-  const perIpHour = checkAndIncrement(`ip:${ip}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 10 });
+  const perIpHour = await checkAndIncrement(`ip:${ip}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 10 });
   if (!perIpHour.allowed) throw new RateLimitedError(perIpHour.retryAfterMs);
 
-  const priorChallenges = db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId)).all();
+  const priorChallenges = await db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId));
   const latest = priorChallenges.sort((a, b) => b.generation - a.generation)[0];
   if (latest && !latest.consumedAt && !latest.supersededAt) {
     const cooldownRemaining = latest.createdAt + RESEND_COOLDOWN_MS - now();
@@ -248,7 +243,7 @@ export async function requestOtp(
   // resetting the rolling abuse budgets above (PLAN.md section 6).
   for (const c of priorChallenges) {
     if (!c.consumedAt && !c.supersededAt) {
-      db.update(emailChallenges).set({ supersededAt: now() }).where(eq(emailChallenges.id, c.id)).run();
+      await db.update(emailChallenges).set({ supersededAt: now() }).where(eq(emailChallenges.id, c.id));
     }
   }
 
@@ -260,20 +255,18 @@ export async function requestOtp(
   const secret = process.env.OTP_HMAC_SECRET ?? "";
   const digest = hashCode(code, { readingId, challengeId, generation, intendedEmail: normalized }, secret);
 
-  db.insert(emailChallenges)
-    .values({
-      id: challengeId,
-      readingId,
-      intendedEmail: normalized,
-      codeHmac: digest,
-      keyVersion,
-      generation,
-      attempts: 0,
-      expiresAt: t + OTP_TTL_MS,
-      sendStatus: "pending",
-      createdAt: t,
-    })
-    .run();
+  await db.insert(emailChallenges).values({
+    id: challengeId,
+    readingId,
+    intendedEmail: normalized,
+    codeHmac: digest,
+    keyVersion,
+    generation,
+    attempts: 0,
+    expiresAt: t + OTP_TTL_MS,
+    sendStatus: "pending",
+    createdAt: t,
+  });
 
   const provider = getEmailProvider();
   const idempotencyKey = challengeId;
@@ -297,7 +290,7 @@ export async function requestOtp(
     // Acceptance is uncertain, not a definite failure — keep "pending".
   }
 
-  db.update(emailChallenges).set({ sendStatus, providerMessageId }).where(eq(emailChallenges.id, challengeId)).run();
+  await db.update(emailChallenges).set({ sendStatus, providerMessageId }).where(eq(emailChallenges.id, challengeId));
 
   return {
     readingId,
@@ -307,8 +300,8 @@ export async function requestOtp(
   };
 }
 
-export function verifyOtp(readingId: string, sessionId: string, code: string) {
-  const row = getOwnedReading(readingId, sessionId);
+export async function verifyOtp(readingId: string, sessionId: string, code: string) {
+  const row = await getOwnedReading(readingId, sessionId);
 
   // Idempotent success: a lost response shouldn't grant extra access, but a
   // repeat verify from the same session should still succeed quietly
@@ -320,7 +313,7 @@ export function verifyOtp(readingId: string, sessionId: string, code: string) {
 
   if (row.state !== "locked") throw new ValidationError("no_pending_challenge");
 
-  const challenges = db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId)).all();
+  const challenges = await db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId));
   const current = challenges
     .filter((c) => !c.consumedAt && !c.supersededAt)
     .sort((a, b) => b.generation - a.generation)[0];
@@ -338,31 +331,47 @@ export function verifyOtp(readingId: string, sessionId: string, code: string) {
   const match = verifyCodeDigest(candidateDigest, current.codeHmac);
 
   if (!match) {
-    // Commit the failed-attempt counter before returning an error (PLAN.md
-    // section 6) — this write happens unconditionally, not inside a
-    // try/catch that could roll it back.
-    db.update(emailChallenges).set({ attempts: current.attempts + 1 }).where(eq(emailChallenges.id, current.id)).run();
-    const remaining = MAX_ATTEMPTS - (current.attempts + 1);
+    // Atomic, conditional increment (Postgres): commits the failed-attempt
+    // counter before returning an error (PLAN.md section 6), and computing
+    // `attempts + 1` in the database rather than in JS avoids a lost-update
+    // race between two concurrent wrong-code submissions for the same
+    // challenge.
+    const [updated] = await db
+      .update(emailChallenges)
+      .set({ attempts: sql`${emailChallenges.attempts} + 1` })
+      .where(and(eq(emailChallenges.id, current.id), isNull(emailChallenges.consumedAt), isNull(emailChallenges.supersededAt)))
+      .returning({ attempts: emailChallenges.attempts });
+    const newAttempts = updated?.attempts ?? current.attempts + 1;
+    const remaining = MAX_ATTEMPTS - newAttempts;
     return { ok: false as const, reason: remaining > 0 ? ("wrong_code" as const) : ("attempts_exhausted" as const) };
   }
 
   const t = now();
-  db.update(emailChallenges).set({ consumedAt: t }).where(eq(emailChallenges.id, current.id)).run();
+
+  // Atomically claim single-use consumption: only the first of two
+  // concurrent correct-code submissions can flip consumed_at from NULL, so
+  // a code genuinely cannot be double-consumed (PLAN.md section 6/9)
+  // regardless of how many requests race here.
+  const [claimed] = await db
+    .update(emailChallenges)
+    .set({ consumedAt: t })
+    .where(and(eq(emailChallenges.id, current.id), isNull(emailChallenges.consumedAt), isNull(emailChallenges.supersededAt)))
+    .returning();
+  if (!claimed) return { ok: false as const, reason: "no_active_code" as const };
 
   const normalized = current.intendedEmail;
   const lookupHash = hashEmailForLookup(normalized);
-  let ve = db.select().from(verifiedEmails).where(eq(verifiedEmails.normalizedLookup, lookupHash)).get();
-  if (ve) {
-    db.update(verifiedEmails).set({ lastActivityAt: t }).where(eq(verifiedEmails.id, ve.id)).run();
-  } else {
-    const veId = randomId();
-    db.insert(verifiedEmails)
-      .values({ id: veId, email: normalized, normalizedLookup: lookupHash, verifiedAt: t, lastActivityAt: t })
-      .run();
-    ve = { id: veId, email: normalized, normalizedLookup: lookupHash, verifiedAt: t, lastActivityAt: t };
-  }
 
-  db.update(readings)
+  // Atomic upsert (Postgres ON CONFLICT) — avoids a check-then-insert race
+  // if the same email is verified concurrently for a different reading.
+  const [ve] = await db
+    .insert(verifiedEmails)
+    .values({ id: randomId(), email: normalized, normalizedLookup: lookupHash, verifiedAt: t, lastActivityAt: t })
+    .onConflictDoUpdate({ target: verifiedEmails.normalizedLookup, set: { lastActivityAt: t } })
+    .returning();
+
+  await db
+    .update(readings)
     .set({
       state: "verified",
       verifiedEmailId: ve.id,
@@ -371,14 +380,13 @@ export function verifyOtp(readingId: string, sessionId: string, code: string) {
       revision: row.revision + 1,
       updatedAt: t,
     })
-    .where(eq(readings.id, readingId))
-    .run();
+    .where(and(eq(readings.id, readingId), eq(readings.state, "locked")));
 
   return { ok: true as const };
 }
 
-export function getResult(readingId: string, sessionId: string) {
-  const row = getOwnedReading(readingId, sessionId);
+export async function getResult(readingId: string, sessionId: string) {
+  const row = await getOwnedReading(readingId, sessionId);
   if (row.state !== "verified") throw new OwnershipError();
   if ((row.accessExpiresAt ?? 0) <= now()) throw new OwnershipError();
   return JSON.parse(row.resultSnapshot ?? "null");

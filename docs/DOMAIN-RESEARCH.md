@@ -1,5 +1,7 @@
 Short .com candidates for the tarot app
 
+**Update:** `tarotova.com` has since been registered by the operator, via Namecheap (not Spaceship, the price-based recommendation below) — see `docs/IMPLEMENTATION.md` for current status. The research and price comparison below are kept as-is as a record of the decision at the time; they're no longer actionable for this domain.
+
 Checked 13 September 2026. Final registry recheck of the three recommended candidates completed at approximately 12:23 UTC (17:53 IST). No domain has been purchased or reserved.
 
 **Recommendation: `tarotova.com`.** The name has eight characters before `.com`, contains the complete word “tarot,” and is distinctive enough to serve as the product name. Suggested presentation: Tarotova. Suggested homepage title: “Tarotova — Free Three-Card Tarot Reading.” This replaces Quiet Arcana as the proposed working name, subject to successful registration and a brand-conflict check.

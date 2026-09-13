@@ -9,12 +9,12 @@ import { z } from "zod";
 // are for the UI to pick the right built state (expired/invalid/exhausted),
 // not to leak account-existence information.
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  ensureMigrated();
+  await ensureMigrated();
   try {
     const { id } = await params;
     const session = await resolveSession();
     const body = verifySchema.parse(await req.json());
-    const result = verifyOtp(id, session.id, body.code);
+    const result = await verifyOtp(id, session.id, body.code);
     if (!result.ok) {
       return privateJson({ error: "verification_failed", reason: result.reason }, { status: 400 });
     }

@@ -20,21 +20,20 @@ import {
 } from "@/server/readingService";
 
 // PLAN.md section 9's "Database/API integration" row, exercised directly
-// against readingService (no HTTP layer) with an in-memory SQLite database
-// (see tests/setup.ts). Session ids are plain strings here — resolveSession()
-// itself depends on next/headers and is exercised only inside the running app.
+// against readingService (no HTTP layer) with an in-memory pglite database
+// (see tests/setup.ts and db/client.ts). Session ids are plain strings here —
+// resolveSession() itself depends on next/headers and is exercised only
+// inside the running app.
 
-function createSession(): string {
+async function createSession(): Promise<string> {
   const id = randomId();
   const t = Date.now();
-  db.insert(browserSessions)
-    .values({ id, tokenHash: randomId(), createdAt: t, expiresAt: t + 30 * 24 * 60 * 60 * 1000 })
-    .run();
+  await db.insert(browserSessions).values({ id, tokenHash: randomId(), createdAt: t, expiresAt: t + 30 * 24 * 60 * 60 * 1000 });
   return id;
 }
 
-function lockedReading(sessionId: string, slots: [number, number, number] = [0, 1, 2]) {
-  const draft = createReading(sessionId);
+async function lockedReading(sessionId: string, slots: [number, number, number] = [0, 1, 2]) {
+  const draft = await createReading(sessionId);
   return updateSelection(draft.id, sessionId, draft.revision, slots, true, undefined);
 }
 
@@ -54,41 +53,41 @@ afterEach(() => {
 });
 
 describe("createReading / getStatus", () => {
-  it("starts in drafting state with no cards resolved", () => {
-    const session = createSession();
-    const status = createReading(session);
+  it("starts in drafting state with no cards resolved", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
     expect(status.state).toBe("drafting");
     expect(status.selectedSlots).toEqual([]);
     expect(status.locked).toBe(false);
     expect(status.resultAvailable).toBe(false);
   });
 
-  it("denies access to a reading owned by a different session (PLAN.md section 9: wrong owner denied)", () => {
-    const owner = createSession();
-    const stranger = createSession();
-    const status = createReading(owner);
-    expect(() => getStatus(status.id, stranger)).toThrow(OwnershipError);
+  it("denies access to a reading owned by a different session (PLAN.md section 9: wrong owner denied)", async () => {
+    const owner = await createSession();
+    const stranger = await createSession();
+    const status = await createReading(owner);
+    await expect(getStatus(status.id, stranger)).rejects.toThrow(OwnershipError);
   });
 
-  it("denies access to a reading id that doesn't exist", () => {
-    const session = createSession();
-    expect(() => getStatus("does-not-exist", session)).toThrow(OwnershipError);
+  it("denies access to a reading id that doesn't exist", async () => {
+    const session = await createSession();
+    await expect(getStatus("does-not-exist", session)).rejects.toThrow(OwnershipError);
   });
 });
 
 describe("reshuffle", () => {
-  it("allows reshuffling only while the selection is empty", () => {
-    const session = createSession();
-    const status = createReading(session);
-    const afterSelect = updateSelection(status.id, session, status.revision, [0], false, undefined);
-    expect(() => reshuffle(status.id, session, afterSelect.revision)).toThrow(ValidationError);
+  it("allows reshuffling only while the selection is empty", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    const afterSelect = await updateSelection(status.id, session, status.revision, [0], false, undefined);
+    await expect(reshuffle(status.id, session, afterSelect.revision)).rejects.toThrow(ValidationError);
   });
 
-  it("rejects a stale revision (PLAN.md section 9: draft revision conflicts)", () => {
-    const session = createSession();
-    const status = createReading(session);
+  it("rejects a stale revision (PLAN.md section 9: draft revision conflicts)", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
     try {
-      reshuffle(status.id, session, status.revision + 1);
+      await reshuffle(status.id, session, status.revision + 1);
       expect.unreachable();
     } catch (e) {
       expect(e).toBeInstanceOf(ConflictError);
@@ -98,90 +97,90 @@ describe("reshuffle", () => {
 });
 
 describe("updateSelection locking", () => {
-  it("locks exactly three distinct slots and freezes a result snapshot", () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+  it("locks exactly three distinct slots and freezes a result snapshot", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
     expect(locked.state).toBe("locked");
     expect(locked.locked).toBe(true);
     expect(locked.selectedSlots).toEqual([0, 1, 2]);
   });
 
-  it("makes the locked draw immutable (PLAN.md section 9: immutable locked draw)", () => {
-    const session = createSession();
-    const locked = lockedReading(session);
-    expect(() => updateSelection(locked.id, session, locked.revision, [3, 4, 5], true, undefined)).toThrow(ValidationError);
-    expect(() => updateSelection(locked.id, session, locked.revision, [0], false, undefined)).toThrow(ValidationError);
+  it("makes the locked draw immutable (PLAN.md section 9: immutable locked draw)", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    await expect(updateSelection(locked.id, session, locked.revision, [3, 4, 5], true, undefined)).rejects.toThrow(ValidationError);
+    await expect(updateSelection(locked.id, session, locked.revision, [0], false, undefined)).rejects.toThrow(ValidationError);
   });
 
-  it("treats an identical re-lock as a safe no-op (PLAN.md section 3: identical retries are safe)", () => {
-    const session = createSession();
-    const locked = lockedReading(session);
-    const retried = updateSelection(locked.id, session, locked.revision, [0, 1, 2], true, undefined);
+  it("treats an identical re-lock as a safe no-op (PLAN.md section 3: identical retries are safe)", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    const retried = await updateSelection(locked.id, session, locked.revision, [0, 1, 2], true, undefined);
     expect(retried.state).toBe("locked");
     expect(retried.selectedSlots).toEqual([0, 1, 2]);
   });
 
-  it("requires exactly three distinct slots to lock", () => {
-    const session = createSession();
-    const status = createReading(session);
-    expect(() => updateSelection(status.id, session, status.revision, [0, 1], true, undefined)).toThrow(ValidationError);
+  it("requires exactly three distinct slots to lock", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    await expect(updateSelection(status.id, session, status.revision, [0, 1], true, undefined)).rejects.toThrow(ValidationError);
   });
 });
 
 describe("OTP request + verify", () => {
-  it("only allows requesting a code once the draw is locked", () => {
-    const session = createSession();
-    const status = createReading(session);
-    return expect(requestOtp(status.id, session, status.revision, freshEmail(), "127.0.0.1")).rejects.toThrow(ValidationError);
+  it("only allows requesting a code once the draw is locked", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    await expect(requestOtp(status.id, session, status.revision, freshEmail(), "127.0.0.1")).rejects.toThrow(ValidationError);
   });
 
   it("verifies the correct code and grants access (happy path)", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
     const code = await codeFor(locked.id);
     expect(code).toMatch(/^\d{6}$/);
 
-    const result = verifyOtp(locked.id, session, code!);
+    const result = await verifyOtp(locked.id, session, code!);
     expect(result.ok).toBe(true);
 
-    const status = getStatus(locked.id, session);
+    const status = await getStatus(locked.id, session);
     expect(status.state).toBe("verified");
     expect(status.resultAvailable).toBe(true);
   });
 
   it("rejects a wrong code and commits the attempt count before returning (PLAN.md section 6)", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
 
-    const before = getStatus(locked.id, session).pendingChallenge!.attemptsRemaining;
-    const result = verifyOtp(locked.id, session, "000000");
+    const before = (await getStatus(locked.id, session)).pendingChallenge!.attemptsRemaining;
+    const result = await verifyOtp(locked.id, session, "000000");
     expect(result.ok).toBe(false);
-    const after = getStatus(locked.id, session).pendingChallenge!.attemptsRemaining;
+    const after = (await getStatus(locked.id, session)).pendingChallenge!.attemptsRemaining;
     expect(after).toBe(before - 1);
   });
 
   it("locks out after the max wrong attempts, even if the correct code is finally tried", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
     const code = await codeFor(locked.id);
 
     for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      const r = verifyOtp(locked.id, session, "000000");
+      const r = await verifyOtp(locked.id, session, "000000");
       expect(r.ok).toBe(false);
     }
-    const finalTry = verifyOtp(locked.id, session, code!);
+    const finalTry = await verifyOtp(locked.id, session, code!);
     expect(finalTry.ok).toBe(false);
     if (!finalTry.ok) expect(finalTry.reason).toBe("attempts_exhausted");
   });
 
   it("supersedes the old code on resend — only the newest code verifies (PLAN.md section 9: only one active generation)", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
-    const revisionAfterFirstSend = getStatus(locked.id, session).revision;
+    const revisionAfterFirstSend = (await getStatus(locked.id, session)).revision;
     const firstCode = await codeFor(locked.id);
 
     // Past the 60s resend cooldown (PLAN.md section 6).
@@ -192,34 +191,34 @@ describe("OTP request + verify", () => {
     const secondCode = await codeFor(locked.id);
     expect(secondCode).not.toBe(firstCode);
 
-    const staleAttempt = verifyOtp(locked.id, session, firstCode!);
+    const staleAttempt = await verifyOtp(locked.id, session, firstCode!);
     expect(staleAttempt.ok).toBe(false);
 
-    const freshAttempt = verifyOtp(locked.id, session, secondCode!);
+    const freshAttempt = await verifyOtp(locked.id, session, secondCode!);
     expect(freshAttempt.ok).toBe(true);
   });
 
   it("is idempotent on repeat verify after success (PLAN.md section 6: a lost response doesn't grant extra access)", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
     const code = await codeFor(locked.id);
 
-    expect(verifyOtp(locked.id, session, code!).ok).toBe(true);
+    expect((await verifyOtp(locked.id, session, code!)).ok).toBe(true);
     // Repeat with a garbage code — already verified, so this must still succeed.
-    expect(verifyOtp(locked.id, session, "111111").ok).toBe(true);
+    expect((await verifyOtp(locked.id, session, "111111")).ok).toBe(true);
   });
 
   it("denies result access before verification, and permits it after (PLAN.md section 9: unverified read denied)", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
-    expect(() => getResult(locked.id, session)).toThrow(OwnershipError);
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    await expect(getResult(locked.id, session)).rejects.toThrow(OwnershipError);
 
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
     const code = await codeFor(locked.id);
-    verifyOtp(locked.id, session, code!);
+    await verifyOtp(locked.id, session, code!);
 
-    const result = getResult(locked.id, session);
+    const result = await getResult(locked.id, session);
     expect(result.cards).toHaveLength(3);
   });
 });
@@ -228,20 +227,20 @@ describe("rate limiting", () => {
   it("blocks a fourth code request to the same address within an hour (PLAN.md: 3/hour per email)", async () => {
     const address = freshEmail();
     for (let i = 0; i < 3; i++) {
-      const session = createSession();
-      const locked = lockedReading(session);
+      const session = await createSession();
+      const locked = await lockedReading(session);
       await requestOtp(locked.id, session, locked.revision, address, `10.0.0.${i}`);
     }
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await expect(requestOtp(locked.id, session, locked.revision, address, "10.0.0.99")).rejects.toThrow(RateLimitedError);
   });
 
   it("enforces a resend cooldown on the same reading", async () => {
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
-    const afterFirst = getStatus(locked.id, session);
+    const afterFirst = await getStatus(locked.id, session);
     await expect(requestOtp(locked.id, session, afterFirst.revision, freshEmail(), "127.0.0.1")).rejects.toThrow(RateLimitedError);
   });
 });
@@ -249,17 +248,15 @@ describe("rate limiting", () => {
 describe("suppressed addresses", () => {
   it("refuses to send a code to a suppressed address", async () => {
     const address = freshEmail();
-    db.insert(suppressedEmails)
-      .values({
-        id: randomId(),
-        normalizedLookupHash: hashEmailForLookup(address.toLowerCase()),
-        reason: "hard_bounce",
-        firstSuppressedAt: Date.now(),
-      })
-      .run();
+    await db.insert(suppressedEmails).values({
+      id: randomId(),
+      normalizedLookupHash: hashEmailForLookup(address.toLowerCase()),
+      reason: "hard_bounce",
+      firstSuppressedAt: Date.now(),
+    });
 
-    const session = createSession();
-    const locked = lockedReading(session);
+    const session = await createSession();
+    const locked = await lockedReading(session);
     await expect(requestOtp(locked.id, session, locked.revision, address, "127.0.0.1")).rejects.toThrow(ValidationError);
   });
 });

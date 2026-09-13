@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 import { db } from "./db/client";
 import { rateLimitBuckets } from "./db/schema";
 import { randomId } from "./ids";
@@ -23,39 +23,29 @@ export interface RateLimitResult {
 }
 
 /**
- * Fixed-window counter backed by a unique (identifier, action, window) row.
- * better-sqlite3 is synchronous and single-connection, so this increment is
- * inherently serialized in local dev; a Postgres deployment would wrap the
- * same upsert-and-check in an explicit transaction (PLAN.md section 6).
+ * Fixed-window counter backed by a unique (identifier, action, window) row,
+ * incremented with a single atomic `INSERT ... ON CONFLICT DO UPDATE`
+ * (Postgres) — genuinely race-free under concurrent requests across
+ * serverless instances, unlike the previous read-then-write version this
+ * replaced (PLAN.md section 6 calls for exactly this kind of atomic
+ * counter).
  */
-export function checkAndIncrement(identifier: string, policy: RateLimitPolicy): RateLimitResult {
+export async function checkAndIncrement(identifier: string, policy: RateLimitPolicy): Promise<RateLimitResult> {
   const digest = identifierDigest(identifier);
   const now = Date.now();
   const windowStart = Math.floor(now / policy.windowMs) * policy.windowMs;
   const expiresAt = windowStart + policy.windowMs;
 
-  const existing = db
-    .select()
-    .from(rateLimitBuckets)
-    .where(
-      and(
-        eq(rateLimitBuckets.identifierDigest, digest),
-        eq(rateLimitBuckets.action, policy.action),
-        eq(rateLimitBuckets.windowStart, windowStart),
-      ),
-    )
-    .get();
+  const [row] = await db
+    .insert(rateLimitBuckets)
+    .values({ id: randomId(), identifierDigest: digest, action: policy.action, windowStart, count: 1, expiresAt })
+    .onConflictDoUpdate({
+      target: [rateLimitBuckets.identifierDigest, rateLimitBuckets.action, rateLimitBuckets.windowStart],
+      set: { count: sql`${rateLimitBuckets.count} + 1` },
+    })
+    .returning({ count: rateLimitBuckets.count });
 
-  const count = (existing?.count ?? 0) + 1;
-
-  if (existing) {
-    db.update(rateLimitBuckets).set({ count }).where(eq(rateLimitBuckets.id, existing.id)).run();
-  } else {
-    db.insert(rateLimitBuckets)
-      .values({ id: randomId(), identifierDigest: digest, action: policy.action, windowStart, count, expiresAt })
-      .run();
-  }
-
+  const count = row.count;
   return {
     allowed: count <= policy.limit,
     remaining: Math.max(0, policy.limit - count),

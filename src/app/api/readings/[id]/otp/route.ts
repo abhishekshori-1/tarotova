@@ -7,7 +7,7 @@ import { otpSchema } from "@/lib/schemas";
 import { z } from "zod";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  ensureMigrated();
+  await ensureMigrated();
   try {
     const { id } = await params;
     const session = await resolveSession();
