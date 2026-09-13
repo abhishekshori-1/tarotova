@@ -1,4 +1,5 @@
 import path from "node:path";
+import { mkdirSync } from "node:fs";
 import postgres from "postgres";
 import { drizzle as drizzlePostgres } from "drizzle-orm/postgres-js";
 import { PGlite } from "@electric-sql/pglite";
@@ -51,6 +52,8 @@ function connect(): Db {
   } else {
     const isTest = !!process.env.VITEST;
     const dataDir = isTest ? undefined : path.join(process.cwd(), "data", "pglite");
+    // pglite only creates the leaf directory; a fresh checkout has no data/.
+    if (dataDir) mkdirSync(dataDir, { recursive: true });
     const client = new PGlite(dataDir);
     instance = drizzlePglite(client, { schema }) as unknown as Db;
     closeFn = () => client.close();

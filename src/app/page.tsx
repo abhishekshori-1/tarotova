@@ -16,14 +16,7 @@ export default function Home() {
     setBusy(true);
     setError(null);
     try {
-      const reading = await createReading();
-      if (focus !== DEFAULT_FOCUS) {
-        await fetch(`/api/readings/${reading.id}/selection`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ revision: reading.revision, slots: [], lock: false, focus }),
-        });
-      }
+      const reading = await createReading(focus);
       router.push(`/reading/${reading.id}/choose`);
     } catch {
       setError("Something went wrong starting your reading. Please try again.");

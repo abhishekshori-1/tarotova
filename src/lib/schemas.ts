@@ -3,6 +3,8 @@ import { FOCUSES } from "@/content/types";
 
 export const focusSchema = z.enum(FOCUSES);
 
+export const createReadingSchema = z.object({ focus: focusSchema.optional() });
+
 export const selectionSchema = z.object({
   revision: z.number().int().min(0),
   slots: z

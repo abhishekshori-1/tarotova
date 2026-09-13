@@ -61,7 +61,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
         setError(`Too many attempts right now. Please try again in ${wait}.`);
       }
       else if (err.body?.error === "address_suppressed") setError("We can't send to this address right now.");
-      else if (err.body?.error === "email_not_configured" || err.body?.error === "email_send_failed") {
+      else if (err.body?.error === "email_not_configured" || err.body?.error === "email_send_failed" || err.body?.error === "bot_check_not_configured") {
         setError("We couldn't send your email. Please try again later.");
       }
       else if (err.body?.error === "bot_check_failed") setError("The security check expired. Please complete it again.");

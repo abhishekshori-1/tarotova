@@ -81,6 +81,42 @@ describe("createReading / getStatus", () => {
     const session = await createSession();
     await expect(getStatus("does-not-exist", session)).rejects.toThrow(OwnershipError);
   });
+
+  it("stores an initial focus in the same request", async () => {
+    const session = await createSession();
+    expect((await createReading(session, "work")).focus).toBe("work");
+    expect((await createReading(session)).focus).toBe("general");
+  });
+});
+
+describe("draft expiry", () => {
+  const DAY = 24 * 60 * 60 * 1000;
+
+  it("treats a drafting reading as gone after the 24-hour draft window", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + DAY + 1000);
+    await expect(getStatus(status.id, session)).rejects.toThrow(OwnershipError);
+    await expect(updateSelection(status.id, session, status.revision, [0], false, undefined)).rejects.toThrow(OwnershipError);
+  });
+
+  it("treats a locked but never-verified reading as gone after the draft window", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + DAY + 1000);
+    await expect(getStatus(locked.id, session)).rejects.toThrow(OwnershipError);
+    await expect(verifyOtp(locked.id, session, "000000")).rejects.toThrow(OwnershipError);
+  });
+
+  it("keeps a verified reading readable past the draft window while access lasts", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
+    await verifyOtp(locked.id, session, (await codeFor(locked.id))!);
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 2 * DAY);
+    expect((await getStatus(locked.id, session)).resultAvailable).toBe(true);
+    expect((await getResult(locked.id, session)).cards).toHaveLength(3);
+  });
 });
 
 describe("reshuffle", () => {
@@ -132,6 +168,38 @@ describe("updateSelection locking", () => {
     const session = await createSession();
     const status = await createReading(session);
     await expect(updateSelection(status.id, session, status.revision, [0, 1], true, undefined)).rejects.toThrow(ValidationError);
+  });
+
+  it("rejects a stale revision on a selection update and reports the current one", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    const next = await updateSelection(status.id, session, status.revision, [0], false, undefined);
+    try {
+      await updateSelection(status.id, session, status.revision, [1], false, undefined);
+      expect.unreachable();
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConflictError);
+      expect((e as ConflictError).currentRevision).toBe(next.revision);
+    }
+    expect((await getStatus(status.id, session)).selectedSlots).toEqual([0]);
+  });
+
+  it("lets exactly one of two concurrent locks at the same revision win", async () => {
+    const session = await createSession();
+    const status = await createReading(session);
+    const outcomes = await Promise.allSettled([
+      updateSelection(status.id, session, status.revision, [0, 1, 2], true, undefined),
+      updateSelection(status.id, session, status.revision, [3, 4, 5], true, undefined),
+    ]);
+    const won = outcomes.filter((o) => o.status === "fulfilled");
+    const lost = outcomes.filter((o) => o.status === "rejected");
+    expect(won).toHaveLength(1);
+    expect(lost).toHaveLength(1);
+    expect((lost[0] as PromiseRejectedResult).reason).toBeInstanceOf(ConflictError);
+    const winnerSlots = (won[0] as PromiseFulfilledResult<Awaited<ReturnType<typeof updateSelection>>>).value.selectedSlots;
+    const final = await getStatus(status.id, session);
+    expect(final.state).toBe("locked");
+    expect(final.selectedSlots).toEqual(winnerSlots);
   });
 });
 

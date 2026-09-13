@@ -3,12 +3,15 @@ import { POST } from "@/app/api/readings/[id]/otp/route";
 import { requestOtp, RateLimitedError } from "@/server/readingService";
 import { EmailConfigurationError } from "@/server/email";
 import { ensureMigrated } from "@/server/db/migrate";
-import { verifyTurnstile } from "@/server/turnstile";
+import { verifyTurnstile, BotCheckConfigurationError } from "@/server/turnstile";
 import { resolveSession } from "@/server/session";
 
 vi.mock("@/server/db/migrate", () => ({ ensureMigrated: vi.fn().mockResolvedValue(undefined) }));
 vi.mock("@/server/session", () => ({ resolveSession: vi.fn().mockResolvedValue({ id: "session", isNew: false }) }));
-vi.mock("@/server/turnstile", () => ({ verifyTurnstile: vi.fn().mockResolvedValue(true) }));
+vi.mock("@/server/turnstile", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/server/turnstile")>(),
+  verifyTurnstile: vi.fn().mockResolvedValue(true),
+}));
 vi.mock("@/server/readingService", async (importOriginal) => ({
   ...await importOriginal<typeof import("@/server/readingService")>(),
   requestOtp: vi.fn(),
@@ -69,6 +72,15 @@ describe("OTP HTTP outcomes", () => {
     expect(await response.json()).toEqual({ error: "bot_check_failed" });
     expect(requestOtp).not.toHaveBeenCalled();
     expect(console.info).toHaveBeenCalledWith("[otp_request]", expect.objectContaining({ stage: "turnstile", status: 400 }));
+  });
+
+  it("returns a service failure, not a bot rejection, when Turnstile is unconfigured in production", async () => {
+    vi.mocked(verifyTurnstile).mockRejectedValueOnce(new BotCheckConfigurationError("TURNSTILE_SECRET_KEY is required in production."));
+    const response = await request();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: "bot_check_not_configured" });
+    expect(requestOtp).not.toHaveBeenCalled();
+    expect(console.error).toHaveBeenCalledWith("[bot_check_configuration]", expect.objectContaining({ reason: expect.any(String) }));
   });
 
   it("catches migration failures and records the failing stage", async () => {

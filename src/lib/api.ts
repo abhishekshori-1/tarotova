@@ -37,8 +37,12 @@ async function asJson<T>(res: Response): Promise<T> {
   return body;
 }
 
-export function createReading() {
-  return fetch("/api/readings", { method: "POST" }).then((r) => asJson<ReadingStatus>(r));
+export function createReading(focus?: Focus) {
+  return fetch("/api/readings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ focus }),
+  }).then((r) => asJson<ReadingStatus>(r));
 }
 
 export function getStatus(id: string) {

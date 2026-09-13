@@ -56,7 +56,7 @@ function requireOwnership(sessionId: string, readingBrowserSessionId: string) {
   if (sessionId !== readingBrowserSessionId) throw new OwnershipError();
 }
 
-export async function createReading(sessionId: string) {
+export async function createReading(sessionId: string, focus: Focus = DEFAULT_FOCUS) {
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
   const id = randomId();
   const t = now();
@@ -65,7 +65,7 @@ export async function createReading(sessionId: string) {
     browserSessionId: sessionId,
     state: "drafting",
     revision: 0,
-    focus: DEFAULT_FOCUS,
+    focus,
     shuffleMapping: JSON.stringify(mapping),
     selectedSlots: "[]",
     deckVersion: DECK_VERSION,
@@ -87,7 +87,29 @@ async function getOwnedReading(id: string, sessionId: string) {
   const row = await getReadingRow(id);
   if (!row) throw new OwnershipError();
   requireOwnership(sessionId, row.browserSessionId);
+  // An abandoned draft (or a locked draw never verified) is gone after the
+  // draft TTL, whether or not the deletion job has run yet.
+  if (row.state !== "verified" && row.draftExpiresAt <= now()) throw new OwnershipError();
   return row;
+}
+
+type ReadingRow = NonNullable<Awaited<ReturnType<typeof getReadingRow>>>;
+
+/**
+ * Applies a draft mutation only if the row is still at the revision the
+ * caller saw and still drafting. The WHERE clause is the concurrency
+ * control: two tabs that both read revision N cannot both write N+1.
+ */
+async function updateDraftAtRevision(readingId: string, sessionId: string, expectedRevision: number, patch: Partial<typeof readings.$inferInsert>) {
+  const [updated] = await db
+    .update(readings)
+    .set(patch)
+    .where(and(eq(readings.id, readingId), eq(readings.revision, expectedRevision), eq(readings.state, "drafting")))
+    .returning();
+  if (updated) return updated as ReadingRow;
+  const current = await getOwnedReading(readingId, sessionId);
+  if (current.revision !== expectedRevision) throw new ConflictError(current.revision);
+  throw new ValidationError("already_locked");
 }
 
 export async function safeStatus(row: NonNullable<Awaited<ReturnType<typeof getReadingRow>>>) {
@@ -131,11 +153,12 @@ export async function reshuffle(readingId: string, sessionId: string, expectedRe
   if (selected.length > 0) throw new ValidationError("selection_not_empty");
 
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
-  await db
-    .update(readings)
-    .set({ shuffleMapping: JSON.stringify(mapping), revision: row.revision + 1, updatedAt: now() })
-    .where(eq(readings.id, readingId));
-  return safeStatus(await getOwnedReading(readingId, sessionId));
+  const updated = await updateDraftAtRevision(readingId, sessionId, expectedRevision, {
+    shuffleMapping: JSON.stringify(mapping),
+    revision: row.revision + 1,
+    updatedAt: now(),
+  });
+  return safeStatus(updated);
 }
 
 export async function updateSelection(
@@ -200,8 +223,7 @@ export async function updateSelection(
     patch.state = "locked";
   }
 
-  await db.update(readings).set(patch).where(eq(readings.id, readingId));
-  return safeStatus(await getOwnedReading(readingId, sessionId));
+  return safeStatus(await updateDraftAtRevision(readingId, sessionId, expectedRevision, patch));
 }
 
 export async function requestOtp(
