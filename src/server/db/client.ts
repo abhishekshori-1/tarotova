@@ -51,7 +51,8 @@ function connect(): Db {
     closeFn = () => sql.end();
   } else {
     const isTest = !!process.env.VITEST;
-    const dataDir = isTest ? undefined : path.join(process.cwd(), "data", "pglite");
+    // PGLITE_DATA_DIR lets the e2e suite run against its own throwaway database.
+    const dataDir = isTest ? undefined : path.resolve(process.cwd(), process.env.PGLITE_DATA_DIR || path.join("data", "pglite"));
     // pglite only creates the leaf directory; a fresh checkout has no data/.
     if (dataDir) mkdirSync(dataDir, { recursive: true });
     const client = new PGlite(dataDir);
