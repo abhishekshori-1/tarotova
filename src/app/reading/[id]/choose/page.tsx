@@ -4,7 +4,8 @@ import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { CardBackSlot } from "@/components/CardBackSlot";
-import { getStatus, reshuffle, updateSelection, type ReadingStatus } from "@/lib/api";
+import { getStatus, reshuffle, updateSelection, type ApiError, type ReadingStatus } from "@/lib/api";
+import { verifyHref } from "@/lib/nextPath";
 
 const SLOT_COUNT = 22;
 
@@ -15,16 +16,19 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const resultHref = `/reading/${id}/result`;
+
   const load = useCallback(async () => {
     try {
       const s = await getStatus(id);
+      if (s.state !== "drafting") return router.replace(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
+      // The continuation gate comes before card selection (docs/ACCESS-FLOW.md section 2).
+      if (s.entitlement === "verification_required") return router.replace(verifyHref(`/reading/${id}/choose`));
       setStatus(s);
-      if (s.state === "locked") router.replace(`/reading/${id}/email`);
-      if (s.state === "verified") router.replace(`/reading/${id}/result`);
     } catch {
       setError("This reading couldn't be found. It may have expired.");
     }
-  }, [id, router]);
+  }, [id, resultHref, router]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern for this build's plain client-fetch pages
@@ -38,11 +42,9 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     const already = status.selectedSlots.includes(slot);
     const nextSlots = already ? status.selectedSlots.filter((s) => s !== slot) : [...status.selectedSlots, slot].slice(0, 3);
     try {
-      const s = await updateSelection(id, status.revision, nextSlots);
-      setStatus(s);
+      setStatus(await updateSelection(id, status.revision, nextSlots));
     } catch (e) {
-      const err = e as { status?: number };
-      if (err.status === 409) await load();
+      if ((e as ApiError).status === 409) await load();
       else setError("Couldn't save your selection. Please try again.");
     } finally {
       setBusy(false);
@@ -72,18 +74,21 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     }
   }
 
-  async function continueToEmail() {
+  async function reveal() {
     if (!status || status.selectedSlots.length !== 3 || busy) return;
     setBusy(true);
     setError(null);
     try {
       const s = await updateSelection(id, status.revision, status.selectedSlots, { lock: true });
       setStatus(s);
-      router.push(`/reading/${id}/email`);
+      // A lost race with another tab locks the draw but grants nothing;
+      // verification then unlocks this same reading.
+      router.push(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
     } catch (e) {
-      const err = e as { status?: number };
-      if (err.status === 409) await load();
-      else setError("Couldn't lock your selection. Please try again.");
+      if ((e as ApiError).status === 409) {
+        setError("This reading changed in another tab. Your cards are shown as they are now.");
+        await load();
+      } else setError("Couldn't lock your selection. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -112,9 +117,12 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10 pb-32">
-      <h1 className="text-2xl font-semibold">Choose three cards</h1>
+      <p className="text-sm text-[var(--color-bronze)]">Your question</p>
+      <p className="prose-measure mt-1 text-lg">{status.question ?? "A general reading"}</p>
+
+      <h1 className="mt-6 text-2xl font-semibold">Choose three cards</h1>
       <p className="mt-2 text-sm text-[var(--color-plum-soft)]" aria-live="polite">
-        {status.selectedSlots.length} of 3 selected
+        {status.selectedSlots.length} of 3 selected — Situation, Challenge, Guidance, in the order you choose them
       </p>
 
       <div className="mt-4 flex gap-3">
@@ -152,11 +160,11 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
           <span className="text-sm">{status.selectedSlots.length} of 3 selected</span>
           <button
             type="button"
-            onClick={continueToEmail}
+            onClick={reveal}
             disabled={status.selectedSlots.length !== 3 || busy}
             className="min-h-11 rounded-lg bg-[var(--color-plum)] px-6 text-sm font-medium text-[var(--color-ivory)] disabled:opacity-40"
           >
-            Continue with these cards
+            Reveal these cards
           </button>
         </div>
       </div>

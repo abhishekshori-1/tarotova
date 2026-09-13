@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       return res;
     }
 
-    const status = await createReading(session.id, body.focus);
+    const status = await createReading(session.id, body.focus, body.question);
     return privateJson(status, { status: 201 });
   } catch (err) {
     if (err instanceof z.ZodError || err instanceof SyntaxError) return privateJson({ error: "invalid_request" }, { status: 400 });

@@ -9,15 +9,20 @@ export function generateCode(): string {
   return randomInt(0, 10 ** CODE_DIGITS).toString().padStart(CODE_DIGITS, "0");
 }
 
+/** What a code unlocks. A digest for one purpose can never verify another. */
+export type OtpPurpose = "reading" | "session_continuation";
+
 export interface OtpContext {
-  readingId: string;
+  purpose: OtpPurpose;
+  /** The reading id or browser session id the challenge belongs to. */
+  subjectId: string;
   challengeId: string;
   generation: number;
   intendedEmail: string;
 }
 
 function contextString(ctx: OtpContext): string {
-  return [ctx.readingId, ctx.challengeId, String(ctx.generation), ctx.intendedEmail.toLowerCase()].join("|");
+  return [ctx.purpose, ctx.subjectId, ctx.challengeId, String(ctx.generation), ctx.intendedEmail.toLowerCase()].join("|");
 }
 
 /** Keyed HMAC of the code bound to its full challenge context; never store the raw code. */

@@ -4,7 +4,8 @@ import { use, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { getResult, getStatus, type ReadingResult } from "@/lib/api";
+import { getResult, getStatus, type ApiError, type ReadingResult } from "@/lib/api";
+import { verifyHref } from "@/lib/nextPath";
 import { FOCUS_META } from "@/content/focuses";
 
 const POSITION_LABEL: Record<ReadingResult["cards"][number]["position"], string> = {
@@ -23,10 +24,11 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     try {
       const status = await getStatus(id);
       if (status.state === "drafting") return router.replace(`/reading/${id}/choose`);
-      if (status.state === "locked") return router.replace(`/reading/${id}/email`);
       setResult(await getResult(id));
-    } catch {
-      setError("This result isn't available. It may have expired, or verification is still needed.");
+    } catch (e) {
+      // Owned but not yet granted: verification unlocks this same reading.
+      if ((e as ApiError).status === 403) return router.replace(verifyHref(`/reading/${id}/result`));
+      setError("This result isn't available. It may have expired.");
     }
   }, [id, router]);
 
@@ -56,8 +58,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-10">
-      <p className="text-sm text-[var(--color-bronze)]">{FOCUS_META[result.focus].label} reading</p>
-      <h1 className="mt-1 text-2xl font-semibold">Your reading</h1>
+      <p className="text-sm text-[var(--color-bronze)]">{result.question ? "Your question" : `${FOCUS_META[result.focus].label} reading`}</p>
+      <h1 className="prose-measure mt-1 text-2xl font-semibold">{result.question ?? "A general reading"}</h1>
       <p className="prose-measure mt-4 text-[var(--color-plum-soft)]">{result.overview}</p>
 
       <div className="mt-8 grid gap-6 sm:grid-cols-3">

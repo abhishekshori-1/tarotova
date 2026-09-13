@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { generateCode, hashCode, verifyCodeDigest, type OtpContext } from "./otp";
 
 const ctx: OtpContext = {
-  readingId: "reading-1",
+  purpose: "reading",
+  subjectId: "reading-1",
   challengeId: "challenge-1",
   generation: 1,
   intendedEmail: "person@example.com",
@@ -37,9 +38,15 @@ describe("hashCode / verifyCodeDigest", () => {
     expect(verifyCodeDigest(hashCode("654321", ctx, secret), digest)).toBe(false);
   });
 
-  it("binds the digest to readingId — same code, different reading, different digest", () => {
+  it("binds the digest to the subject — same code, different reading, different digest", () => {
     const a = hashCode("123456", ctx, secret);
-    const b = hashCode("123456", { ...ctx, readingId: "reading-2" }, secret);
+    const b = hashCode("123456", { ...ctx, subjectId: "reading-2" }, secret);
+    expect(a).not.toBe(b);
+  });
+
+  it("binds the digest to its purpose — a reading code cannot verify a session, even for the same ids", () => {
+    const a = hashCode("123456", ctx, secret);
+    const b = hashCode("123456", { ...ctx, purpose: "session_continuation" }, secret);
     expect(a).not.toBe(b);
   });
 

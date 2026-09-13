@@ -39,7 +39,7 @@ describe("email configuration", () => {
 });
 
 describe("Resend submission", () => {
-  const params = { to: "reader@example.com", code: "012345", readingId: "reading", idempotencyKey: "challenge" };
+  const params = { to: "reader@example.com", code: "012345", subjectId: "reading", idempotencyKey: "challenge" };
 
   it("submits the OTP and challenge idempotency key and requires an accepted message id", async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json({ id: "resend-message-id" }));

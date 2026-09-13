@@ -9,7 +9,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Tarotova — Free Three-Card Tarot Reading",
   description:
-    "A calm, free three-card tarot reading — Situation, Challenge, Guidance — from the Major Arcana. Confirm your email once to reveal your cards.",
+    "A calm, free three-card tarot reading — Situation, Challenge, Guidance — from the Major Arcana. Bring a question; your first reading needs no email.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

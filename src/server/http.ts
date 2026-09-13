@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ConflictError, OwnershipError, ValidationError, RateLimitedError } from "./readingService";
+import { AccessRequiredError, ConflictError, OwnershipError, ValidationError, RateLimitedError } from "./errors";
 import { EmailConfigurationError } from "./email";
 import { BotCheckConfigurationError } from "./turnstile";
 
@@ -27,6 +27,9 @@ export function handleServiceError(err: unknown): NextResponse {
   }
   if (err instanceof OwnershipError) {
     return privateJson({ error: "not_found" }, { status: 404 });
+  }
+  if (err instanceof AccessRequiredError) {
+    return privateJson({ error: "verification_required" }, { status: 403 });
   }
   if (err instanceof ConflictError) {
     return privateJson({ error: "revision_conflict", currentRevision: err.currentRevision }, { status: 409 });
