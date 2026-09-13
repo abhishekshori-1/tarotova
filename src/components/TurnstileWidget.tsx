@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import Script from "next/script";
 
 declare global {
@@ -11,12 +11,20 @@ declare global {
         options: { sitekey: string; callback: (token: string) => void; "expired-callback"?: () => void; theme?: "light" | "dark" | "auto" },
       ) => string;
       remove: (widgetId: string) => void;
+      reset: (widgetId: string) => void;
     };
   }
 }
 
 interface Props {
   onToken: (token: string | null) => void;
+}
+
+export interface TurnstileWidgetHandle {
+  /** Get a fresh token — call after any failed submission. Turnstile
+   * tokens are single-use; retrying with the same token fails server-side
+   * verification even though the widget still shows as "checked". */
+  reset: () => void;
 }
 
 /**
@@ -34,10 +42,16 @@ interface Props {
  * a ref so we render at most once per mounted instance, and explicitly
  * `remove()` the widget on unmount.
  */
-export function TurnstileWidget({ onToken }: Props) {
+export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, Props>(function TurnstileWidget({ onToken }, ref) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    reset() {
+      if (widgetIdRef.current) window.turnstile?.reset(widgetIdRef.current);
+    },
+  }));
 
   useEffect(() => {
     renderOnce();
@@ -67,4 +81,4 @@ export function TurnstileWidget({ onToken }: Props) {
       <div ref={containerRef} />
     </>
   );
-}
+});

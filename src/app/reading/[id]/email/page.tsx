@@ -1,11 +1,11 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { getStatus, sendOtp, type ReadingStatus } from "@/lib/api";
-import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "@/components/TurnstileWidget";
 
 const TURNSTILE_CONFIGURED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -18,6 +18,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
 
   const load = useCallback(async () => {
     try {
@@ -55,6 +56,13 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
       if (err.status === 429) setError("Too many attempts right now. Please try again shortly.");
       else if (err.body?.error === "address_suppressed") setError("We can't send to this address right now.");
       else setError("Couldn't send the code. Please check the address and try again.");
+
+      // A Turnstile token is single-use: the server already consumed it by
+      // this point regardless of *why* the request then failed (rate limit,
+      // validation, etc.), so retrying with the same token would just fail
+      // Turnstile's own check. Reset so the next attempt gets a fresh one.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setBusy(false);
     }
@@ -109,7 +117,7 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
           onChange={(e) => setEmail(e.target.value)}
           className="min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white/60 px-3 text-base"
         />
-        <TurnstileWidget onToken={setTurnstileToken} />
+        <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
         {error && (
           <p role="alert" className="text-sm text-red-700">
             {error}
