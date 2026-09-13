@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Hierophant">
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f1e8" stroke="#30253b" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#30253b">V</text>
+  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="90" y1="145" x2="110" y2="235"/>
+    <circle cx="90" cy="145" r="9"/>
+    <line x1="150" y1="145" x2="130" y2="235" stroke="#9b7849"/>
+    <circle cx="150" cy="145" r="9" stroke="#9b7849"/>
+  </g>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Hierophant</text>
+</svg>

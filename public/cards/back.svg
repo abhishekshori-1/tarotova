@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="Card back">
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#30253b" stroke="#9b7849" stroke-width="3"/>
+  <rect x="14" y="14" width="212" height="356" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
+  <circle cx="120" cy="190" r="46" fill="none" stroke="#f6f1e8" stroke-width="2"/>
+  <circle cx="120" cy="190" r="26" fill="none" stroke="#f6f1e8" stroke-width="2"/>
+  <path d="M 120 120 l 0 140 M 50 190 l 140 0" stroke="#f6f1e8" stroke-width="1.5" opacity="0.6"/>
+</svg>
