@@ -17,6 +17,19 @@ done/incomplete/limitations status of this build specifically,
 together), and [`docs/ISSUES.md`](./docs/ISSUES.md) tracks open bugs found
 in the deployed app.
 
+The next product/design phase is specified in
+[`docs/PLAN-EXTENDED.md`](./docs/PLAN-EXTENDED.md): a more atmospheric UI,
+a question companion and guided journeys, responsive phone/tablet/desktop
+layouts, motion and performance targets. Journaling, additional spreads and
+other expansions remain future scope. These are planned features, not
+implemented behavior.
+
+[`docs/JOURNEY-DESIGN.md`](./docs/JOURNEY-DESIGN.md) details the proposed journey
+screens, wireframe, content sources, model input/output and persistence flow.
+[`docs/ACCESS-FLOW.md`](./docs/ACCESS-FLOW.md) specifies the proposed first reading
+without email, verification when starting another reading, and remembered
+verification in the same browser. This requires a backend access-policy change.
+
 ## Running it
 
 ```
