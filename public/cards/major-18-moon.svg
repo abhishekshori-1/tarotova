@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Moon">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f1e8" stroke="#30253b" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#30253b">XVIII</text>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XVIII</text>
   <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <path d="M 135 135 a 32 32 0 1 0 0 64 a 24 24 0 1 1 0 -64 z" fill="#30253b" stroke="none"/>
-    <path d="M 65 245 q 25 -20 50 0 q 25 20 50 0" stroke="#9b7849"/>
+    <path d="M 65 245 q 25 -20 50 0 q 25 20 50 0" stroke="#b8955a"/>
   </g>
   <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Moon</text>
 </svg>

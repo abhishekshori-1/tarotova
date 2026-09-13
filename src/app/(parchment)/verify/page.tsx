@@ -19,7 +19,7 @@ export default function VerifyPage() {
 
 function Loading() {
   return (
-    <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--color-plum-soft)]" aria-live="polite">
+    <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--fg-soft)]" aria-live="polite">
       Loading…
     </div>
   );
@@ -84,8 +84,8 @@ function VerifyForm() {
 
   return (
     <div className="mx-auto max-w-md px-6 py-10">
-      <h1 className="text-2xl font-semibold">Keep exploring with Tarotova</h1>
-      <p className="prose-measure mt-3 text-[var(--color-plum-soft)]">
+      <h1 className="title">Keep exploring with Tarotova</h1>
+      <p className="prose-measure mt-3 text-[var(--fg-soft)]">
         Your first reading needed no email. To begin another, confirm your email once — we&apos;ll send a one-time code, and this
         browser stays confirmed for 30 days.
       </p>
@@ -101,7 +101,7 @@ function VerifyForm() {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="min-h-11 w-full rounded-lg border border-[var(--color-border)] bg-white/60 px-3 text-base"
+          className="field"
         />
         <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
         {error && (
@@ -109,16 +109,12 @@ function VerifyForm() {
             {error}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={busy || (TURNSTILE_CONFIGURED && !turnstileToken)}
-          className="min-h-11 w-full rounded-lg bg-[var(--color-plum)] px-6 text-sm font-medium text-[var(--color-ivory)] disabled:opacity-60"
-        >
+        <button type="submit" disabled={busy || (TURNSTILE_CONFIGURED && !turnstileToken)} className="btn-primary w-full px-6 text-sm">
           {busy ? "Sending…" : "Send my code"}
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-[var(--color-plum-soft)]">This won&apos;t subscribe you to marketing.</p>
+      <p className="mt-4 text-xs text-[var(--fg-soft)]">This won&apos;t subscribe you to marketing.</p>
       <p className="mt-6 text-sm">
         <Link href="/" className="underline">
           Return to my reading

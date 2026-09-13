@@ -27,7 +27,7 @@ export default function CodePage() {
 
 function Loading() {
   return (
-    <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--color-plum-soft)]" aria-live="polite">
+    <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--fg-soft)]" aria-live="polite">
       Loading…
     </div>
   );
@@ -96,8 +96,8 @@ function CodeForm() {
 
   return (
     <div className="mx-auto max-w-md px-6 py-10">
-      <h1 className="text-2xl font-semibold">Enter your code</h1>
-      <p className="mt-2 text-sm text-[var(--color-plum-soft)]">
+      <h1 className="title">Enter your code</h1>
+      <p className="mt-2 text-sm text-[var(--fg-soft)]">
         {sendStatus === "accepted"
           ? `Check ${session.maskedEmail ?? "your email"} for a 6-digit code.`
           : sendStatus === "failed"
@@ -112,16 +112,12 @@ function CodeForm() {
             {error}
           </p>
         )}
-        <button
-          type="submit"
-          disabled={busy || code.length !== 6}
-          className="min-h-11 w-full rounded-lg bg-[var(--color-plum)] px-6 text-sm font-medium text-[var(--color-ivory)] disabled:opacity-60"
-        >
+        <button type="submit" disabled={busy || code.length !== 6} className="btn-primary w-full px-6 text-sm">
           {busy ? "Checking…" : "Confirm and continue"}
         </button>
       </form>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-[var(--color-plum-soft)]">
+      <div className="mt-4 flex items-center justify-between text-sm text-[var(--fg-soft)]">
         <button
           type="button"
           onClick={() => router.push(verifyHref(next))}
@@ -136,7 +132,7 @@ function CodeForm() {
       </div>
 
       {expiryRemaining > 0 && expiryRemaining < 2 * 60 * 1000 && (
-        <p className="mt-3 text-xs text-[var(--color-plum-soft)]">Code expires in {Math.ceil(expiryRemaining / 1000)}s.</p>
+        <p className="mt-3 text-xs text-[var(--fg-soft)]">Code expires in {Math.ceil(expiryRemaining / 1000)}s.</p>
       )}
 
       {devCode && (

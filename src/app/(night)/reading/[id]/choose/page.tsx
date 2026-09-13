@@ -2,13 +2,16 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { CardBackSlot } from "@/components/CardBackSlot";
+import { ReadingProgress } from "@/components/ReadingProgress";
 import { getStatus, reshuffle, updateSelection, type ApiError, type ReadingStatus } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { createSaveQueue, type SaveState } from "@/lib/saveQueue";
 
 const SLOT_COUNT = 22;
+const POSITIONS = ["Situation", "Challenge", "Guidance"] as const;
 
 export default function ChoosePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -55,8 +58,6 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         onStateChange: setSaveState,
         onError: async (e) => {
           if ((e as ApiError).status === 409) {
-            // Another tab moved the reading on; show the server's state and
-            // let the person reapply what they meant.
             setError("This reading changed in another tab. Your cards are shown as they are now.");
             await load();
           } else {
@@ -136,7 +137,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
   if (!status) {
     return (
-      <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--color-plum-soft)]" aria-live="polite">
+      <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--fg-soft)]" aria-live="polite">
         Loading your deck…
       </div>
     );
@@ -146,46 +147,35 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const saveLabel = saveState === "saving" ? "Saving…" : saveState === "failed" ? "Not saved" : "Saved";
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-10 pb-32">
-      <p className="text-sm text-[var(--color-bronze)]">Your question</p>
+    <div className="mx-auto max-w-5xl px-6 pb-44 pt-8">
+      <ReadingProgress current={1} />
+      <p className="eyebrow mt-6">Your question</p>
       <p className="prose-measure mt-1 text-lg">{status.question ?? "A general reading"}</p>
 
-      <h1 className="mt-6 text-2xl font-semibold">Choose three cards</h1>
-      <p className="mt-2 text-sm text-[var(--color-plum-soft)]" aria-live="polite">
-        {selected.length} of 3 selected — Situation, Challenge, Guidance, in the order you choose them
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={shuffle}
-          disabled={!canShuffle || busy}
-          className="min-h-11 rounded-lg border border-[var(--color-border)] px-4 text-sm disabled:opacity-40"
-        >
-          Shuffle
-        </button>
-        {selected.length > 0 && (
-          <button type="button" onClick={clearSelection} disabled={busy} className="min-h-11 rounded-lg border border-[var(--color-border)] px-4 text-sm">
-            Clear selection
+      <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="title">Choose three cards</h1>
+          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap in the order you want: first Situation, then Challenge, then Guidance.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={shuffle} disabled={!canShuffle || busy} className="btn-secondary px-4 text-sm">
+            Shuffle
           </button>
-        )}
-        <span className="text-xs text-[var(--color-plum-soft)]" aria-live="polite">
-          {saveLabel}
-        </span>
-        {saveState === "failed" && (
-          <button type="button" onClick={() => queue.retry()} className="min-h-11 text-sm underline">
-            Retry saving
-          </button>
-        )}
+          {selected.length > 0 && (
+            <button type="button" onClick={clearSelection} disabled={busy} className="btn-secondary px-4 text-sm">
+              Clear
+            </button>
+          )}
+        </div>
       </div>
 
       {error && (
-        <p role="alert" className="mt-3 text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-red-300">
           {error}
         </p>
       )}
 
-      <div className="mt-6 grid grid-cols-4 gap-3 sm:grid-cols-6">
+      <div className="mt-6 grid grid-cols-4 gap-3 sm:grid-cols-6 sm:gap-4 xl:grid-cols-8">
         {Array.from({ length: SLOT_COUNT }, (_, slot) => {
           const order = selected.includes(slot) ? selected.indexOf(slot) + 1 : undefined;
           const disabled = order === undefined && selected.length >= 3;
@@ -193,17 +183,37 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         })}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 border-t border-[var(--color-border)] bg-[var(--color-ivory)]/95 px-6 py-4 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
-          <span className="text-sm">{selected.length} of 3 selected</span>
-          <button
-            type="button"
-            onClick={reveal}
-            disabled={selected.length !== 3 || busy || saveState === "failed"}
-            className="min-h-11 rounded-lg bg-[var(--color-plum)] px-6 text-sm font-medium text-[var(--color-ivory)] disabled:opacity-40"
-          >
-            {busy ? "Saving your choices…" : "Reveal these cards"}
-          </button>
+      <div className="sticky-tray fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[rgba(20,17,31,0.92)] px-4 pt-3 backdrop-blur sm:px-6">
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
+          <ol className="flex items-center gap-3" aria-label="Your three positions">
+            {POSITIONS.map((label, i) => {
+              const filled = selected[i] !== undefined;
+              return (
+                <li key={label} className="flex flex-col items-center gap-1">
+                  <div
+                    className={`relative aspect-[5/8] w-10 rounded-md border ${filled ? "border-[var(--gold)]" : "border-dashed border-[var(--line)]"}`}
+                    aria-hidden="true"
+                  >
+                    {filled && <Image src="/cards/back.svg" alt="" fill sizes="40px" className="rounded-md" />}
+                  </div>
+                  <span className={`text-[0.65rem] ${filled ? "text-[var(--fg)]" : "text-[var(--fg-soft)]"}`}>{label}</span>
+                </li>
+              );
+            })}
+          </ol>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-[var(--fg-soft)]" aria-live="polite">
+              {saveLabel}
+            </span>
+            {saveState === "failed" && (
+              <button type="button" onClick={() => queue.retry()} className="min-h-11 text-sm underline">
+                Retry saving
+              </button>
+            )}
+            <button type="button" onClick={reveal} disabled={selected.length !== 3 || busy || saveState === "failed"} className="btn-primary px-6 text-sm">
+              {busy ? "Saving your choices…" : "Reveal these cards"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
