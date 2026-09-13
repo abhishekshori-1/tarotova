@@ -6,6 +6,13 @@ practitioner has been sourced yet (PLAN.md section 13). Treat every reading
 from this build as a working demo — the interpretive copy has not had the
 practitioner review PLAN.md section 9 requires as a release gate.
 
+Planning docs live in [`docs/`](./docs): [`docs/PLAN.md`](./docs/PLAN.md) is
+the full product/engineering plan this build follows (`PLAN.md section N`
+below refers to it), [`docs/DOMAIN-RESEARCH.md`](./docs/DOMAIN-RESEARCH.md)
+is the domain-name research it cites, and
+[`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) is the current
+done/incomplete/limitations status of this build specifically.
+
 ## Running it
 
 ```
@@ -97,4 +104,5 @@ scope: `src/app` (routes), `src/server` (db, session, OTP, rate limiting,
 email), `src/content` (the 22-card deck and copy), `src/components`,
 `src/lib` (zod schemas, client API wrapper), `drizzle/` (SQL migrations),
 `public/cards/`, `tests/` (integration tests + Vitest setup — pure-unit
-tests are colocated as `*.test.ts` next to the code they cover).
+tests are colocated as `*.test.ts` next to the code they cover), `docs/`
+(the plan, its domain research, and this build's implementation status).

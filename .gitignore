@@ -37,11 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
-# local sqlite stand-in db (see .env.example)
-/data/*.db
-/data/*.db-journal
-/data/*.db-wal
-/data/*.db-shm
+# local sqlite stand-in db + dev server logs (see .env.example) — the app
+# creates this directory itself at runtime, nothing in it is checked in
+/data/
 
 # typescript
 *.tsbuildinfo
