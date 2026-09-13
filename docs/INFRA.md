@@ -23,7 +23,7 @@ Visitor
 Cloudflare (DNS host for tarotova.com — NOT proxied, "DNS only")
   │  A/CNAME records point straight at Vercel's edge
   ▼
-Vercel (hosting: Next.js app, region currently mismatched — see Known Issues)
+Vercel (Next.js; hnd1 configured locally, deployment pending — see Known Issues)
   │                                  │
   ▼                                  ▼
 Supabase Postgres (Tokyo)      Resend (mail.tarotova.com)  ──▶  Cloudflare Turnstile
@@ -73,9 +73,9 @@ already exists on the domain you're verifying.
 - One widget, "Managed" mode, hostname `tarotova.com` (covers all
   subdomains automatically — Cloudflare's widget UI explicitly rejects
   entering a subdomain as a separate hostname).
-- Site Key → `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Vercel, type **Config** —
-  must not be type "Secret," or Next.js can't inline it into the browser
-  bundle at build time).
+- Site Key → `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (currently saved as Config
+  in Vercel). Must be available at build time for Next.js to inline it into
+  the browser bundle; changing it requires a new build.
 - Secret Key → `TURNSTILE_SECRET_KEY` (Vercel, type **Secret**).
 - Client widget: `src/components/TurnstileWidget.tsx`. Server check:
   `src/server/turnstile.ts`.
@@ -91,6 +91,7 @@ already exists on the domain you're verifying.
 | Custom domains | `tarotova.com` (redirects to www), `www.tarotova.com` (canonical) |
 | Framework | Next.js (App Router), root directory `./` |
 | Runtime | Node.js serverless functions (not Edge, not Cloudflare Workers) |
+| Function region | `vercel.json` now sets `hnd1` (Tokyo); deployment and live verification pending |
 
 ### Environment variables (Production)
 
@@ -103,14 +104,17 @@ already exists on the domain you're verifying.
 | `EMAIL_PROVIDER` | Config | `resend` |
 | `RESEND_API_KEY` | Secret | Resend API key |
 | `EMAIL_FROM` | Config | `Tarotova <do-not-reply@mail.tarotova.com>` |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | **Config** (not Secret) | Turnstile site key — must reach the browser bundle |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Config | Public Turnstile site key — must be available at build time |
 | `TURNSTILE_SECRET_KEY` | Secret | Turnstile server-side verification |
 
-Note the one non-obvious rule learned the hard way: any `NEXT_PUBLIC_*`
-variable must be Vercel type **Config**, never **Secret** — Secret-type
-values are injected only at runtime into serverless functions and are
-never inlined into the client-side JS bundle, so a `NEXT_PUBLIC_` var saved
-as Secret silently never reaches the browser at all.
+The earlier deployment's public Turnstile key was fixed by re-adding it as
+Config and rebuilding. The essential requirement is build-time availability;
+the earlier claim that all Secret-type values are runtime-only was not
+verified and should not be treated as a general Vercel rule.
+
+Production email now requires `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, and
+`EMAIL_FROM`. Missing configuration returns a service error rather than
+silently logging OTPs through the development console provider.
 
 ## Database (Supabase)
 
@@ -122,9 +126,11 @@ as Secret silently never reaches the browser at all.
 | Migrations | Run automatically on first query per cold start (`ensureMigrated()`, idempotent) |
 | Tables | `browser_sessions`, `readings`, `verified_emails`, `email_challenges`, `rate_limit_buckets`, `delivery_events`, `suppressed_emails` |
 
-**Known mismatch**: Vercel's functions are executing in a US region
-(observed `iad1` in `x-vercel-id` response headers) while the database is in
-Tokyo — see Known Issues below.
+**Region fix pending deployment:** The previous investigation reported US
+execution (`iad1`) against Tokyo Postgres. `vercel.json` now pins functions to
+`hnd1`. Confirm actual execution in Vercel deployment/runtime details and the
+new OTP logs' `region` field; response headers can also reflect edge routing.
+See `docs/ISSUES.md` for measurements and verification steps.
 
 ## Email (Resend)
 
@@ -149,9 +155,9 @@ Tokyo — see Known Issues below.
 ## Known issues
 
 See `docs/ISSUES.md` for full details and status:
-1. **Every interaction feels slow** — likely the Vercel/Supabase region
-   mismatch (US function region vs. Tokyo database).
-2. **OTP emails aren't arriving, and Resend's own logs show nothing** —
-   root cause not yet confirmed; two real client-side Turnstile bugs were
-   found and fixed along the way, but the underlying email-delivery gap
-   is still open.
+1. **Slow interactions:** Tokyo region configured locally and one redundant
+   database round trip removed; production timing verification pending.
+2. **Missing OTPs:** Silent console fallback, cooldown budget consumption,
+   misleading send-success UI and broken resend path fixed locally. New
+   logs identify the first failing stage. The production cause and live
+   inbox delivery remain unconfirmed until deployment and a real attempt.

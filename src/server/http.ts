@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ConflictError, OwnershipError, ValidationError, RateLimitedError } from "./readingService";
+import { EmailConfigurationError } from "./email";
 
 export function getClientIp(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
@@ -15,6 +16,10 @@ export function privateJson(body: unknown, init?: ResponseInit): NextResponse {
 }
 
 export function handleServiceError(err: unknown): NextResponse {
+  if (err instanceof EmailConfigurationError) {
+    console.error("[email_configuration]", { reason: err.message });
+    return privateJson({ error: "email_not_configured" }, { status: 503 });
+  }
   if (err instanceof OwnershipError) {
     return privateJson({ error: "not_found" }, { status: 404 });
   }

@@ -74,30 +74,6 @@ export default function ConfirmPage({ params }: { params: Promise<{ id: string }
     }
   }
 
-  async function resend() {
-    if (!status || busy || resendRemaining > 0) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const email = status.maskedEmail ?? "";
-      // Masked email isn't enough to resend to the right address in a real
-      // deployment; this dev build re-sends via the same intended email the
-      // server already has on the current challenge.
-      const res = await fetch(`/api/readings/${id}/otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ revision: status.revision, email, intent: "resend" }),
-      });
-      if (res.ok) {
-        const body = await res.json();
-        if (body.devCode) setDevCode(body.devCode);
-      }
-      await load();
-    } finally {
-      setBusy(false);
-    }
-  }
-
   if (notFound) {
     return (
       <div className="mx-auto max-w-md px-6 py-16 text-center">
@@ -121,7 +97,11 @@ export default function ConfirmPage({ params }: { params: Promise<{ id: string }
     <div className="mx-auto max-w-md px-6 py-10">
       <h1 className="text-2xl font-semibold">Enter your code</h1>
       <p className="mt-2 text-sm text-[var(--color-plum-soft)]">
-        We sent a 6-digit code to {status.maskedEmail ?? "your email"}.
+        {status.pendingChallenge?.sendStatus === "accepted"
+          ? `Check ${status.maskedEmail ?? "your email"} for a 6-digit code.`
+          : status.pendingChallenge?.sendStatus === "failed"
+            ? "We couldn't send your code. Please request a new one below."
+            : "We couldn't confirm whether your code was sent. If it arrives, you can enter it here; otherwise, request a new one below."}
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-4">
@@ -141,8 +121,8 @@ export default function ConfirmPage({ params }: { params: Promise<{ id: string }
       </form>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[var(--color-plum-soft)]">
-        <button type="button" onClick={resend} disabled={resendRemaining > 0 || busy} className="underline disabled:no-underline disabled:opacity-60">
-          {resendRemaining > 0 ? `Resend available in ${Math.ceil(resendRemaining / 1000)}s` : "Resend code"}
+        <button type="button" onClick={() => router.push(`/reading/${id}/email`)} disabled={resendRemaining > 0 || busy} className="underline disabled:no-underline disabled:opacity-60">
+          {resendRemaining > 0 ? `Resend available in ${Math.ceil(resendRemaining / 1000)}s` : "Request a new code"}
         </button>
         <Link href={`/reading/${id}/email`} className="underline">
           Change email

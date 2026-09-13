@@ -52,9 +52,23 @@ export default function EmailPage({ params }: { params: Promise<{ id: string }> 
       }
       router.push(`/reading/${id}/confirm`);
     } catch (e) {
-      const err = e as { status?: number; body?: { error?: string } };
-      if (err.status === 429) setError("Too many attempts right now. Please try again shortly.");
+      const err = e as { status?: number; retryAfterSeconds?: number; body?: { error?: string } };
+      if (err.status === 429) {
+        const seconds = err.retryAfterSeconds;
+        const wait = seconds
+          ? seconds < 60 ? `${seconds} seconds` : `${Math.ceil(seconds / 60)} minutes`
+          : "a little while";
+        setError(`Too many attempts right now. Please try again in ${wait}.`);
+      }
       else if (err.body?.error === "address_suppressed") setError("We can't send to this address right now.");
+      else if (err.body?.error === "email_not_configured" || err.body?.error === "email_send_failed") {
+        setError("We couldn't send your email. Please try again later.");
+      }
+      else if (err.body?.error === "bot_check_failed") setError("The security check expired. Please complete it again.");
+      else if (err.status === 409) {
+        setError("This reading changed. Please try again.");
+        await load();
+      }
       else setError("Couldn't send the code. Please check the address and try again.");
 
       // A Turnstile token is single-use: the server already consumed it by

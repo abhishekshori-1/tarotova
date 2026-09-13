@@ -60,7 +60,7 @@ export async function createReading(sessionId: string) {
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
   const id = randomId();
   const t = now();
-  await db.insert(readings).values({
+  const [row] = await db.insert(readings).values({
     id,
     browserSessionId: sessionId,
     state: "drafting",
@@ -74,8 +74,8 @@ export async function createReading(sessionId: string) {
     draftExpiresAt: t + DRAFT_TTL_MS,
     createdAt: t,
     updatedAt: t,
-  });
-  return safeStatus(await getOwnedReading(id, sessionId));
+  }).returning();
+  return safeStatus(row);
 }
 
 async function getReadingRow(id: string) {
@@ -225,19 +225,24 @@ export async function requestOtp(
     .limit(1);
   if (suppressed) throw new ValidationError("address_suppressed");
 
-  const perEmailHour = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 3 });
-  if (!perEmailHour.allowed) throw new RateLimitedError(perEmailHour.retryAfterMs);
-  const perEmailDay = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_day", windowMs: 24 * 60 * 60 * 1000, limit: 5 });
-  if (!perEmailDay.allowed) throw new RateLimitedError(perEmailDay.retryAfterMs);
-  const perIpHour = await checkAndIncrement(`ip:${ip}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 10 });
-  if (!perIpHour.allowed) throw new RateLimitedError(perIpHour.retryAfterMs);
-
+  // Reject a retry during the cooldown before it spends send budgets.
   const priorChallenges = await db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId));
   const latest = priorChallenges.sort((a, b) => b.generation - a.generation)[0];
   if (latest && !latest.consumedAt && !latest.supersededAt) {
     const cooldownRemaining = latest.createdAt + RESEND_COOLDOWN_MS - now();
     if (cooldownRemaining > 0) throw new RateLimitedError(cooldownRemaining);
   }
+
+  // Configuration errors must not spend the user's send budget or create
+  // a challenge that was never submitted to an email provider.
+  const provider = getEmailProvider();
+
+  const perEmailHour = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 3 });
+  if (!perEmailHour.allowed) throw new RateLimitedError(perEmailHour.retryAfterMs);
+  const perEmailDay = await checkAndIncrement(`email:${normalized}`, { action: "otp_send_day", windowMs: 24 * 60 * 60 * 1000, limit: 5 });
+  if (!perEmailDay.allowed) throw new RateLimitedError(perEmailDay.retryAfterMs);
+  const perIpHour = await checkAndIncrement(`ip:${ip}`, { action: "otp_send_hour", windowMs: 60 * 60 * 1000, limit: 10 });
+  if (!perIpHour.allowed) throw new RateLimitedError(perIpHour.retryAfterMs);
 
   // A resend/email-change supersedes the previous challenge without
   // resetting the rolling abuse budgets above (PLAN.md section 6).
@@ -268,7 +273,6 @@ export async function requestOtp(
     createdAt: t,
   });
 
-  const provider = getEmailProvider();
   const idempotencyKey = challengeId;
 
   // Awaited within the request per PLAN.md section 6: "await delivery
@@ -278,17 +282,28 @@ export async function requestOtp(
   // provider rejection is marked failed.
   let sendStatus: "accepted" | "pending" | "failed" = "pending";
   let providerMessageId: string | undefined;
+  let failureReason: string | undefined;
+  const startedAt = now();
+  const deliveryContext = { readingId, challengeId, provider: provider.name, region: process.env.VERCEL_REGION ?? "local" };
+  console.info("[otp_delivery]", { ...deliveryContext, event: "submission_started" });
   try {
     const result = await provider.sendVerificationCode({ to: normalized, code, readingId, idempotencyKey });
     if (result.status === "accepted") {
       sendStatus = "accepted";
       providerMessageId = result.providerMessageId;
-    } else if (result.reason !== "network_error_or_timeout") {
-      sendStatus = "failed";
+    } else {
+      failureReason = result.reason;
+      if (result.reason !== "network_error_or_timeout" && result.reason !== "resend_invalid_response") sendStatus = "failed";
     }
   } catch {
     // Acceptance is uncertain, not a definite failure — keep "pending".
+    failureReason = "provider_exception";
   }
+  // Do not log recipients, codes, keys, or raw provider responses.
+  console.info("[otp_delivery]", {
+    ...deliveryContext, event: "submission_finished", sendStatus, providerMessageId,
+    failureReason, durationMs: now() - startedAt,
+  });
 
   await db.update(emailChallenges).set({ sendStatus, providerMessageId }).where(eq(emailChallenges.id, challengeId));
 

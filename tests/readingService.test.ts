@@ -1,6 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
-import { browserSessions, suppressedEmails } from "@/server/db/schema";
+import { browserSessions, suppressedEmails, rateLimitBuckets } from "@/server/db/schema";
+import * as emailProviders from "@/server/email";
 import { randomId } from "@/server/ids";
 import { hashEmailForLookup } from "@/server/emailHash";
 import { consoleEmailProvider } from "@/server/email/console-provider";
@@ -48,8 +50,14 @@ function freshEmail() {
   return `person${email}@example.com`;
 }
 
+beforeEach(async () => {
+  await db.delete(rateLimitBuckets);
+});
+
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("createReading / getStatus", () => {
@@ -224,6 +232,22 @@ describe("OTP request + verify", () => {
 });
 
 describe("rate limiting", () => {
+  it("does not spend send budgets on repeated attempts during the resend cooldown", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    const address = freshEmail();
+    await requestOtp(locked.id, session, locked.revision, address, "127.0.0.1");
+    for (let i = 0; i < 3; i++) {
+      await expect(requestOtp(locked.id, session, locked.revision, address, "127.0.0.1")).rejects.toThrow(RateLimitedError);
+    }
+    const buckets = await db.select().from(rateLimitBuckets);
+    expect(buckets).toHaveLength(3);
+    expect(buckets.every((b) => b.count === 1)).toBe(true);
+
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 61_000);
+    expect((await requestOtp(locked.id, session, locked.revision, address, "127.0.0.1")).sendStatus).toBe("accepted");
+  });
+
   it("blocks a fourth code request to the same address within an hour (PLAN.md: 3/hour per email)", async () => {
     const address = freshEmail();
     for (let i = 0; i < 3; i++) {
@@ -242,6 +266,42 @@ describe("rate limiting", () => {
     await requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1");
     const afterFirst = await getStatus(locked.id, session);
     await expect(requestOtp(locked.id, session, afterFirst.revision, freshEmail(), "127.0.0.1")).rejects.toThrow(RateLimitedError);
+  });
+});
+
+describe("delivery failures", () => {
+  it("does not create a challenge or spend send budgets when email is misconfigured", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    vi.stubEnv("EMAIL_PROVIDER", "resend");
+    vi.stubEnv("RESEND_API_KEY", undefined);
+    await expect(requestOtp(locked.id, session, locked.revision, freshEmail(), "127.0.0.1")).rejects.toThrow(emailProviders.EmailConfigurationError);
+    expect((await getStatus(locked.id, session)).pendingChallenge).toBeUndefined();
+    expect(await db.select().from(rateLimitBuckets).where(eq(rateLimitBuckets.action, "otp_send_hour"))).toEqual([]);
+  });
+
+  it.each([
+    ["resend_http_403", "failed"],
+    ["network_error_or_timeout", "pending"],
+    ["resend_invalid_response", "pending"],
+  ] as const)("persists %s as %s and logs a reason without exposing the code or email", async (reason, status) => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    const address = freshEmail();
+    const send = vi.fn().mockResolvedValue({ status: "failed", reason });
+    vi.spyOn(emailProviders, "getEmailProvider").mockReturnValue({ name: "resend", sendVerificationCode: send });
+    const log = vi.spyOn(console, "info").mockImplementation(() => {});
+    vi.stubEnv("NODE_ENV", "production");
+    const result = await requestOtp(locked.id, session, locked.revision, address, "127.0.0.1");
+    expect(result.sendStatus).toBe(status);
+    expect(result.devCode).toBeUndefined();
+    expect((await getStatus(locked.id, session)).pendingChallenge?.sendStatus).toBe(status);
+    expect(log).toHaveBeenCalledWith("[otp_delivery]", expect.objectContaining({ failureReason: reason, sendStatus: status }));
+    const code = send.mock.calls[0][0].code;
+    const logs = JSON.stringify(log.mock.calls);
+    expect(logs).not.toContain(address);
+    expect(logs).not.toContain(code);
+    if (status === "pending") expect((await verifyOtp(locked.id, session, code)).ok).toBe(true);
   });
 });
 

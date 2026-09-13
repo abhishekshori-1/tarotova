@@ -2,13 +2,13 @@ import { randomId } from "../ids";
 import type { EmailProvider, SendCodeParams, SendResult } from "./provider";
 
 /**
- * Local-dev stand-in for Resend (PLAN.md section 5/8) — no email account
- * exists yet. Logs the code to the server terminal instead of delivering
- * it. `lastCodeFor` lets non-production routes echo the code back so the
- * confirm screen is testable without a real inbox; never used in a
- * production build (guarded at the call site in the otp route).
+ * Local-dev stand-in for Resend (PLAN.md section 5/8). Logs the code to the
+ * terminal instead of delivering it. `lastCodeFor` makes local integration
+ * tests possible without a real inbox. getEmailProvider rejects this
+ * provider in production; the service also guards its dev-only code echo.
  */
 class ConsoleEmailProvider implements EmailProvider {
+  readonly name = "console";
   private lastCodes = new Map<string, string>();
 
   async sendVerificationCode(params: SendCodeParams): Promise<SendResult> {

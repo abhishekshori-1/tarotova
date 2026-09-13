@@ -6,6 +6,9 @@ export {};
 // VITEST=true — with DATABASE_URL left unset, client.ts picks in-memory
 // pglite specifically because VITEST is set (see db/client.ts).
 delete process.env.DATABASE_URL;
+// Never send real email from tests, even if the shell has production env vars.
+process.env.EMAIL_PROVIDER = "console";
+delete process.env.RESEND_API_KEY;
 process.env.OTP_HMAC_SECRET ??= "test-otp-secret";
 process.env.OTP_HMAC_KEY_VERSION ??= "1";
 process.env.SESSION_HASH_SECRET ??= "test-session-secret";

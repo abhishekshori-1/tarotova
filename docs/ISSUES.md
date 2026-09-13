@@ -1,146 +1,135 @@
 # Known issues
 
-Live issue log for the deployed app (`docs/IMPLEMENTATION.md` covers the
-codebase's overall done/incomplete state; this file is specifically for
-open bugs found in production). Update status inline as these move;
-don't let this drift into a second, contradicting source of truth.
-
----
+Updated 2026-09-14. Code fixes below are local; production deployment and
+end-to-end verification are still outstanding. Accounts and DNS are in
+`INFRA.md`; implementation scope is in `IMPLEMENTATION.md`.
 
 ## Issue 1: Every interaction is slow
 
-**Status:** Open — root cause identified, fix not yet applied/confirmed.
+**Status:** Tokyo function region configured in `vercel.json`; awaiting
+deployment and new measurements.
 
-**Symptom:** Every button click / interaction on the live site
-(`tarotova.com`) feels sluggish to the user.
-
-**Measured evidence:** Timed directly against the production site:
+Previously recorded production timings:
 
 | Request | Time |
 | --- | --- |
 | Homepage (`/`, static, no DB) | ~0.09s |
-| `POST /api/readings` (creates a DB row) | ~2.15-2.25s, consistently — not just a one-off cold start |
-| `/reading/[id]/email` page (client-rendered shell) | ~0.43s |
+| `POST /api/readings` | ~2.15–2.25s consistently |
+| `/reading/[id]/email` client shell | ~0.43s |
 
-The static, no-database homepage is fast. Anything that touches the
-database is consistently ~2+ seconds slower, every time, not just on the
-first ("cold") request.
+Supabase is in Tokyo (`ap-northeast-1`), while the previous investigation
+reported US execution (`iad1`). Multiple sequential database queries make
+cross-region latency a strong explanation. An `x-vercel-id` can include
+edge routing information; verify the function region in Vercel's deployment
+or runtime details rather than inferring it from a static response.
 
-**Root cause:** A region mismatch. `x-vercel-id` response headers show the
-serverless function executing in a US region (`iad1`, matching Vercel's
-default). The Supabase Postgres database is in `ap-northeast-1` (Tokyo).
-Every database round trip pays the full US-to-Tokyo network latency, and
-several endpoints make more than one sequential query per request (e.g.
-`createReading` does an insert, then a follow-up select), so the delay
-compounds within a single request.
+**Changes:** `vercel.json` sets `regions: ["hnd1"]`, co-locating functions
+with the existing database without migrating data. `createReading` now
+uses `INSERT ... RETURNING` to remove its follow-up reading select.
+Cold starts still perform the existing migration check.
 
-One earlier data point consistent with this: a single `FUNCTION_INVOCATION_TIMEOUT`
-(504) was observed on the very first request right after a deploy — plausibly
-a cold container needing to both establish the cross-region connection *and*
-run pending migrations before responding, together exceeding the timeout that
-one time. Not reproduced since, but consistent with the same root cause.
+Vercel supports setting the function region in repository configuration:
+[region configuration](https://vercel.com/docs/functions/configuring-functions/region),
+[region identifiers](https://vercel.com/docs/regions).
 
-**Fix options, in order of preference:**
-1. **Change Vercel's function region to Tokyo (`hnd1`)** to co-locate with
-   Supabase — Project Settings → Functions → Region. No data migration
-   needed, should be a fast, low-risk change. **Not yet done as of this
-   writing.**
-2. Supabase itself **cannot change an existing project's region
-   in-place** — the region is fixed at creation. If option 1 turns out to
-   be undesirable for some other reason, the alternative is creating a
-   *new* Supabase project in a region matching Vercel's function region,
-   then migrating schema and data to it and updating `DATABASE_URL` —
-   meaningfully more disruptive, only worth it if option 1 is ruled out.
+**Verification after deployment:** Confirm the deployed functions use `hnd1`
+(also emitted as `region` in the new OTP logs). Measure reading creation
+several times, keeping cold and warm requests separate. No new production
+latency measurement has been made for these fixes yet.
 
-**Next step:** Apply fix option 1, then re-measure the same
-`POST /api/readings` timing to confirm the improvement.
+## Issue 2: OTP emails do not arrive; no Resend records
 
----
+**Status:** Several reproducible code defects fixed locally. Production's
+underlying send failure is not yet confirmed. The user reports an error or
+“Too many attempts” on the latest attempt.
 
-## Issue 2: OTP emails aren't arriving — Resend shows no record of any send
+A genuine `429 rate_limited` occurs before provider submission, so that
+request cannot send an email. Absence of dashboard entries alone does not
+prove that every request failed before reaching Resend: check the key's
+account, log filters, and actual HTTP result too.
 
-**Status:** Open — not yet root-caused. Two real bugs were found and fixed
-along the way (below), but the core symptom (no email, no Resend log
-entry) has not yet been observed to resolve, and no attempt has yet fully
-confirmed or ruled out the underlying cause.
+### Confirmed defects and changes
 
-**Symptom:** User completes the real flow on the live site (choose 3
-cards → email screen → solves the Turnstile widget → "Send my code") using
-their real address (`abhishekshori@gmail.com`). No code email arrives
-(checked inbox and spam/junk — not in either). Resend's dashboard "Logs"/
-"Emails" section shows **zero entries** for any of these attempts — not a
-bounce, not a failure, nothing at all.
+- **Silent production console fallback:** `getEmailProvider` previously
+  selected the console provider whenever `EMAIL_PROVIDER` did not exactly
+  match `resend`, or the API key was missing. This logged a code and reported
+  `accepted` without calling Resend, including in production. Production
+  now requires `EMAIL_PROVIDER=resend`, a nonempty `RESEND_API_KEY`, and
+  `EMAIL_FROM`. Missing configuration returns `503 email_not_configured`;
+  it does not create a challenge or consume send budgets. Values are trimmed.
+  Whether production has these bad settings has not been established.
+- **Cooldown retries spent send budgets:** A retry inside the 60-second
+  cooldown incremented email/IP counters before rejecting the request.
+  The cooldown is now checked first. Limits remain 3/hour and 5/day per
+  email, 10/hour per IP. They are fixed clock windows, not rolling windows.
+  Existing consumed counters remain until their windows expire.
+- **Provider failures looked successful:** Resend rejections were returned
+  as HTTP 200 and the UI always advanced to “We sent a code.” Definite
+  rejection now returns `502 email_send_failed`; uncertain acceptance
+  returns 202 and the confirmation screen explains the uncertainty. An
+  uncertain code remains verifiable if its email arrives.
+- **Broken resend request:** The confirmation screen submitted an empty or
+  masked email without a Turnstile token, preventing sending. “Request a
+  new code” now opens the email form for the recipient and a fresh bot check,
+  retaining the cooldown.
+- **Missing diagnostics:** `[otp_request]` logs include request id, region,
+  stopping stage, HTTP status, duration and retry interval. `[otp_delivery]`
+  logs record submission start/result, provider, challenge id, failure reason
+  and accepted message id. These new logs exclude recipients, codes, keys,
+  and raw provider responses. The HTTP response includes `X-Request-Id` for
+  correlating a browser request.
+- **Unbounded Resend fetch / unvalidated acceptance:** The request now has
+  a 10-second timeout and explicit User-Agent; only a nonempty provider
+  message id counts as accepted. Network failures or malformed success
+  responses leave acceptance uncertain. HTTP failures preserve diagnostic
+  reasons such as `resend_http_401` and `resend_http_403`.
+- **Unhelpful retry message:** The email page uses `Retry-After` to show how
+  long to wait and distinguishes expired bot checks from email failures.
 
-**What that specific symptom means:** if Resend had received the API call
-at all, *something* would show in its logs, even a rejected/failed one.
-Zero entries means the request never reached Resend's API — the failure is
-somewhere before that call, not in delivery/deliverability itself (spam
-filtering, DNS, etc. would all still produce a Resend log entry).
+Earlier fixes remain: Turnstile's widget render/unmount guard and resetting
+its single-use token after a failed submission. The previous investigation
+also corrected the deployed public site-key configuration.
 
-**Two real bugs found and fixed this session, both of which were
-independently capable of preventing any request from reaching the server
-at all:**
+### Production verification
 
-1. **`EMAIL_PROVIDER` variable type mismatch.** `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
-   was initially saved in Vercel as type "Secret," which is runtime-only
-   and never gets inlined into the browser bundle — so the Turnstile
-   widget's own site key never reached the client at all, and the widget
-   silently never rendered. Fixed by deleting and re-adding it as type
-   "Config." (This one was about Turnstile specifically, not
-   `EMAIL_PROVIDER` — noted here because it was the first blocker in the
-   same causal chain: no widget → no token → button never enables → no
-   request ever sent → nothing in Vercel logs, nothing in Resend logs.)
-2. **Turnstile widget double-render / stale-token bugs**, in
-   `src/components/TurnstileWidget.tsx`:
-   - `next/script`'s `onReady` fires on every component mount, not once —
-     calling `turnstile.render()` unconditionally there re-rendered into
-     the same container without removing the previous widget, logged by
-     Turnstile as `Cannot find Widget ...`. Fixed with a ref guard so
-     render only happens once per mounted instance, plus explicit
-     `turnstile.remove()` on unmount.
-   - Turnstile tokens are single-use, and the server consumes the token
-     during its bot-check step *before* rate-limiting/validation checks
-     run — so any failure after that point (a 429, a validation error)
-     left the client holding an already-spent token. Retrying without a
-     fresh token failed Turnstile's own check (`bot_check_failed`),
-     surfacing as a confusing generic "Couldn't send the code" error.
-     Fixed by resetting the widget (and clearing the stored token) on any
-     failed submission, via an imperative `reset()` handle.
+1. In Vercel's **Production** environment verify `EMAIL_PROVIDER=resend`,
+   `RESEND_API_KEY` is present and belongs to the intended Resend account,
+   and `EMAIL_FROM=Tarotova <do-not-reply@mail.tarotova.com>` uses a verified
+   domain. Confirm both Turnstile keys. Do not put secrets in logs or source
+   control. Environment changes need a new deployment; the public site key
+   must be available at build time.
+2. Deploy the code, including `vercel.json`, and confirm `hnd1` execution.
+3. Wait out the API's `Retry-After` interval before one real OTP attempt.
+   Hourly, daily, and IP limits are separate; clearing an email-hour window
+   does not clear all other budgets. Do not repeatedly click or raise limits
+   to diagnose delivery.
+4. Inspect that request in Vercel's runtime logs and match `X-Request-Id`:
 
-**After both fixes**, requests do now demonstrably reach the server —
-confirmed via genuine `429 rate_limited` responses (which only happen
-*after* Turnstile's check passes and `requestOtp` actually runs). That's
-real progress: the client-side path is confirmed working now.
+   | Outcome | Interpretation / next check |
+   | --- | --- |
+   | No `[otp_request]` start | Browser request, routing, deployment version, or log filters |
+   | 400, stage `turnstile` | Bot token rejected; complete a fresh challenge |
+   | 429, stage `request_otp` | App rate limit/cooldown; use `Retry-After` |
+   | 503 + `[email_configuration]` | Required email setting absent/invalid; fix and redeploy |
+   | `[otp_delivery]` start without finish | Function interruption or request still in flight; inspect platform timeout logs |
+   | `resend_http_401` / `403` | Check key validity/permissions and verified sender/domain |
+   | `resend_http_429` | Resend rate/quota limit, separate from the app's limits |
+   | `pending` | Network/timeout or malformed response; delivery uncertain, check Resend |
+   | `accepted` with provider message id | Match that id in the correct Resend account; acceptance is not proof of inbox delivery |
+   | 500 | Inspect exception and stage; migration/session/DB work can fail before sending |
 
-**Current confound blocking further diagnosis:** repeated testing with the
-same real address (`abhishekshori@gmail.com`) during the above debugging
-has very likely exhausted the app's own rate limit — 3 sends per email per
-rolling clock-hour (PLAN.md section 6) — before a single attempt could get
-far enough to actually reach Resend's API. This is a **fixed clock-hour
-window**, not a rolling 60-minutes-since-last-try window, so it may not
-have cleared yet even after a 5+ minute wait. A workaround was suggested
-(Gmail `+` alias, e.g. `abhishekshori+test1@gmail.com` — the app
-deliberately doesn't strip `+` tags, so this gets a fresh rate-limit budget
-while still delivering to the same inbox) but has not yet been confirmed
-tried.
+5. Confirm receipt and successful code verification. Record the live region,
+   warm request timings and accepted Resend message id before marking either
+   production issue resolved.
 
-**What's genuinely still unknown:** whether a request that gets past *both*
-Turnstile *and* the rate limit actually succeeds in calling Resend, and if
-it doesn't, what the actual error is. That has not yet been directly
-observed — every attempt so far has been blocked by one of the above before
-reaching that point.
+Local verification: 70 Vitest tests pass, including provider configuration,
+Resend HTTP failures, uncertain delivery, cooldown budget preservation and
+OTP route status codes. Lint and TypeScript checks pass. Local credentials
+use the console provider; no live email has been sent by this investigation.
+`npm run build -- --webpack` passes. The default Turbopack build is blocked
+by this environment's worker-port restriction (including after an approved
+retry outside the sandbox); the deployment build configuration is unchanged.
 
-**Next steps, in order:**
-1. Retry using a fresh address (the `+` alias workaround, or wait out the
-   rate-limit window) to get one attempt that's not blocked by either
-   Turnstile or the rate limiter.
-2. Immediately after that attempt, check **both** Vercel's Logs (for the
-   specific `/api/readings/[id]/otp` request — look for any thrown error,
-   not just the access-log line) **and** Resend's dashboard logs, in the
-   same breath, so we see the true first point of failure if it's still
-   not working.
-3. If Vercel's logs show the request completing with `sendStatus: "accepted"`
-   but Resend's logs still show nothing, that would point to a bug in
-   `src/server/email/resend-provider.ts` or a Resend API-key/permissions
-   issue specifically. If Vercel's logs show an exception, that's the
-   direct answer.
+References: [Resend send API](https://resend.com/docs/api-reference/emails/send-email),
+[API errors](https://resend.com/docs/api-reference/errors),
+[User-Agent guidance](https://resend.com/docs/api-reference/introduction).

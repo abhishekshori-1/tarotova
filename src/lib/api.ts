@@ -23,9 +23,15 @@ async function asJson<T>(res: Response): Promise<T> {
     const err = new Error((body as { error?: string }).error ?? `http_${res.status}`) as Error & {
       status: number;
       body: unknown;
+      retryAfterSeconds?: number;
     };
     err.status = res.status;
     err.body = body;
+    const retryAfter = res.headers.get("Retry-After");
+    if (retryAfter !== null) {
+      const seconds = Number(retryAfter);
+      if (Number.isFinite(seconds) && seconds > 0) err.retryAfterSeconds = Math.ceil(seconds);
+    }
     throw err;
   }
   return body;
@@ -71,7 +77,7 @@ export function sendOtp(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ revision, email, intent, turnstileToken: turnstileToken ?? undefined }),
-  }).then((r) => asJson<{ sendStatus: string; devCode?: string }>(r));
+  }).then((r) => asJson<{ sendStatus: "accepted" | "pending"; devCode?: string }>(r));
 }
 
 export function verifyCode(id: string, code: string) {

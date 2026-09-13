@@ -3,14 +3,13 @@ import type { EmailProvider, SendCodeParams, SendResult } from "./provider";
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
 /**
- * Real path for PLAN.md section 5/6/8, unused until RESEND_API_KEY and a
- * verified sending domain exist. Uses fetch directly rather than the
- * `resend` package to avoid an unused dependency while EMAIL_PROVIDER=console.
+ * Resend delivery using fetch directly, without an SDK dependency.
  * Awaits the send within the request per section 6 ("do not rely on
  * unfinished work after a serverless response") and uses one idempotency
  * key per challenge generation per Resend's idempotency guidance.
  */
 export class ResendEmailProvider implements EmailProvider {
+  readonly name = "resend";
   constructor(
     private readonly apiKey: string,
     private readonly from: string,
@@ -24,7 +23,9 @@ export class ResendEmailProvider implements EmailProvider {
           Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
           "Idempotency-Key": params.idempotencyKey,
+          "User-Agent": "Tarotova/0.1",
         },
+        signal: AbortSignal.timeout(10_000),
         body: JSON.stringify({
           from: this.from,
           to: params.to,
@@ -36,8 +37,13 @@ export class ResendEmailProvider implements EmailProvider {
       if (!res.ok) {
         return { status: "failed", reason: `resend_http_${res.status}` };
       }
-      const body = (await res.json()) as { id?: string };
-      return { status: "accepted", providerMessageId: body.id ?? "unknown" };
+      const body: unknown = await res.json();
+      if (!body || typeof body !== "object" || !("id" in body) || typeof body.id !== "string" || !body.id.trim()) {
+        // A successful HTTP response without a message id cannot confirm
+        // acceptance. Keep the challenge usable in case delivery occurred.
+        return { status: "failed", reason: "resend_invalid_response" };
+      }
+      return { status: "accepted", providerMessageId: body.id };
     } catch {
       // A network/timeout failure here means acceptance is uncertain, not a
       // definite rejection (PLAN.md section 6) — callers must treat this the
