@@ -48,3 +48,6 @@ next-env.d.ts
 # playwright
 /test-results/
 /playwright-report/
+
+# Evaluation reports contain generated answers for human review; never committed
+eval/report/

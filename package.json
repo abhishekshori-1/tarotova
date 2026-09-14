@@ -12,7 +12,8 @@
     "cards:gen": "node scripts/generate-card-svgs.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "eval": "vitest run --config vitest.eval.config.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

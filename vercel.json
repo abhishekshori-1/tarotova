@@ -1,10 +1,18 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["hnd1"],
-  "crons": [{ "path": "/api/internal/cleanup", "schedule": "0 3 * * *" }],
+  "regions": [
+    "hnd1"
+  ],
+  "crons": [
+    {
+      "path": "/api/internal/cleanup",
+      "schedule": "0 3 * * *"
+    }
+  ],
   "git": {
     "deploymentEnabled": {
-      "feat/v2": false
+      "feat/v2": false,
+      "feat/release-b": false
     }
   }
 }
