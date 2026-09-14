@@ -8,7 +8,9 @@ import { CARDS } from "@/content/cards";
 import { FOCUS_META } from "@/content/focuses";
 import { isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { AnthropicProvider } from "./anthropic";
-import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, getGenerationConfig, type GenerationConfig } from "./config";
+import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, getGenerationConfig, type GenerationConfig, type ProviderSpec } from "./config";
+import { FallbackProvider } from "./fallback";
+import { GeminiProvider } from "./gemini";
 import { INTERPRETATION_PROMPT_VERSION } from "./prompts";
 import { StubProvider } from "./stub";
 import { BUDGET_REASON, getGeneration, viewOf, type GenerationRow } from "./store";
@@ -18,12 +20,24 @@ import { validateInterpretation } from "./validate";
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 let stub: StubProvider | undefined;
-export function getGenerationProvider(config: GenerationConfig): GenerationProvider | undefined {
-  if (config.provider === "anthropic" && config.apiKey) {
-    return new AnthropicProvider(config.apiKey, { answer: config.model, classifier: config.classifierModel }, config.timeoutMs, config.workspaceId);
+
+function buildProvider(spec: ProviderSpec, timeoutMs: number): GenerationProvider {
+  switch (spec.kind) {
+    case "gemini":
+      return new GeminiProvider(spec.apiKey!, spec.models, timeoutMs);
+    case "anthropic":
+      return new AnthropicProvider(spec.apiKey!, spec.models, timeoutMs, spec.workspaceId);
+    case "stub":
+      return (stub ??= new StubProvider());
   }
-  if (config.provider === "stub") return (stub ??= new StubProvider());
-  return undefined;
+}
+
+/** The configured chain (preferred first) as one provider, or undefined when nothing can generate. */
+export function getGenerationProvider(config: GenerationConfig): GenerationProvider | undefined {
+  if (config.providers.length === 0) return undefined;
+  const chain = config.providers.map((spec) => buildProvider(spec, config.timeoutMs));
+  if (chain.length === 1) return chain[0];
+  return new FallbackProvider(chain, (from, to, reason, detail) => log("fallback", { from, to, reason, detail }));
 }
 
 function log(event: string, fields: Record<string, unknown>) {
@@ -46,8 +60,8 @@ export async function requestInterpretation(readingId: string, sessionId: string
   const existing = await getGeneration(db, readingId);
   const current = viewOf(existing, grant.basis, reading.question, now);
 
-  if (config.provider === null && config.enabled && reading.question) {
-    console.error("[generation_configuration]", { reason: config.configurationProblem });
+  if (config.enabled && reading.question && config.configurationProblem) {
+    (config.providers.length === 0 ? console.error : console.warn)("[generation_configuration]", { reason: config.configurationProblem, usable: config.providers.map((p) => p.kind) });
   }
   // Only idle and retryable failures do work; everything else is already the answer.
   if (current.status !== "idle" && !(current.status === "failed" && current.retryable)) return current;
@@ -93,14 +107,17 @@ export async function requestInterpretation(readingId: string, sessionId: string
   let attempts = claimed.attempts;
   let safetyCategory = (claimed.safetyCategory as SafetyCategory | null) ?? null;
   let lastReason = "unknown";
+  const requestStartedAt = Date.now();
 
-  while (attempts < GENERATION_MAX_ATTEMPTS) {
+  // A second attempt only starts while the request still has time for it;
+  // otherwise the row's lease lapses and a later request picks it up.
+  while (attempts < GENERATION_MAX_ATTEMPTS && Date.now() - requestStartedAt < GENERATION_REQUEST_BUDGET_MS) {
     attempts += 1;
     const startedAt = Date.now();
     // Recorded before the await: a lost response still counts as a paid attempt.
     await db
       .update(readingGenerations)
-      .set({ status: "provider_called", attempts, leaseExpiresAt: startedAt + GENERATION_LEASE_MS, model: config.model, updatedAt: startedAt })
+      .set({ status: "provider_called", attempts, leaseExpiresAt: startedAt + GENERATION_LEASE_MS, model: config.providers[0].models.answer, updatedAt: startedAt })
       .where(eq(readingGenerations.id, claimed.id));
 
     if (safetyCategory === null) {
@@ -142,7 +159,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
       .update(readingGenerations)
       .set({ status: "succeeded", output: JSON.stringify(validated.output), model: outcome.model, completedAt: t, updatedAt: t, leaseExpiresAt: t })
       .where(eq(readingGenerations.id, claimed.id));
-    log("succeeded", { readingId, generationId: claimed.id, attempts, model: outcome.model, usage: outcome.usage, durationMs: t - startedAt });
+    log("succeeded", { readingId, generationId: claimed.id, attempts, provider: provider.name, model: outcome.model, usage: outcome.usage, durationMs: t - startedAt });
     return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
   }
 

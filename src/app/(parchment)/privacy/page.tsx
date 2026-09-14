@@ -20,7 +20,7 @@ export default function PrivacyPage() {
       <p className="mt-2">
         If you type a question, it is stored with your reading and used to write the part of the reading
         that responds to it. To do that, the question, the focus you chose and the meanings of your three
-        cards are processed by a third-party service provider on our behalf, under terms that do not allow
+        cards are processed by third-party service providers on our behalf, under terms that do not allow
         it to be used for any other purpose. Your email address, your session and your other readings are
         never sent with it. Some questions, such as those describing a crisis or asking for medical or
         legal instruction, are not read against the cards; you see a written note and resources instead.

@@ -5,8 +5,8 @@ import { CARDS } from "@/content/cards";
 import { FOCUS_META } from "@/content/focuses";
 import { REFUSAL_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import type { Focus, Position } from "@/content/types";
-import { AnthropicProvider } from "@/server/generation/anthropic";
 import { getGenerationConfig } from "@/server/generation/config";
+import { getGenerationProvider } from "@/server/generation/service";
 import { CLASSIFIER_PROMPT_VERSION, INTERPRETATION_PROMPT_VERSION } from "@/server/generation/prompts";
 import type { InterpretationInput, InterpretationOutput } from "@/server/generation/types";
 import { validateInterpretation } from "@/server/generation/validate";
@@ -27,7 +27,7 @@ interface Question {
 
 const QUESTIONS = questionSet.questions as Question[];
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
-const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+const apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim();
 
 function inputFor(q: Question): InterpretationInput {
   return {
@@ -44,8 +44,10 @@ const categories = new Map<string, { got: SafetyCategory | string; ok: boolean }
 const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number } }>();
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
-  const config = getGenerationConfig();
-  const provider = new AnthropicProvider(apiKey ?? "", { answer: config.model, classifier: config.classifierModel }, 60_000, config.workspaceId);
+  process.env.GENERATION_PROVIDER ||= "gemini,anthropic";
+  const config = { ...getGenerationConfig(), timeoutMs: 60_000 };
+  const provider = getGenerationProvider(config)!;
+  const chainLabel = config.providers.map((p) => `${p.kind} (${p.models.answer} / ${p.models.classifier})`).join(" → ");
 
   beforeAll(async () => {
     for (const q of QUESTIONS) {
@@ -70,7 +72,7 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
         ms: Date.now() - startedAt,
       });
     }
-    writeReport(config.model, config.classifierModel);
+    writeReport(chainLabel);
   });
 
   it("routes every crisis and abuse question to the authored response", () => {
@@ -114,14 +116,14 @@ if (!apiKey) {
   });
 }
 
-function writeReport(model: string, classifierModel: string) {
+function writeReport(chainLabel: string) {
   const dir = path.resolve(process.cwd(), "eval", "report");
   mkdirSync(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const lines: string[] = [];
   lines.push(`# Contextual answer evaluation — ${stamp}`);
   lines.push("");
-  lines.push(`Answer model: \`${model}\` · classifier: \`${classifierModel}\` · prompts: \`${INTERPRETATION_PROMPT_VERSION}\`, \`${CLASSIFIER_PROMPT_VERSION}\``);
+  lines.push(`Providers: ${chainLabel} · prompts: \`${INTERPRETATION_PROMPT_VERSION}\`, \`${CLASSIFIER_PROMPT_VERSION}\``);
   lines.push("");
   lines.push("## Safety routing");
   lines.push("");
@@ -146,7 +148,7 @@ function writeReport(model: string, classifierModel: string) {
     lines.push("");
     lines.push(`> ${q.question}`);
     lines.push("");
-    lines.push(`_${a.ms} ms · ${a.usage?.inputTokens ?? "?"} in / ${a.usage?.outputTokens ?? "?"} out_`);
+    lines.push(`_${a.model ?? "?"} · ${a.ms} ms · ${a.usage?.inputTokens ?? "?"} in / ${a.usage?.outputTokens ?? "?"} out_`);
     lines.push("");
     if (a.rejected) {
       lines.push(`**REJECTED:** ${a.rejected}`);

@@ -36,7 +36,7 @@ export function viewOf(row: GenerationRow | undefined, grantBasis: string | unde
   }
   // Configuration and the guest switch come after stored results: an answer
   // already paid for stays readable when generation is paused later.
-  if (!config.provider) return { status: "unavailable", reason: "not_configured" };
+  if (config.providers.length === 0) return { status: "unavailable", reason: "not_configured" };
   if (grantBasis === "guest" && !config.guestEnabled) return { status: "unavailable", reason: "guest_paused" };
   if (!row) return { status: "idle" };
 

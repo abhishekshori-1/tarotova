@@ -107,10 +107,12 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
 | `GENERATION_ENABLED` | Config | Release B master flag. **Unset/false until the eval gate passes** (`IMPLEMENTATION.md`); false hides the personalized section entirely |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
-| `GENERATION_PROVIDER` | Config | `anthropic` (the only value production accepts) |
+| `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
+| `GEMINI_API_KEY` | Secret | Google AI Studio key (Gemini Developer API). Set a budget/quota on the Google Cloud project it belongs to |
+| `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; defaults `gemini-2.5-pro` and `gemini-2.5-flash` |
 | `ANTHROPIC_API_KEY` | Secret | Anthropic API key. Prepaid credits with auto-reload off are the spend cap |
 | `ANTHROPIC_WORKSPACE_ID` | Config | Only when the key is organization-level (the API rejects such keys without a workspace); a workspace-scoped key needs nothing |
-| `GENERATION_MODEL`, `CLASSIFIER_MODEL` | Config | Optional overrides; defaults `claude-sonnet-5` and `claude-haiku-4-5-20251001` |
+| `ANTHROPIC_MODEL`, `ANTHROPIC_CLASSIFIER_MODEL` | Config | Optional overrides; defaults `claude-sonnet-5` and `claude-haiku-4-5-20251001` (`GENERATION_MODEL` / `CLASSIFIER_MODEL` still honoured) |
 | `GENERATION_LIMIT_SESSION_DAY`, `GENERATION_LIMIT_IP_DAY`, `GENERATION_LIMIT_GLOBAL_DAY` | Config | Optional; defaults 10 / 30 / 400 per UTC day |
 | `GENERATION_TIMEOUT_MS` | Config | Optional; default 20000 (two attempts + classifier must fit the route's 60 s `maxDuration`) |
 
@@ -148,15 +150,25 @@ DNS resolving is not the same as Resend verification: the domain must be
 submitted for verification in Resend's dashboard (the "Verify" button) and
 show **Verified** there. Check that page, not `dig`, when something is off.
 
-## AI provider (Anthropic) — Release B
+## AI providers — Release B
 
-| Item | Value |
-| --- | --- |
-| Account | Not yet created; key goes into `ANTHROPIC_API_KEY` (Secret) and a spend limit into the console |
-| Endpoint | `https://api.anthropic.com/v1/messages`, plain `fetch`, forced tool use, 20 s timeout, `user-agent: Tarotova/0.2` |
-| What is sent | The question, the focus label and the three drawn cards' curated meanings. Never email, session ids or other readings |
-| Data handling | Anthropic API terms (no training on API data). The app never names the vendor; the privacy page says "a third-party service provider on our behalf" |
-| Status | Live locally against the real API since 2026-09-14 (organization-level key + `ANTHROPIC_WORKSPACE_ID`); three eval runs done, routing passes; not yet enabled in production |
+Gemini is preferred; Anthropic takes over on any Gemini failure (HTTP error,
+timeout, safety block, unparseable reply), inside the same attempt, so the
+reader never notices. The row stores which model actually wrote the answer,
+and `[generation]` logs a `fallback` event with the reason.
+
+| Item | Gemini (preferred) | Anthropic (fallback) |
+| --- | --- | --- |
+| Key | `GEMINI_API_KEY` (Google AI Studio) | `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` for an org-level key) |
+| Endpoint | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent`, JSON-mode output against the same schema | `api.anthropic.com/v1/messages`, forced tool use |
+| Models | `gemini-2.5-pro` answer, `gemini-2.5-flash` classifier | `claude-sonnet-5` answer, `claude-haiku-4-5-20251001` classifier |
+| Timeout | 20 s per call (`GENERATION_TIMEOUT_MS`) | same |
+| What is sent | The question, the focus label and the three drawn cards' curated meanings. Never email, session ids or other readings | same |
+| Data handling | Gemini API paid tier: not used for training (the free tier is — use a billed project) | Anthropic API terms: no training on API data |
+| Status | Adapter built and unit-tested against recorded shapes; **no real Gemini call made yet** — the next `npm run eval` is the first | Live locally since 2026-09-14; three eval runs, routing passes |
+
+The app never names either vendor; the privacy page says "third-party
+service providers on our behalf".
 
 ## Deployment flow
 

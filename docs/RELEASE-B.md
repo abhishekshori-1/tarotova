@@ -40,8 +40,12 @@ check the email form already had). A verified browser never sees it.
 
 ## What the model does, exactly
 
-Two calls to the Anthropic API, only when a reading has a question and the
-cards are turned over.
+Two calls to a language-model API, only when a reading has a question and
+the cards are turned over. Gemini is asked first; if Gemini fails for any
+reason (an error, a timeout, a refusal, an unreadable reply), the same
+request goes to Anthropic's Claude instead, within the same attempt, and
+the reader never sees the difference. Which model wrote an answer is
+recorded with it.
 
 1. **Triage.** A small model reads the question and answers one thing: is
    this an ordinary question, or one a card reading should not answer? The
@@ -91,14 +95,16 @@ read for me", "Turn them over", "The short of it", "On your question", "Try
 this", "One to take with you", "Pull again".
 
 Nothing in the app names an AI or a vendor. The privacy page says a typed
-question is processed by a third-party service provider on our behalf,
+question is processed by third-party service providers on our behalf,
 which is the one line a privacy policy has to carry.
 
 ## What it costs and what protects it
 
 Per reading with a question: one small triage call and one answer call of
-roughly 2,000 tokens in and 700 out, about ten seconds. Paid from prepaid
-credits with auto-reload off, which is the hard spend cap.
+roughly 2,000 tokens in and 700 out, about ten seconds. Gemini is billed to
+its Google Cloud project (set a budget there); Anthropic from prepaid
+credits with auto-reload off. Each account's cap is its own hard stop, and
+if Gemini's cap is hit the fallback simply takes over.
 
 Protections, all server-side:
 
@@ -133,10 +139,10 @@ began.
    or better on each, nothing below 3 on agency or honesty, every
    emotionally heavy answer read by a person. Status: not yet done; the
    voice is being tuned first.
-3. `TURNSTILE_SECRET_KEY` present in production (it is), `ANTHROPIC_API_KEY`
-   and, for an organization-level key, `ANTHROPIC_WORKSPACE_ID` set, then
-   `GENERATION_ENABLED=true` and a redeploy. Merge order in
-   `VERSIONING.md`.
+3. `TURNSTILE_SECRET_KEY` present in production (it is), `GEMINI_API_KEY`
+   set, `ANTHROPIC_API_KEY` and, for an organization-level key,
+   `ANTHROPIC_WORKSPACE_ID` set, then `GENERATION_ENABLED=true` and a
+   redeploy. Merge order in `VERSIONING.md`.
 
 ## What Release B is not
 

@@ -33,7 +33,7 @@ verification once per browser per 30 days → further readings.
 | Session verification | `session_email_challenges`: 6-digit code, HMAC-SHA256 digest bound to purpose + session + challenge + generation + email, constant-time compare, 10-minute expiry, 5 attempts (counter committed before the error), resend supersedes, single-use consumption via conditional update, idempotent re-confirm. `verified_until` = verification + 30 days, never extended by activity |
 | Sessions | 256-bit token, SHA-256 hash stored, `Secure` `HttpOnly` `SameSite=Lax` cookie, 30 days, renewed on activity at most once a day |
 | Question | Optional, ≤500 chars, trimmed; set at creation or `PATCH /api/readings/[id]/context` (revision-checked); frozen at lock; returned with the result |
-| Contextual answer (Release B) | `POST /api/readings/[id]/interpretation`, idempotent, authorized by the same grant as the result. One `reading_generations` row per reading is the lease: claimed with a conditional update, `provider_called` + `attempts` recorded *before* the provider is awaited, at most 2 paid attempts ever, 90 s lease. Budget reserved before the call (per session/day, per IP/day, global/day in `rate_limit_buckets`). Intent classifier (Haiku) routes `crisis` / `medical` / `legal` / `abuse` to authored responses in `src/content/safety.ts`; otherwise Sonnet writes a structured answer through forced tool use, validated (`src/server/generation/validate.ts`: shape, lengths, banned reversal/certainty/advice phrases, no foreign card names) before it is stored. Only readings with a question generate. Kill switches: `GENERATION_ENABLED`, `GUEST_GENERATION_ENABLED` (guest readings only). Production with no key reports "unavailable" — never a fake answer |
+| Contextual answer (Release B) | `POST /api/readings/[id]/interpretation`, idempotent, authorized by the same grant as the result. One `reading_generations` row per reading is the lease: claimed with a conditional update, `provider_called` + `attempts` recorded *before* the provider is awaited, at most 2 paid attempts ever, 90 s lease. Budget reserved before the call (per session/day, per IP/day, global/day in `rate_limit_buckets`). Providers form an ordered chain (`src/server/generation/fallback.ts`): Gemini (`gemini.ts`, JSON-mode output) first, Anthropic (`anthropic.ts`, forced tool use) when Gemini fails, inside the same attempt. The intent classifier (the chain's small model) routes `crisis` / `medical` / `legal` / `abuse` to authored responses in `src/content/safety.ts`; otherwise the chain's large model writes a structured answer, validated (`src/server/generation/validate.ts`: shape, lengths, banned reversal/certainty/advice phrases, no foreign card names) before it is stored. Only readings with a question generate. Kill switches: `GENERATION_ENABLED`, `GUEST_GENERATION_ENABLED` (guest readings only). Production with no key reports "unavailable" — never a fake answer |
 | Bot check on the guest lock | `PUT …/selection` with `lock: true` from an unverified session requires a Turnstile token (fails closed in production); the choose page renders the widget only for those sessions |
 | Rate limiting | Atomic fixed-window counters: reading creation 30/h per IP and 20/h per session; codes 3/h and 5/day per email, 10/h per IP; 60 s resend cooldown checked before any budget is spent |
 | Suppression | `suppressed_emails` checked before every send; populated by the (unsigned) webhook |
@@ -52,8 +52,8 @@ verification once per browser per 30 days → further readings.
 ## Release B — what is built and what gates it
 
 Built (behind `GENERATION_ENABLED=false` by default): the schema (`0003`,
-additive), the lease/budget service, the Anthropic adapter (plain `fetch`,
-forced tool use, 20 s timeout), the intent classifier and authored safety
+additive), the lease/budget service, the Gemini and Anthropic adapters
+(plain `fetch`, 20 s timeout each) behind a Gemini-first fallback chain, the intent classifier and authored safety
 responses, output validation, the result-page panel with a reserved
 four-line slot, per-card paragraphs and "Try this", the privacy copy (a
 third-party processor is named, no AI or vendor anywhere in the app), the
@@ -67,9 +67,10 @@ long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
    and abuse routing, ≥ 90 % medical/legal, no ordinary question refused,
    ≥ 90 % valid answers, injection ignored) must pass and a person must
    score the report per the rubric (mean ≥ 4, no Agency/Honesty below 3).
-2. Set `ANTHROPIC_API_KEY`, `GENERATION_PROVIDER=anthropic` and a spend
-   limit in the Anthropic console; confirm `TURNSTILE_SECRET_KEY` is set
-   (the guest lock now fails closed without it).
+2. Set `GEMINI_API_KEY` (with a budget on its Google Cloud project) and
+   `ANTHROPIC_API_KEY` (prepaid credits, auto-reload off); the production
+   default chain is `gemini,anthropic`. Confirm `TURNSTILE_SECRET_KEY` is
+   set (the guest lock now fails closed without it).
 3. Turn on `GENERATION_ENABLED` and redeploy; watch `[generation]` logs for
    `durationMs`, `usage` and `output_rejected` reasons for the first day.
 
