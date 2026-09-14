@@ -52,15 +52,15 @@ export const CARDS: CardContent[] = [
       situation:
         "Resources and focus. Skill, timing, tools, people, and the act of choosing which to use. The card does not know what is within your reach. Taking stock of that, including what is missing, is where it begins.",
       challenge:
-        "The Magician's trouble is scattering: effort spread across too many directions, or planning that stands in for doing. A single deliberate effort usually counts for more than several half ones.",
+        "The Magician's trouble is scattering: effort spread across too many directions, or planning that stands in for doing. The card favours a single deliberate effort over several half ones.",
       guidance:
-        "Pick one concrete action and see it through before reaching for the next tool. Name what it needs in time, money or help, and whether that is available. A step the means can support beats a plan they cannot.",
+        "Pick one concrete action and see it through before reaching for the next tool. Name what it needs in time, money or help, and whether that is available. The card's preference is a step the means can support over a plan they cannot.",
     },
     focus: {
       general: "Resourcefulness is the theme. What could be made with the resources you can actually name?",
-      relationships: "Saying plainly what you want, rather than hinting, is this card's suggestion. Clarity does work that charm cannot.",
+      relationships: "Saying plainly what you want, rather than hinting, is this card's suggestion. It favours clarity over charm.",
       work: "A skill or project may be ready for focused effort. Which one, and with what means, is the practical question.",
-      growth: "One intention, one visible action. Small and real does more than large and imagined.",
+      growth: "One intention, one visible action. The card favours small and real over large and imagined.",
     },
   },
   {
@@ -76,11 +76,11 @@ export const CARDS: CardContent[] = [
       challenge:
         "The High Priestess's trouble is forcing an answer before it is ready, or dismissing a sense because it cannot be proved. A hunch says where to look. It is not evidence about another person, and it does not replace the facts.",
       guidance:
-        "Give it a little more time. Write down what you sense and keep gathering what you know. The fuller picture tends to arrive on its own schedule, not on demand.",
+        "Give it a little more time. Write down what you sense and keep gathering what you know. This card treats the fuller picture as something that arrives on its own schedule, not on demand.",
     },
     focus: {
       general: "A quiet instinct deserves a hearing alongside the facts. The card does not say which of them is right.",
-      relationships: "Something unspoken may matter here. A direct, gentle question finds out faster than guessing.",
+      relationships: "Something unspoken may matter here. The card favours a direct, gentle question over guessing.",
       work: "A sense about timing or people can sit next to the visible facts. Not instead of them.",
       growth: "Quiet, unscheduled time is this card's suggestion. Some understanding arrives in the gaps.",
     },
@@ -98,7 +98,7 @@ export const CARDS: CardContent[] = [
       challenge:
         "The Empress's trouble is giving past your own reserves: care that runs out because nothing refills it. Where the limit of your giving sits right now is worth knowing.",
       guidance:
-        "Keep tending what matters, and decide how much you can give before you need refilling yourself. Care that includes you lasts longer than care that leaves you out.",
+        "Keep tending what matters, and decide how much you can give before you need refilling yourself. The card's view is that care which includes you outlasts care that leaves you out.",
     },
     focus: {
       general: "Nurturing what already exists, rather than starting something new, is the theme.",
@@ -118,7 +118,7 @@ export const CARDS: CardContent[] = [
       situation:
         "Structure. A plan, a boundary, a decision that holds. This card raises the question of whether some part of what you brought has stayed open-ended longer than it serves you, or whether a firmer shape would only feel safer.",
       challenge:
-        "The Emperor's trouble is rigidity: a boundary held so tightly it stops serving anyone, or control reached for where trust might work. Both look like strength from the inside.",
+        "The Emperor's trouble is rigidity: a boundary held so tightly it stops serving anyone, or control reached for where trust might work. Both can look like strength from the inside.",
       guidance:
         "Set the structure you need, then check it now and then instead of treating it as permanent. A boundary is there to serve the goal, not to replace it.",
     },
@@ -138,7 +138,7 @@ export const CARDS: CardContent[] = [
     coreMeaning: "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
     position: {
       situation:
-        "The tried path. An established approach, a mentor, a community that has faced this before. Part of your question has likely been worked out by someone, somewhere. Finding that is different from copying it.",
+        "The tried path. An established approach, a mentor, a community that has faced this before. This card suggests that part of your question has been worked out by someone before. Finding that is different from copying it.",
       challenge:
         "The Hierophant's trouble is following a convention without checking whether it fits. A method that served others may not serve this. Which parts to keep is the question.",
       guidance:
@@ -148,7 +148,7 @@ export const CARDS: CardContent[] = [
       general: "A teacher, a mentor or an established framework is where this card points. Whether they fit your situation is a separate question.",
       relationships: "Shared values or a shared community may matter more here than has been said aloud.",
       work: "Process and precedent are a guide. Checking what worked before improvising is a reasonable first step.",
-      growth: "Find someone who has walked this path and ask them one specific question. Small, concrete, and often enough.",
+      growth: "Find someone who has walked this path and ask them one specific question. Small and concrete.",
     },
   },
   {
@@ -170,7 +170,7 @@ export const CARDS: CardContent[] = [
       general: "A choice in front of you may really be a choice about values. Getting clear on those comes first.",
       relationships: "Alignment of values is the theme, more than compromise for its own sake. Whether they match is something to find out, not assume.",
       work: "A decision between paths can be a decision about what you want your work to stand for.",
-      growth: "Choose on the basis of what you value, and say that reason to yourself plainly. It is a practice, and it gets easier.",
+      growth: "Choose on the basis of what you value, and say that reason to yourself plainly. It is a practice.",
     },
   },
   {
@@ -233,10 +233,10 @@ export const CARDS: CardContent[] = [
         "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
     },
     focus: {
-      general: "Some solitude clarifies this faster than more conversation. That is where the card leans.",
-      relationships: "A little space, used well, is this card's suggestion. Another conversation is the alternative it weighs it against.",
+      general: "The Hermit favours quiet reflection before further conversation.",
+      relationships: "A little space before the next conversation is this card's suggestion.",
       work: "Think it through alone before returning to the group. That is the order this card proposes.",
-      growth: "Protected time alone with the question, not just around it. When that is possible, it tends to pay.",
+      growth: "Protected time alone with the question, not just around it. When that is possible, this card recommends it.",
     },
   },
   {
@@ -382,7 +382,7 @@ export const CARDS: CardContent[] = [
       situation:
         "Sudden change. Something shaken, possibly without warning. The card does not say why it happened or what it means about what stood before. How you are doing with it counts for as much as what fell.",
       challenge:
-        "The Tower's trouble is the pull to rebuild immediately, before taking stock of what was affected. There is no lesson you have to find in it. What needs steadying first is the only question with any urgency.",
+        "The Tower's trouble is the pull to rebuild immediately, before taking stock of what was affected. There is no lesson you have to find in it. What needs steadying first comes before any rebuilding.",
       guidance:
         "Look at the disruption before anything is rebuilt, and rebuild on ground you have checked. Help, where it is available, comes before deciding what to rebuild.",
     },
@@ -432,7 +432,7 @@ export const CARDS: CardContent[] = [
     },
     focus: {
       general: "What is known, what is assumed, and what is still unanswered. Separating those is where this card points. There may already be enough for the next step.",
-      relationships: "A misunderstanding is one possibility among several. Asking directly finds out which.",
+      relationships: "A misunderstanding is one possibility among several. The card favours asking directly over guessing.",
       work: "What is confirmed, and what still needs a direct question. That is the sorting this card asks for.",
       growth: "A story you tell about yourself, checked against the facts. Look for what supports it as well as what challenges it.",
     },
@@ -446,7 +446,7 @@ export const CARDS: CardContent[] = [
     coreMeaning: "Clarity and warmth, a plain kind of good worth noticing when it is there.",
     position: {
       situation:
-        "What is clear and good. Warmth, energy, something straightforward. Something in the situation you asked about may be going well, and good things get less attention than trouble does.",
+        "What is clear and good. Warmth, energy, something straightforward. Something in the situation you asked about may be going well, and good things often get less attention than trouble.",
       challenge:
         "The Sun's trouble is that good things can be hard to trust and easy to talk down. The card does not say there is nothing to watch for. It asks whether the good part is being allowed to count.",
       guidance:
@@ -476,7 +476,7 @@ export const CARDS: CardContent[] = [
     },
     focus: {
       general: "A clear look at where things stand, offered without harshness. That is the theme.",
-      relationships: "A pattern both people have half-noticed, and whether to name it. Start with what you have seen, and leave room for how the other person sees it.",
+      relationships: "A pattern that may be worth naming between two people. Start with what you have seen, and leave room for how the other person sees it.",
       work: "An honest review of results so far, before deciding what is next. That is the step this card suggests.",
       growth: "Taking stock of where you are, minus the self-judgement. That is the practice.",
     },

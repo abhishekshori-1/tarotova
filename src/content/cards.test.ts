@@ -70,6 +70,8 @@ describe("CARDS deck composition", () => {
       /is(n'?t| not) (permanent|fixed|true)\b/i,
       /(usually|tends to) (isn'?t|is not)/i,
       /ambiguity here is real|some of this is still unclear|the extreme you are used to|rather than a setback to fear/i,
+      // Promises of effect and presumed facts removed in content.v7:
+      /half-noticed|clarifies this faster|finds out (faster|which)|tends to pay|gets easier|usually counts for more|does work that .* cannot|lasts longer than/i,
     ];
     for (const card of CARDS) {
       const texts = [card.coreMeaning, ...Object.values(card.position), ...Object.values(card.focus)];

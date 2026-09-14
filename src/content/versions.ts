@@ -4,7 +4,7 @@
 // version, and content version when the draw is locked").
 export const DECK_VERSION = "major-22.v1";
 export const SPREAD_VERSION = "situation-challenge-guidance.v1";
-export const CONTENT_VERSION = "content.v6-draft"; // v6: texture pass, declarative sentences, at most one question per text, hedges cut; overview a paragraph again
+export const CONTENT_VERSION = "content.v7-draft"; // v7: promises of effect and presumed facts removed from v6; overview names positions, not findings
 
 /**
  * This build ships PLAN.md's section-1 scope contingency: 22 Major Arcana

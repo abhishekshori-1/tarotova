@@ -11,7 +11,7 @@ const REFLECTIONS: Record<Focus, string[]> = {
   relationships: [
     "What haven't you said out loud yet, and would it be safe to say it?",
     "What does this look like from their side, as far as you actually know?",
-    "What do you need here, as distinct from what you have been asking for?",
+    "What do you need here, and does it match what you have been asking for?",
   ],
   work: [
     "Is there a next step you have been putting off, and what would make it smaller?",
