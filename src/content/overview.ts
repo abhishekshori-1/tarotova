@@ -14,6 +14,6 @@ export function buildOverview(situation: CardContent, challenge: CardContent, gu
     `Where you are is ${situation.name}. ${situation.coreMeaning} ` +
     `What's in the way is ${challenge.name}. ${challenge.coreMeaning} ` +
     `The way through is ${guidance.name}, and it asks for ${guidance.keywords[0]}, not a quick fix.${about} ` +
-    `That's the shape of it. Not a forecast. What you do with it is still yours.`
+    `That's the shape of it, as I read it. Not a forecast, just a way in. What you do with it is yours.`
   );
 }

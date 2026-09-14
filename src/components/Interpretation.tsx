@@ -43,7 +43,7 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
   return (
     <section className="panel mt-6 p-5 sm:p-6" aria-labelledby="interpretation-heading" aria-live="polite" aria-busy={view.status === "idle" || view.status === "pending"}>
       <p className="eyebrow" id="interpretation-heading">
-        About what you asked
+        On your question
       </p>
       <div className="answer-slot mt-2">
         {(view.status === "idle" || view.status === "pending") && (
@@ -75,8 +75,9 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
       <details className="mt-4 text-sm text-[var(--fg-soft)]">
         <summary className="cursor-pointer">Where this comes from</summary>
         <p className="prose-measure mt-2">
-          The card meanings are written by people. This part is written for your question by an AI model (Anthropic Claude), working only from
-          those meanings and your words. It&apos;s a way of seeing, not a forecast. It stays with this reading for 30 days, then it&apos;s gone.
+          The meanings of the cards are written by people. The part about your question is written by an AI (Claude, made by Anthropic),
+          using only those meanings and what you typed. Take it as one reader&apos;s take, not a prediction. It&apos;s kept with this reading for
+          30 days.
         </p>
       </details>
     </section>

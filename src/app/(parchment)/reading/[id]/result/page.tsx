@@ -136,7 +136,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <p className="prose-measure mt-3 italic text-[var(--fg-soft)]">{c.focusNote}</p>
               {interpretation?.status === "succeeded" && (
                 <div className="mt-4 border-l-2 border-[var(--accent)] pl-4">
-                  <p className="eyebrow">About what you asked</p>
+                  <p className="eyebrow">On your question</p>
                   <p className="prose-measure mt-1 leading-relaxed">{interpretation.answer.cards.find((a) => a.position === c.position)?.relevance}</p>
                 </div>
               )}

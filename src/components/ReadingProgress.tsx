@@ -1,4 +1,4 @@
-const STEPS = ["The question", "The cards", "The reading"] as const;
+const STEPS = ["Ask", "Pull", "Read"] as const;
 
 /** Quiet three-step indicator (docs/PLAN-EXTENDED.md section 4). */
 export function ReadingProgress({ current }: { current: 0 | 1 | 2 }) {

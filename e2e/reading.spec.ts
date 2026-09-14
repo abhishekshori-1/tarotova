@@ -42,9 +42,9 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
 
   // Release B: the contextual answer arrives after the editorial reading,
   // into its reserved slot, and is repeated per card (stub provider in e2e).
-  await expect(page.getByText("About what you asked").first()).toBeVisible();
+  await expect(page.getByText("On your question").first()).toBeVisible();
   await expect(page.getByText(/Here's the short of it for what you asked/)).toBeVisible();
-  await expect(page.getByText("About what you asked", { exact: true })).toHaveCount(4);
+  await expect(page.getByText("On your question", { exact: true })).toHaveCount(4);
   await expect(page.getByText("Try this")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
@@ -58,7 +58,7 @@ test("a general reading has no personalized section; a crisis question gets the 
   await page.getByRole("button", { name: "Just read for me" }).click();
   await chooseThreeAndReveal(page);
   await expectResult(page);
-  await expect(page.getByText("About what you asked")).toHaveCount(0);
+  await expect(page.getByText("On your question")).toHaveCount(0);
   await expect(page.getByText("Reading your cards against")).toHaveCount(0);
   const firstResult = page.url();
 
@@ -76,7 +76,7 @@ test("a general reading has no personalized section; a crisis question gets the 
   await expectResult(page);
   await expect(page.getByRole("heading", { name: /bigger than a card reading/ })).toBeVisible();
   await expect(page.getByText("Find a helpline.")).toBeVisible();
-  await expect(page.getByText("About what you asked")).toHaveCount(0);
+  await expect(page.getByText("On your question")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expect(page.url()).not.toBe(firstResult);
 });
