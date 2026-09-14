@@ -157,6 +157,7 @@ began.
 ## What Release B is not
 
 No follow-up questions, no guided journeys (Release C). No memory across
-readings. No change to the 22-card library text, which is still draft copy
-awaiting a practitioner's review; if the reader's voice is right, the
-library text is the next thing to bring in line with it.
+readings. The 22-card library was rewritten on 15 September 2026 as themes
+to consider rather than findings about the reader (`content.v4-draft`),
+because the model grounds on it and any verdict there became a verdict in
+someone's reading. It is still draft copy awaiting a practitioner's review.

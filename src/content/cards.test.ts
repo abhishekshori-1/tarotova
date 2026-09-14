@@ -54,6 +54,26 @@ describe("CARDS deck composition", () => {
     }
   });
 
+  it("never states a verdict about the reader (docs/RELEASE-B-QUALITY-REVIEW.md, library stance)", () => {
+    // The personalized answer grounds itself on this text, so a finding
+    // written here ("you have more than you credit", "looser than it
+    // feels", "no catch") becomes a finding in someone's reading.
+    const verdicts = [
+      /than it (feels|deserves|needs|probably)/i,
+      /isn'?t actually/i,
+      /you (already )?have (more|everything|what you need)/i,
+      /a catch/i,
+      /pretense/i,
+      /(worry|anxiety) (can|will|tends to) fill/i,
+      /is(n'?t| not) (permanent|fixed|true)\b/i,
+      /(usually|tends to) (isn'?t|is not)/i,
+    ];
+    for (const card of CARDS) {
+      const texts = [card.coreMeaning, ...Object.values(card.position), ...Object.values(card.focus)];
+      for (const text of texts) for (const v of verdicts) expect(text, `${card.id}: ${text.slice(0, 60)}`).not.toMatch(v);
+    }
+  });
+
   it("never reuses reversed-orientation language in a Challenge position", () => {
     // PLAN.md section 4: Challenge must name the upright card's difficulty,
     // not silently switch to a reversed meaning. Reversal isn't modeled at
