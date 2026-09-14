@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIMITS, findForeignCardName, validateInterpretation } from "./validate";
+import { LIMITS, findAssertedCertainty, findForeignCardName, validateInterpretation } from "./validate";
 
 const DRAWN = ["major-00-fool", "major-07-chariot", "major-09-hermit"];
 
@@ -39,13 +39,34 @@ describe("validateInterpretation", () => {
 
   it.each([
     "The Chariot reversed would mean the opposite.",
-    "This outcome is guaranteed if you act now.",
     "The cards predict a new offer within weeks.",
     "You should stop taking the medication and see.",
     "This is not legal advice, but sue them.",
   ])("rejects banned phrasing: %s", (sentence) => {
     const result = validateInterpretation({ ...good(), perspective: good().perspective + " " + sentence }, DRAWN);
     expect(result).toMatchObject({ ok: false, reason: "banned_phrase" });
+  });
+
+  it.each([
+    ["This outcome is guaranteed if you act now.", "guaranteed"],
+    ["You are destined for this role.", "destined"],
+    ["I'd diagnose this as burnout.", "diagnose"],
+    ["The Hermit predicts a quiet month ahead.", "predicts"],
+  ])("rejects asserted certainty: %s", (sentence, word) => {
+    const result = validateInterpretation({ ...good(), reflection: sentence + " Sit with that for a week." }, DRAWN);
+    expect(result).toMatchObject({ ok: false, reason: "asserted_certainty", detail: word });
+  });
+
+  it.each([
+    "Nothing here is guaranteed, and that's the honest part.",
+    "There's no guarantee the offer comes through.",
+    "This isn't a diagnosis — a clinician can give you that.",
+    "The cards can't predict whether they'll say yes.",
+    "That is beyond what three cards can predict.",
+  ])("accepts the same words when denied: %s", (sentence) => {
+    expect(findAssertedCertainty(sentence)).toBeUndefined();
+    const result = validateInterpretation({ ...good(), reflection: sentence + " Sit with that for a week." }, DRAWN);
+    expect(result.ok).toBe(true);
   });
 
   it("rejects a card that was not drawn, but tolerates the plain words", () => {

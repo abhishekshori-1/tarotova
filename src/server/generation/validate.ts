@@ -8,7 +8,7 @@ import type { InterpretationOutput } from "./types";
  * never stored or shown; the caller decides whether a second paid attempt
  * is worth it.
  */
-export const LIMITS = { perspective: 900, relevance: 600, reflection: 320, beyondSpread: 320 } as const;
+export const LIMITS = { perspective: 900, relevance: 600, reflection: 320, beyondSpread: 480 } as const;
 const MINIMUMS = { perspective: 80, relevance: 40, reflection: 20 } as const;
 
 const outputSchema = z.object({
@@ -21,26 +21,43 @@ const outputSchema = z.object({
   beyondSpread: z.string().trim().max(LIMITS.beyondSpread).nullable().transform((v) => (v ? v : null)),
 });
 
+/** Always rejected, whatever surrounds them. */
 export const BANNED_PHRASES: readonly RegExp[] = [
   /\breversed\b/i,
   /\breversal\b/i,
   /\binverted\b/i,
-  /\bguarantee[ds]?\b/i,
   /\bdefinitely will\b/i,
   /\bwill definitely\b/i,
   /\bwill certainly\b/i,
   /\bis certain to\b/i,
   /\bthe cards predict\b/i,
   /\bpredicts that\b/i,
-  /\bdestined\b/i,
   /\bit is fate\b/i,
-  /\bdiagnos/i,
   /\bprescri/i,
   /\bdosage\b/i,
   /\bstop taking\b/i,
   /\byou should sue\b/i,
   /\blegal advice\b/i,
 ];
+
+/**
+ * Rejected only when asserted, not when denied: "nothing is guaranteed" and
+ * "this isn't a diagnosis" are exactly the honesty the rubric wants, and the
+ * first real eval run showed the model using them that way (8 of 37
+ * answers). A negation within a few words before the match clears it.
+ */
+export const CERTAINTY_PHRASES: readonly RegExp[] = [/\bguarantee[ds]?\b/i, /\bdiagnos\w*/i, /\bdestined\b/i, /\bpredict\w*\b/i];
+const NEGATION_BEFORE = /(\b(?:no|not|nothing|never|without|nor|neither|any|isn't|aren't|can't|cannot|couldn't|doesn't|don't|won't|wouldn't|shouldn't|rather than|instead of|beyond|outside)\b[^.!?]{0,40})$/i;
+
+export function findAssertedCertainty(text: string): string | undefined {
+  for (const pattern of CERTAINTY_PHRASES) {
+    for (const match of text.matchAll(new RegExp(pattern.source, "gi"))) {
+      const before = text.slice(Math.max(0, match.index - 60), match.index);
+      if (!NEGATION_BEFORE.test(before)) return match[0];
+    }
+  }
+  return undefined;
+}
 
 export type ValidationResult = { ok: true; output: InterpretationOutput } | { ok: false; reason: string; detail?: string };
 
@@ -75,6 +92,8 @@ export function validateInterpretation(raw: unknown, drawnCardIds: string[]): Va
 
   const banned = BANNED_PHRASES.find((p) => p.test(text));
   if (banned) return { ok: false, reason: "banned_phrase", detail: banned.source };
+  const asserted = findAssertedCertainty(text);
+  if (asserted) return { ok: false, reason: "asserted_certainty", detail: asserted };
 
   const foreign = findForeignCardName(text, drawnCardIds);
   if (foreign) return { ok: false, reason: "foreign_card", detail: foreign };

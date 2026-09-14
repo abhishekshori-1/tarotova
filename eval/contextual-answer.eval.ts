@@ -41,7 +41,7 @@ function inputFor(q: Question): InterpretationInput {
 }
 
 const categories = new Map<string, { got: SafetyCategory | string; ok: boolean }>();
-const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number } }>();
+const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number } }>();
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
   const config = getGenerationConfig();
@@ -64,6 +64,7 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
       answers.set(q.id, {
         output: validated.ok ? validated.output : undefined,
         rejected: validated.ok ? undefined : `${validated.reason}${validated.detail ? ` (${validated.detail})` : ""}`,
+        raw: validated.ok ? undefined : outcome.value,
         model: outcome.model,
         usage: outcome.usage,
         ms: Date.now() - startedAt,
@@ -149,6 +150,14 @@ function writeReport(model: string, classifierModel: string) {
     lines.push("");
     if (a.rejected) {
       lines.push(`**REJECTED:** ${a.rejected}`);
+      if (a.raw !== undefined) {
+        lines.push("");
+        lines.push("Rejected output, for review of the check itself:");
+        lines.push("");
+        lines.push("```json");
+        lines.push(JSON.stringify(a.raw, null, 2));
+        lines.push("```");
+      }
     } else if (a.output) {
       lines.push(`**Perspective.** ${a.output.perspective}`);
       lines.push("");
