@@ -108,7 +108,8 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `GENERATION_ENABLED` | Config | Release B master flag. **Unset/false until the eval gate passes** (`IMPLEMENTATION.md`); false hides the personalized section entirely |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | `anthropic` (the only value production accepts) |
-| `ANTHROPIC_API_KEY` | Secret | Anthropic API key; set a monthly spend limit in the Anthropic console too |
+| `ANTHROPIC_API_KEY` | Secret | Anthropic API key. Prepaid credits with auto-reload off are the spend cap |
+| `ANTHROPIC_WORKSPACE_ID` | Config | Only when the key is organization-level (the API rejects such keys without a workspace); a workspace-scoped key needs nothing |
 | `GENERATION_MODEL`, `CLASSIFIER_MODEL` | Config | Optional overrides; defaults `claude-sonnet-5` and `claude-haiku-4-5-20251001` |
 | `GENERATION_LIMIT_SESSION_DAY`, `GENERATION_LIMIT_IP_DAY`, `GENERATION_LIMIT_GLOBAL_DAY` | Config | Optional; defaults 10 / 30 / 400 per UTC day |
 | `GENERATION_TIMEOUT_MS` | Config | Optional; default 20000 (two attempts + classifier must fit the route's 60 s `maxDuration`) |

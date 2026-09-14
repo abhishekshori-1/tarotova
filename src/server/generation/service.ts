@@ -20,7 +20,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 let stub: StubProvider | undefined;
 export function getGenerationProvider(config: GenerationConfig): GenerationProvider | undefined {
   if (config.provider === "anthropic" && config.apiKey) {
-    return new AnthropicProvider(config.apiKey, { answer: config.model, classifier: config.classifierModel }, config.timeoutMs);
+    return new AnthropicProvider(config.apiKey, { answer: config.model, classifier: config.classifierModel }, config.timeoutMs, config.workspaceId);
   }
   if (config.provider === "stub") return (stub ??= new StubProvider());
   return undefined;
@@ -107,7 +107,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
       const classified = await provider.classify(question);
       if (!classified.ok) {
         lastReason = classified.reason;
-        log("classifier_failed", { readingId, generationId: claimed.id, attempts, reason: classified.reason, durationMs: Date.now() - startedAt });
+        log("classifier_failed", { readingId, generationId: claimed.id, attempts, reason: classified.reason, detail: classified.detail, durationMs: Date.now() - startedAt });
         if (classified.retryable) continue;
         break;
       }
@@ -127,7 +127,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
     const outcome = await provider.interpret(input);
     if (!outcome.ok) {
       lastReason = outcome.reason;
-      log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, uncertain: outcome.uncertain, durationMs: Date.now() - startedAt });
+      log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, detail: outcome.detail, uncertain: outcome.uncertain, durationMs: Date.now() - startedAt });
       if (outcome.retryable) continue;
       break;
     }

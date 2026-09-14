@@ -12,8 +12,8 @@ const INPUT: InterpretationInput = {
   ],
 };
 
-function provider() {
-  return new AnthropicProvider("sk-test", { answer: "claude-sonnet-5", classifier: "claude-haiku-4-5-20251001" }, 5_000);
+function provider(workspaceId?: string) {
+  return new AnthropicProvider("sk-test", { answer: "claude-sonnet-5", classifier: "claude-haiku-4-5-20251001" }, 5_000, workspaceId);
 }
 
 function response(status: number, body: unknown) {
@@ -37,6 +37,7 @@ describe("AnthropicProvider", () => {
     const headers = init.headers as Record<string, string>;
     expect(headers["x-api-key"]).toBe("sk-test");
     expect(headers["anthropic-version"]).toBe("2023-06-01");
+    expect(headers["anthropic-workspace-id"]).toBeUndefined();
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe("claude-sonnet-5");
     expect(body.tool_choice).toEqual({ type: "tool", name: "deliver_reading" });
@@ -44,6 +45,13 @@ describe("AnthropicProvider", () => {
     expect(body.messages[0].content).toContain("<question>\nWhat should I consider before changing jobs?\n</question>");
     expect(body.messages[0].content).toContain("## Guidance: The Hermit");
     expect(body.system).toContain("Never mention reversals");
+  });
+
+  it("names the workspace when the key is organization-level", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response(200, { content: [{ type: "tool_use", name: "classify_intent", input: { category: "none" } }] }));
+    vi.stubGlobal("fetch", fetchMock);
+    await provider("wrkspc_test").classify("hello");
+    expect((fetchMock.mock.calls[0][1] as RequestInit).headers).toMatchObject({ "anthropic-workspace-id": "wrkspc_test" });
   });
 
   it("neutralizes question tags so the question cannot close its own delimiter", async () => {
@@ -56,10 +64,16 @@ describe("AnthropicProvider", () => {
 
   it("maps HTTP failures to retryable or terminal reasons", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(529, { error: "overloaded" })));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_http_529", retryable: true, uncertain: false });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_529", retryable: true, uncertain: false });
 
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(401, { error: "auth" })));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_http_401", retryable: false, uncertain: false });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(401, { type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } })));
+    expect(await provider().interpret(INPUT)).toEqual({
+      ok: false,
+      reason: "provider_http_401",
+      detail: "authentication_error: invalid x-api-key",
+      retryable: false,
+      uncertain: false,
+    });
   });
 
   it("treats a timeout as uncertain, and a missing tool call as retryable", async () => {

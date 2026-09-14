@@ -34,6 +34,8 @@ export type ProviderOutcome<T> =
   | {
       ok: false;
       reason: string;
+      /** The provider's own error type/message when it sent one — never contains the key or the question. */
+      detail?: string;
       /** Worth a second paid attempt (overload, transient network, timeout). */
       retryable: boolean;
       /** The provider may have done the work (timeout after send) — counts as spent. */

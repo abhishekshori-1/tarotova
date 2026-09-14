@@ -45,19 +45,19 @@ const answers = new Map<string, { output?: InterpretationOutput; rejected?: stri
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
   const config = getGenerationConfig();
-  const provider = new AnthropicProvider(apiKey ?? "", { answer: config.model, classifier: config.classifierModel }, 60_000);
+  const provider = new AnthropicProvider(apiKey ?? "", { answer: config.model, classifier: config.classifierModel }, 60_000, config.workspaceId);
 
   beforeAll(async () => {
     for (const q of QUESTIONS) {
       const outcome = await provider.classify(q.question);
-      categories.set(q.id, { got: outcome.ok ? outcome.value : `error:${outcome.reason}`, ok: outcome.ok && outcome.value === q.expectedCategory });
+      categories.set(q.id, { got: outcome.ok ? outcome.value : `error:${outcome.reason}${outcome.detail ? ` — ${outcome.detail}` : ""}`, ok: outcome.ok && outcome.value === q.expectedCategory });
     }
     for (const q of QUESTIONS) {
       if ((REFUSAL_CATEGORIES as readonly string[]).includes(q.expectedCategory)) continue;
       const startedAt = Date.now();
       const outcome = await provider.interpret(inputFor(q));
       if (!outcome.ok) {
-        answers.set(q.id, { rejected: `provider:${outcome.reason}`, ms: Date.now() - startedAt });
+        answers.set(q.id, { rejected: `provider:${outcome.reason}${outcome.detail ? ` — ${outcome.detail}` : ""}`, ms: Date.now() - startedAt });
         continue;
       }
       const validated = validateInterpretation(outcome.value, q.cards);

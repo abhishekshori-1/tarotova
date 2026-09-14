@@ -24,6 +24,7 @@ export class AnthropicProvider implements GenerationProvider {
     private readonly apiKey: string,
     private readonly models: { answer: string; classifier: string },
     private readonly timeoutMs: number,
+    private readonly workspaceId?: string,
   ) {}
 
   async classify(question: string): Promise<ProviderOutcome<SafetyCategory>> {
@@ -50,6 +51,9 @@ export class AnthropicProvider implements GenerationProvider {
           "anthropic-version": API_VERSION,
           "content-type": "application/json",
           "user-agent": "Tarotova/0.2",
+          // An organization-level key must name the workspace to bill; a
+          // workspace-scoped key ignores the header.
+          ...(this.workspaceId ? { "anthropic-workspace-id": this.workspaceId } : {}),
         },
         signal: AbortSignal.timeout(this.timeoutMs),
         body: JSON.stringify({
@@ -70,7 +74,17 @@ export class AnthropicProvider implements GenerationProvider {
 
     if (!res.ok) {
       const retryable = res.status === 429 || res.status === 529 || res.status >= 500;
-      return { ok: false, reason: `provider_http_${res.status}`, retryable, uncertain: false };
+      // Anthropic error bodies are {type:"error", error:{type, message}}; the
+      // message names the cause (billing, bad model id, schema) and never
+      // echoes the key or the prompt, so it is safe to keep for diagnostics.
+      let detail: string | undefined;
+      try {
+        const body = (await res.json()) as { error?: { type?: string; message?: string } };
+        if (body.error) detail = [body.error.type, body.error.message].filter(Boolean).join(": ").slice(0, 300);
+      } catch {
+        // No JSON body; the status alone will have to do.
+      }
+      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
     let body: { content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };

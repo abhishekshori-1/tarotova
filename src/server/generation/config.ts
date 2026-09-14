@@ -28,6 +28,8 @@ export interface GenerationConfig {
   /** Why `provider` is null, for the log line. */
   configurationProblem?: string;
   apiKey?: string;
+  /** Required by the API when the key is organization-level rather than workspace-scoped. */
+  workspaceId?: string;
   model: string;
   classifierModel: string;
   timeoutMs: number;
@@ -68,6 +70,7 @@ export function getGenerationConfig(): GenerationConfig {
     provider,
     configurationProblem,
     apiKey,
+    workspaceId: process.env.ANTHROPIC_WORKSPACE_ID?.trim() || undefined,
     model: process.env.GENERATION_MODEL?.trim() || "claude-sonnet-5",
     classifierModel: process.env.CLASSIFIER_MODEL?.trim() || "claude-haiku-4-5-20251001",
     timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 20_000),
