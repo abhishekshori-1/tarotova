@@ -84,7 +84,7 @@ export function getGenerationConfig(): GenerationConfig {
     if (kind === "gemini") {
       const apiKey = env("GEMINI_API_KEY");
       if (!apiKey) problems.push("gemini skipped: GEMINI_API_KEY is not set.");
-      else providers.push({ kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-3.1-pro-preview", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.6-flash" } });
+      else providers.push({ kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-3.8-flash", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.8-flash" } });
     } else if (kind === "anthropic") {
       const apiKey = env("ANTHROPIC_API_KEY");
       if (!apiKey) problems.push("anthropic skipped: ANTHROPIC_API_KEY is not set.");

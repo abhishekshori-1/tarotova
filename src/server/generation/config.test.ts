@@ -25,7 +25,7 @@ describe("getGenerationConfig", () => {
     vi.stubEnv("ANTHROPIC_WORKSPACE_ID", "wrkspc_1");
     const config = getGenerationConfig();
     expect(kinds()).toEqual(["gemini", "anthropic"]);
-    expect(config.providers[0].models).toEqual({ answer: "gemini-3.1-pro-preview", classifier: "gemini-3.6-flash" });
+    expect(config.providers[0].models).toEqual({ answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" });
     expect(config.providers[1]).toMatchObject({ workspaceId: "wrkspc_1", models: { answer: "claude-sonnet-5" } });
     expect(config.configurationProblem).toBeUndefined();
   });
