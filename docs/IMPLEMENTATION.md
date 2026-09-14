@@ -12,7 +12,9 @@ force: no illustrator or RWS practitioner has been sourced (section 13).
 `CONTENT_VERSION` is `content.v5-draft` (v2: overview and reflections in the
 reader's voice; v3: core meaning frozen into snapshots; v4: all 22 cards
 rewritten as themes to consider; v5: remaining assumptions revised, with
-the overview and reflections brought into the same stance). A wording test
+the overview and reflections brought into the same stance; v6: texture pass,
+declarative sentences, at most one question per text, permission language
+cut, the overview a paragraph again). A wording test
 guards selected past verdict phrases; it does not replace editorial review.
 The copy has not had the practitioner review section 9 sets as a release gate.
 Content version is recorded again at lock, alongside the text actually used,

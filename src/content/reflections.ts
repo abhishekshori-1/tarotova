@@ -1,25 +1,27 @@
 import type { Focus } from "./types";
 
+// One question each, plain, with some bite and no verdict. The question
+// opens something; it does not assume what the reader has been doing.
 const REFLECTIONS: Record<Focus, string[]> = {
   general: [
-    "Was there a word or image you want to spend more time with?",
-    "What do you know about this that the reading leaves out?",
-    "Is there a small step you want to take today, or would some time help?",
+    "What do you know about this that the reading doesn't?",
+    "Which line in this reading landed, and why that one?",
+    "What is the small version of the next step, and is it one you want?",
   ],
   relationships: [
-    "Is there anything you want to say, and would it feel safe to say it?",
-    "What have they told you about their experience, and what would you need to ask?",
-    "What matters to you in this relationship, and how would you put it into words?",
+    "What haven't you said out loud yet, and would it be safe to say it?",
+    "What does this look like from their side, as far as you actually know?",
+    "What do you need here, as distinct from what you have been asking for?",
   ],
   work: [
-    "What would make the next work decision easier: information, time, help, or something else?",
-    "What would a workable next step ask of you, and are those resources available?",
-    "What is within your control at work, and where would you need someone else's agreement or support?",
+    "Is there a next step you have been putting off, and what would make it smaller?",
+    "What is yours to move here, and where do you need someone else's yes?",
+    "What would you decide with all the information, and how much of it do you already have?",
   ],
   growth: [
-    "Is there a pattern you want to understand better, without deciding yet that it needs to change?",
-    "What would you like to keep as it is, and what would you like to change?",
-    "Is there a small practice you want to try this week, and what would make room for it?",
+    "Which pattern here do you want to understand first, before deciding whether it needs to change?",
+    "What does keeping things exactly as they are cost you, and what does it give you?",
+    "What is one small practice for this week, and what would have to make room for it?",
   ],
 };
 

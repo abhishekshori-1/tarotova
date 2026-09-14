@@ -4,16 +4,18 @@ import { FOCUS_META } from "./focuses";
 /**
  * Rule-based combined overview (PLAN.md section 4: "connects the three
  * cards through editorial themes without guaranteeing predictions").
- * Deterministic given the three cards and focus — no randomness, no
- * per-reading generation cost. Written in the reader's voice: plain,
- * direct, no forecast.
+ * Deterministic given the three cards and focus: no randomness, no
+ * per-reading generation cost. Shown for readings without a question; a
+ * question reading gets a generated perspective instead. Written as one
+ * plain paragraph in the library's stance: themes, not findings, and no
+ * forecast.
  */
 export function buildOverview(situation: CardContent, challenge: CardContent, guidance: CardContent, focus: Focus): string {
-  const about = focus === "general" ? "" : ` Hold these themes alongside what matters to you about ${FOCUS_META[focus].label.toLowerCase()}.`;
+  const lens = focus === "general" ? "" : ` Read them with ${FOCUS_META[focus].label.toLowerCase()} in mind, since that is what you asked about.`;
   return (
-    `${situation.name} offers a starting point. ${situation.coreMeaning} ` +
-    `The challenge card is ${challenge.name}. ${challenge.coreMeaning} What might be difficult about that theme? ` +
-    `For guidance, consider ${guidance.name}. ${guidance.coreMeaning}${about} ` +
-    `What connects with your experience, and what would you leave aside?`
+    `${situation.name} sets the scene. ${situation.coreMeaning} ` +
+    `${challenge.name} names what is hard here. ${challenge.coreMeaning} ` +
+    `${guidance.name} is the way through the cards offer. ${guidance.coreMeaning}` +
+    `${lens} Three themes, side by side. None of this is a forecast. Take what fits and leave the rest.`
   );
 }

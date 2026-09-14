@@ -161,8 +161,10 @@ readings. The 22-card library was rewritten on 15 September 2026 as themes
 to consider rather than findings about the reader (`content.v4-draft`),
 because the model grounds on it and any verdict there became a verdict in
 someone's reading. It is still draft copy awaiting a practitioner's review.
-The follow-up `content.v5-draft` pass revises remaining assumptions and
-repeated qualifying language, and applies the same stance to the assembled
+The `content.v5-draft` pass revised remaining assumptions, and
+`content.v6-draft` restored the texture (declarative sentences, one
+question at most per text, no permission language) without giving the
+verdicts back. Both passes revise and applies the same stance to the assembled
 overview and reflection prompts. Its wording test catches selected known
 regressions, not every possible unsupported claim. A draft spanning a
 deployment is labelled with the content version used when it locks;
