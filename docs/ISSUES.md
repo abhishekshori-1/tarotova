@@ -1,13 +1,20 @@
 # Known issues
 
-Updated 2026-09-14. Code fixes below are local; production deployment and
-end-to-end verification are still outstanding. Accounts and DNS are in
-`INFRA.md`; implementation scope is in `IMPLEMENTATION.md`.
+Updated 2026-09-14. **Both issues below are resolved and verified in
+production** (GitHub issues #1 and #2). The sections are kept as the record
+of what was found and how it was fixed. Accounts and DNS are in `INFRA.md`;
+implementation scope is in `IMPLEMENTATION.md`; the v2 rollback procedure is
+in `VERSIONING.md`.
 
-## Issue 1: Every interaction is slow
+| # | Issue | Resolution | Verified |
+| --- | --- | --- | --- |
+| 1 | Every interaction slow (~2.2 s) | Functions pinned to `hnd1` (Tokyo) next to Supabase; one redundant query removed | `x-vercel-id: …::hnd1::…`; `POST /api/readings` ~0.3–0.4 s warm, lock ~0.4 s, result ~0.3 s |
+| 2 | OTP emails never arrive, no Resend records | Resend domain verification had never been started, then the `RESEND_API_KEY` row held an empty value; both fixed operationally. Code now fails visibly instead of silently | Real code delivered and confirmed in production on 2026-09-14 |
 
-**Status:** Tokyo function region configured in `vercel.json`; awaiting
-deployment and new measurements.
+## Issue 1: Every interaction is slow — RESOLVED
+
+**Status:** Resolved 2026-09-14. Deployed with commit `d4d4ad1`; region and
+timings verified live (table above).
 
 Previously recorded production timings:
 
@@ -32,14 +39,29 @@ Vercel supports setting the function region in repository configuration:
 [region configuration](https://vercel.com/docs/functions/configuring-functions/region),
 [region identifiers](https://vercel.com/docs/regions).
 
-**Verification after deployment:** Confirm the deployed functions use `hnd1`
-(also emitted as `region` in the new OTP logs). Measure reading creation
-several times, keeping cold and warm requests separate. No new production
-latency measurement has been made for these fixes yet.
+**Verification (done):** `x-vercel-id` on API responses shows `bom1::hnd1::…`
+(Mumbai edge, Tokyo function). Measured from India after deployment:
+`POST /api/readings` 0.29–0.39 s warm (1.2 s on the cold start that also ran
+migrations), lock 0.37–0.43 s, result 0.27–0.39 s — down from ~2.2 s.
 
-## Issue 2: OTP emails do not arrive; no Resend records
+## Issue 2: OTP emails do not arrive; no Resend records — RESOLVED
 
-**Status:** Root cause found and confirmed on 2026-09-14: the `mail.tarotova.com`
+**Status:** Resolved 2026-09-14. Two operational causes, found in order:
+
+1. The `mail.tarotova.com` domain had never been submitted for verification
+   in Resend (dashboard status "Not Started"). Clicking Verify moved it to
+   Pending and then Verified.
+2. The `RESEND_API_KEY` variable existed in Vercel but its stored value was
+   empty, so production logged `[email_configuration] RESEND_API_KEY is
+   required for Resend.` Deleting the row and re-adding the key (type
+   Secret, Production) and redeploying fixed it.
+
+After both, a real code was delivered and confirmed in production. The v2
+session-verification flow (deployed later the same day) uses the same
+provider path and still needs one real production send to be called
+verified end to end.
+
+The original diagnosis follows. Root cause found and confirmed on 2026-09-14: the `mail.tarotova.com`
 sending domain's status in the Resend dashboard was **"Not Started"** —
 verification had never been submitted, despite the DKIM/SPF/MX/DMARC records
 being correctly configured and resolving (re-confirmed independently via
