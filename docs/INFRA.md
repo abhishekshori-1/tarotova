@@ -109,12 +109,12 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
 | `GEMINI_API_KEY` | Secret | Google AI Studio key (Gemini Developer API). Set a budget/quota on the Google Cloud project it belongs to |
-| `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; defaults `gemini-2.5-pro` and `gemini-2.5-flash` |
+| `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; defaults `gemini-3.1-pro-preview` and `gemini-3.6-flash` |
 | `ANTHROPIC_API_KEY` | Secret | Anthropic API key. Prepaid credits with auto-reload off are the spend cap |
 | `ANTHROPIC_WORKSPACE_ID` | Config | Only when the key is organization-level (the API rejects such keys without a workspace); a workspace-scoped key needs nothing |
 | `ANTHROPIC_MODEL`, `ANTHROPIC_CLASSIFIER_MODEL` | Config | Optional overrides; defaults `claude-sonnet-5` and `claude-haiku-4-5-20251001` (`GENERATION_MODEL` / `CLASSIFIER_MODEL` still honoured) |
 | `GENERATION_LIMIT_SESSION_DAY`, `GENERATION_LIMIT_IP_DAY`, `GENERATION_LIMIT_GLOBAL_DAY` | Config | Optional; defaults 10 / 30 / 400 per UTC day |
-| `GENERATION_TIMEOUT_MS` | Config | Optional; default 20000 (two attempts + classifier must fit the route's 60 s `maxDuration`) |
+| `GENERATION_TIMEOUT_MS` | Config | Optional; default 30000 per call; a second attempt only starts within 25 s of the request so the route's 60 s `maxDuration` holds |
 
 Editing a variable never changes a running deployment — redeploy afterwards.
 Two lessons from v1 (details in `ISSUES.md`): the public Turnstile key had to
@@ -161,11 +161,11 @@ and `[generation]` logs a `fallback` event with the reason.
 | --- | --- | --- |
 | Key | `GEMINI_API_KEY` (Google AI Studio) | `ANTHROPIC_API_KEY` (+ `ANTHROPIC_WORKSPACE_ID` for an org-level key) |
 | Endpoint | `generativelanguage.googleapis.com/v1beta/models/<model>:generateContent`, JSON-mode output against the same schema | `api.anthropic.com/v1/messages`, forced tool use |
-| Models | `gemini-2.5-pro` answer, `gemini-2.5-flash` classifier | `claude-sonnet-5` answer, `claude-haiku-4-5-20251001` classifier |
-| Timeout | 20 s per call (`GENERATION_TIMEOUT_MS`) | same |
+| Models | `gemini-3.1-pro-preview` answer, `gemini-3.6-flash` classifier | `claude-sonnet-5` answer, `claude-haiku-4-5-20251001` classifier |
+| Timeout | 30 s per call (`GENERATION_TIMEOUT_MS`); a pro answer runs 15–20 s | same |
 | What is sent | The question, the focus label and the three drawn cards' curated meanings. Never email, session ids or other readings | same |
 | Data handling | Gemini API paid tier: not used for training (the free tier is — use a billed project) | Anthropic API terms: no training on API data |
-| Status | Adapter built and unit-tested against recorded shapes; **no real Gemini call made yet** — the next `npm run eval` is the first | Live locally since 2026-09-14; three eval runs, routing passes |
+| Status | Verified live 2026-09-14: the key lists 41 models; `gemini-2.5-*` are retired for new keys (404), so defaults moved to Google's recommended `gemini-3.1-pro-preview` / `gemini-3.6-flash`; one real classify + answer passed validation | Live locally since 2026-09-14; three eval runs, routing passes |
 
 The app never names either vendor; the privacy page says "third-party
 service providers on our behalf".

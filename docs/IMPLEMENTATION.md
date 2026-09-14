@@ -53,7 +53,7 @@ verification once per browser per 30 days → further readings.
 
 Built (behind `GENERATION_ENABLED=false` by default): the schema (`0003`,
 additive), the lease/budget service, the Gemini and Anthropic adapters
-(plain `fetch`, 20 s timeout each) behind a Gemini-first fallback chain, the intent classifier and authored safety
+(plain `fetch`, 30 s timeout each) behind a Gemini-first fallback chain, the intent classifier and authored safety
 responses, output validation, the result-page panel with a reserved
 four-line slot, per-card paragraphs and "Try this", the privacy copy (a
 third-party processor is named, no AI or vendor anywhere in the app), the

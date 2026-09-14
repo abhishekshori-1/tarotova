@@ -17,8 +17,13 @@
 export const GENERATION_MAX_ATTEMPTS = 2; // paid passes through the chain per reading, ever
 export const GENERATION_LEASE_MS = 90_000; // a request holds the row this long
 export const GENERATION_KIND = "interpretation";
-/** Don't start another attempt this late in the request; the route's maxDuration is 60 s. */
-export const GENERATION_REQUEST_BUDGET_MS = 40_000;
+/**
+ * Don't start another attempt this late in the request; the route's
+ * maxDuration is 60 s. A realistic worst case inside one attempt is the
+ * preferred answer call timing out (30 s) and the fallback answering
+ * (~10 s), which still fits.
+ */
+export const GENERATION_REQUEST_BUDGET_MS = 25_000;
 
 export type ProviderKind = "gemini" | "anthropic" | "stub";
 
@@ -79,7 +84,7 @@ export function getGenerationConfig(): GenerationConfig {
     if (kind === "gemini") {
       const apiKey = env("GEMINI_API_KEY");
       if (!apiKey) problems.push("gemini skipped: GEMINI_API_KEY is not set.");
-      else providers.push({ kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-2.5-pro", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-2.5-flash" } });
+      else providers.push({ kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-3.1-pro-preview", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.6-flash" } });
     } else if (kind === "anthropic") {
       const apiKey = env("ANTHROPIC_API_KEY");
       if (!apiKey) problems.push("anthropic skipped: ANTHROPIC_API_KEY is not set.");
@@ -105,7 +110,7 @@ export function getGenerationConfig(): GenerationConfig {
     guestEnabled: flag("GUEST_GENERATION_ENABLED", true),
     providers,
     configurationProblem: problems.length ? problems.join(" ") : undefined,
-    timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 20_000),
+    timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 30_000),
     limits: {
       sessionPerDay: positiveInt("GENERATION_LIMIT_SESSION_DAY", 10),
       ipPerDay: positiveInt("GENERATION_LIMIT_IP_DAY", 30),
