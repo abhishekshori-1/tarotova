@@ -4,6 +4,9 @@ import { db } from "@/server/db/client";
 import { browserSessions, rateLimitBuckets } from "@/server/db/schema";
 import { randomId } from "@/server/ids";
 import { createReading, updateSelection } from "@/server/readingService";
+import { ensureMigrated } from "@/server/db/migrate";
+import { StubProvider } from "@/server/generation/stub";
+import { GENERATION_REQUEST_DEADLINE_MS } from "@/server/generation/config";
 import { resolveSession } from "@/server/session";
 
 vi.mock("@/server/db/migrate", () => ({ ensureMigrated: vi.fn().mockResolvedValue(undefined) }));
@@ -62,6 +65,20 @@ describe("POST /api/readings/[id]/interpretation", () => {
     const response = await post(second.id);
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: "verification_required" });
+  });
+
+  it("starts the deadline before migration and session work", async () => {
+    const session = await createSession();
+    const draft = await createReading(session, "work", "A question");
+    await updateSelection(draft.id, session, draft.revision, [0, 1, 2], true, undefined);
+    let now = Date.now();
+    const startedAt = now;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    vi.mocked(ensureMigrated).mockImplementationOnce(async () => { now += 10_000; });
+    vi.mocked(resolveSession).mockImplementationOnce(async () => { now += 5000; return { id: session, isNew: false }; });
+    const spy = vi.spyOn(StubProvider.prototype, "interpret");
+    expect((await post(draft.id)).status).toBe(200);
+    expect(spy).toHaveBeenCalledWith(expect.anything(), { deadlineAt: startedAt + GENERATION_REQUEST_DEADLINE_MS });
   });
 
   it("says disabled when the flag is off", async () => {

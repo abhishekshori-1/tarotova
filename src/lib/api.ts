@@ -118,11 +118,11 @@ export interface ReadingResult {
   interpretation: InterpretationView;
 }
 
-export function getResult(id: string) {
-  return fetch(`/api/readings/${id}/result`, { cache: "no-store" }).then((r) => asJson<ReadingResult>(r));
+export function getResult(id: string, signal?: AbortSignal) {
+  return fetch(`/api/readings/${id}/result`, { cache: "no-store", signal }).then((r) => asJson<ReadingResult>(r));
 }
 
 /** Idempotent: claims or reports the reading's contextual answer (202 while it is being written). */
-export function requestInterpretation(id: string) {
-  return fetch(`/api/readings/${id}/interpretation`, json("POST")).then((r) => asJson<InterpretationView>(r));
+export function requestInterpretation(id: string, signal?: AbortSignal) {
+  return fetch(`/api/readings/${id}/interpretation`, { ...json("POST"), signal }).then((r) => asJson<InterpretationView>(r));
 }

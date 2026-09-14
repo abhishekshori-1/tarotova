@@ -67,13 +67,32 @@ describe("validateInterpretation", () => {
     // Sentences from the real eval runs that a blunter check rejected:
     "These cards can't tell you what your manager is thinking or intends, or hand you a script guaranteed to fix the dynamic.",
     "You're weighing a real change, and the cards suggest this is less about finding a guaranteed right answer and more about how you approach it.",
-    "The Hanged Man names the trap of trying to urgently fix or diagnose what's happening between you.",
+    "A deliberate pause names the trap of trying to urgently fix or diagnose what's happening between you.",
     "These cards can't tell you what the psychiatrist will think, say, or diagnose, and they don't predict how the appointment will go.",
     "A three-card reading can't tell you specific dates or predict how your year will unfold.",
   ])("accepts the same words when denied: %s", (sentence) => {
     expect(findAssertedCertainty(sentence)).toBeUndefined();
     const result = validateInterpretation({ ...good(), reflection: sentence + " Sit with that for a week." }, DRAWN);
     expect(result.ok).toBe(true);
+  });
+
+  it("rejects undeclared fields at both levels", () => {
+    expect(validateInterpretation({ ...good(), secret: "unexpected" }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    const answer = good();
+    Object.assign(answer.cards[0], { advice: "extra" });
+    expect(validateInterpretation(answer, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+  });
+
+  it.each([
+    "I cannot know his mind, but I guarantee he loves you.",
+    "Nothing is certain.\nI guarantee this works.",
+    "I can't know; however, this reading predicts a happy ending.",
+  ])("rejects certainty after an unrelated denial: %s", (text) => {
+    expect(findAssertedCertainty(text)).toBeDefined();
+  });
+
+  it.each(["The Star offers renewal.", "Try reflecting. The Tower reveals the answer."])("rejects an undrawn card at a sentence boundary: %s", (text) => {
+    expect(findForeignCardName(text, DRAWN)).toBeDefined();
   });
 
   it("rejects a card that was not drawn, but tolerates the plain words", () => {

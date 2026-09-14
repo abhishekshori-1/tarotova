@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { FallbackProvider } from "./fallback";
 import type { GenerationProvider, InterpretationInput, ProviderOutcome } from "./types";
 
-const INPUT = { question: "q", focusLabel: "General", cards: [] } as InterpretationInput;
+const INPUT = { question: "q", safetyCategory: "none", focusLabel: "General", cards: [] } as InterpretationInput;
 
 function fake(name: string, outcome: ProviderOutcome<unknown>): GenerationProvider & { interpret: ReturnType<typeof vi.fn>; classify: ReturnType<typeof vi.fn> } {
   return { name, interpret: vi.fn().mockResolvedValue(outcome), classify: vi.fn().mockResolvedValue(outcome) };
@@ -23,13 +23,23 @@ describe("FallbackProvider", () => {
     expect(onFallback).not.toHaveBeenCalled();
   });
 
-  it("falls back on any failure, including a terminal one, and reports the switch", async () => {
+  it("falls back on a provider configuration error and reports the switch", async () => {
     const gemini = fake("gemini", fail("provider_http_400", false, false, "INVALID_ARGUMENT: bad key"));
     const anthropic = fake("anthropic", ok("claude-sonnet-5"));
     const onFallback = vi.fn();
     const chain = new FallbackProvider([gemini, anthropic], onFallback);
     expect(await chain.classify("hello")).toMatchObject({ ok: true, model: "claude-sonnet-5" });
     expect(onFallback).toHaveBeenCalledWith("gemini", "anthropic", "provider_http_400", "INVALID_ARGUMENT: bad key");
+  });
+
+  it.each(["provider_blocked", "provider_finish_safety", "provider_refused"])("does not send refused content to another provider: %s", async (reason) => {
+    const preferred = fake("first", fail(reason, false));
+    const next = fake("next", ok("next-model"));
+    const chain = new FallbackProvider([preferred, next]);
+    expect(await chain.classify("question")).toMatchObject({ ok: false, reason, retryable: false });
+    expect(await chain.interpret(INPUT)).toMatchObject({ ok: false, reason, retryable: false });
+    expect(next.classify).not.toHaveBeenCalled();
+    expect(next.interpret).not.toHaveBeenCalled();
   });
 
   it("lists every failure when the whole chain fails and keeps the worst flags", async () => {

@@ -1,6 +1,8 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, InterpretationInput, ProviderOutcome } from "./types";
+import type { GenerationProvider, InterpretationInput, ProviderCallOptions, ProviderOutcome } from "./types";
+
+import { callTimeout, deadlineExceeded } from "./deadline";
 
 const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -39,8 +41,8 @@ export class GeminiProvider implements GenerationProvider {
     private readonly timeoutMs: number,
   ) {}
 
-  async classify(question: string): Promise<ProviderOutcome<SafetyCategory>> {
-    const outcome = await this.callJson(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL.input_schema, 1024);
+  async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
+    const outcome = await this.callJson(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL.input_schema, 1024, options);
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown })?.category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
@@ -49,17 +51,20 @@ export class GeminiProvider implements GenerationProvider {
     return { ...outcome, value: category as SafetyCategory };
   }
 
-  interpret(input: InterpretationInput): Promise<ProviderOutcome<unknown>> {
-    return this.callJson(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL.input_schema, 8192);
+  interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL.input_schema, 8192, options);
   }
 
-  private async callJson(model: string, system: string, user: string, schema: unknown, maxOutputTokens: number): Promise<ProviderOutcome<unknown>> {
+  private async callJson(model: string, system: string, user: string, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    const timeoutMs = callTimeout(this.timeoutMs, options);
+    if (timeoutMs <= 0) return deadlineExceeded();
+    const signal = AbortSignal.timeout(timeoutMs);
     let res: Response;
     try {
       res = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
         method: "POST",
         headers: { "x-goog-api-key": this.apiKey, "content-type": "application/json", "user-agent": "Tarotova/0.2" },
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal,
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
           contents: [{ role: "user", parts: [{ text: user }] }],
@@ -67,7 +72,7 @@ export class GeminiProvider implements GenerationProvider {
         }),
       });
     } catch (err) {
-      const timedOut = err instanceof Error && err.name === "TimeoutError";
+      const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
       return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
     }
 
@@ -92,6 +97,7 @@ export class GeminiProvider implements GenerationProvider {
     try {
       body = await res.json();
     } catch {
+      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
       return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
     if (body.promptFeedback?.blockReason) {

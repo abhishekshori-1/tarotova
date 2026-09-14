@@ -1,6 +1,8 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, InterpretationInput, ProviderOutcome } from "./types";
+import type { GenerationProvider, InterpretationInput, ProviderCallOptions, ProviderOutcome } from "./types";
+
+import { callTimeout, deadlineExceeded } from "./deadline";
 
 const ENDPOINT = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
@@ -27,8 +29,8 @@ export class AnthropicProvider implements GenerationProvider {
     private readonly workspaceId?: string,
   ) {}
 
-  async classify(question: string): Promise<ProviderOutcome<SafetyCategory>> {
-    const outcome = await this.callTool(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL, 64);
+  async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
+    const outcome = await this.callTool(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL, 64, options);
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown }).category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
@@ -37,11 +39,14 @@ export class AnthropicProvider implements GenerationProvider {
     return { ...outcome, value: category as SafetyCategory };
   }
 
-  interpret(input: InterpretationInput): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 1200);
+  interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 1200, options);
   }
 
-  private async callTool(model: string, system: string, user: string, tool: ToolCall, maxTokens: number): Promise<ProviderOutcome<unknown>> {
+  private async callTool(model: string, system: string, user: string, tool: ToolCall, maxTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    const timeoutMs = callTimeout(this.timeoutMs, options);
+    if (timeoutMs <= 0) return deadlineExceeded();
+    const signal = AbortSignal.timeout(timeoutMs);
     let res: Response;
     try {
       res = await fetch(ENDPOINT, {
@@ -55,7 +60,7 @@ export class AnthropicProvider implements GenerationProvider {
           // workspace-scoped key ignores the header.
           ...(this.workspaceId ? { "anthropic-workspace-id": this.workspaceId } : {}),
         },
-        signal: AbortSignal.timeout(this.timeoutMs),
+        signal,
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
@@ -68,7 +73,7 @@ export class AnthropicProvider implements GenerationProvider {
     } catch (err) {
       // The request may have been received and billed before the timeout —
       // the caller treats this as a spent attempt.
-      const timedOut = err instanceof Error && err.name === "TimeoutError";
+      const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
       return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
     }
 
@@ -87,12 +92,14 @@ export class AnthropicProvider implements GenerationProvider {
       return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
-    let body: { content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };
+    let body: { stop_reason?: string; content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };
     try {
       body = await res.json();
     } catch {
+      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
       return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
+    if (body.stop_reason === "refusal") return { ok: false, reason: "provider_refused", retryable: false, uncertain: false };
     const call = body.content?.find((block) => block.type === "tool_use" && block.name === tool.name);
     if (!call || call.input === undefined) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
     return {

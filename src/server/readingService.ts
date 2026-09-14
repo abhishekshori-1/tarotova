@@ -62,7 +62,7 @@ export interface ResultSnapshot {
   focus: Focus;
   overview: string;
   reflection: string;
-  cards: { position: (typeof POSITIONS)[number]; id: string; name: string; numeral: string; keywords: string[]; interpretation: string; focusNote: string }[];
+  cards: { position: (typeof POSITIONS)[number]; id: string; name: string; numeral: string; keywords: string[]; coreMeaning?: string; interpretation: string; focusNote: string }[];
   deckVersion: string;
   spreadVersion: string;
   contentVersion: string;
@@ -212,6 +212,7 @@ export async function updateSelection(
       name: card.name,
       numeral: card.numeral,
       keywords: card.keywords,
+      coreMeaning: card.coreMeaning,
       interpretation: card.position[position],
       focusNote: card.focus[effectiveFocus],
     })),

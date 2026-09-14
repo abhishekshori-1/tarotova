@@ -4,17 +4,16 @@ import { readingGenerations } from "../db/schema";
 import { randomId } from "../ids";
 import { checkAndIncrement } from "../rateLimit";
 import { loadGrantedReading } from "../readingService";
-import { CARDS } from "@/content/cards";
-import { FOCUS_META } from "@/content/focuses";
 import { isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { AnthropicProvider } from "./anthropic";
-import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, getGenerationConfig, type GenerationConfig, type ProviderSpec } from "./config";
+import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig, type GenerationConfig, type ProviderSpec } from "./config";
 import { FallbackProvider } from "./fallback";
 import { GeminiProvider } from "./gemini";
 import { INTERPRETATION_PROMPT_VERSION } from "./prompts";
 import { StubProvider } from "./stub";
 import { BUDGET_REASON, getGeneration, viewOf, type GenerationRow } from "./store";
-import type { GenerationProvider, InterpretationInput, InterpretationView } from "./types";
+import type { GenerationProvider, InterpretationView, ProviderCallOptions } from "./types";
+import { buildInterpretationInput } from "./input";
 import { validateInterpretation } from "./validate";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -53,7 +52,8 @@ function log(event: string, fields: Record<string, unknown>) {
  * attempt is recorded *before* the response is awaited so a crash after
  * the call can never produce an unbounded retry.
  */
-export async function requestInterpretation(readingId: string, sessionId: string, ip: string): Promise<InterpretationView> {
+export async function requestInterpretation(readingId: string, sessionId: string, ip: string, options: ProviderCallOptions = { deadlineAt: Date.now() + GENERATION_REQUEST_DEADLINE_MS }): Promise<InterpretationView> {
+  const requestStartedAt = Date.now();
   const { row: reading, grant, snapshot } = await loadGrantedReading(readingId, sessionId);
   const config = getGenerationConfig();
   const now = Date.now();
@@ -65,6 +65,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
   }
   // Only idle and retryable failures do work; everything else is already the answer.
   if (current.status !== "idle" && !(current.status === "failed" && current.retryable)) return current;
+  if (Date.now() >= options.deadlineAt) return { status: "failed", reason: "request_deadline", retryable: true, ...("classifiedCategory" in current ? { classifiedCategory: current.classifiedCategory } : {}) };
   const provider = getGenerationProvider(config);
   if (!provider) return { status: "unavailable", reason: "not_configured" };
 
@@ -83,35 +84,19 @@ export async function requestInterpretation(readingId: string, sessionId: string
       .set({ status: "failed", errorReason: BUDGET_REASON, leaseExpiresAt: now + budget.retryAfterMs, updatedAt: Date.now() })
       .where(eq(readingGenerations.id, claimed.id));
     log("budget_exhausted", { readingId, generationId: claimed.id, scope: budget.scope, retryAfterMs: budget.retryAfterMs });
-    return { status: "unavailable", reason: "busy", retryAfterSeconds: Math.max(1, Math.ceil(budget.retryAfterMs / 1000)) };
+    return viewOf(await getGeneration(db, readingId), grant.basis, reading.question, Date.now());
   }
 
   const question = reading.question!;
   const drawnCardIds = snapshot.cards.map((c) => c.id);
-  const input: InterpretationInput = {
-    question,
-    focusLabel: FOCUS_META[snapshot.focus].label,
-    // The frozen snapshot carries the position text and focus note; the core
-    // meaning is looked up from the deck by id so the model sees exactly the
-    // curated meanings and nothing else.
-    cards: snapshot.cards.map((c) => ({
-      position: c.position,
-      name: c.name,
-      keywords: c.keywords,
-      coreMeaning: CARDS.find((card) => card.id === c.id)?.coreMeaning ?? "",
-      positionText: c.interpretation,
-      focusNote: c.focusNote,
-    })),
-  };
 
   let attempts = claimed.attempts;
   let safetyCategory = (claimed.safetyCategory as SafetyCategory | null) ?? null;
-  let lastReason = "unknown";
-  const requestStartedAt = Date.now();
+  let lastReason = "request_deadline";
 
   // A second attempt only starts while the request still has time for it;
   // otherwise the row's lease lapses and a later request picks it up.
-  while (attempts < GENERATION_MAX_ATTEMPTS && Date.now() - requestStartedAt < GENERATION_REQUEST_BUDGET_MS) {
+  while (attempts < GENERATION_MAX_ATTEMPTS && Date.now() < options.deadlineAt && (attempts === claimed.attempts || Date.now() - requestStartedAt < GENERATION_REQUEST_BUDGET_MS)) {
     attempts += 1;
     const startedAt = Date.now();
     // Recorded before the await: a lost response still counts as a paid attempt.
@@ -121,7 +106,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
       .where(eq(readingGenerations.id, claimed.id));
 
     if (safetyCategory === null) {
-      const classified = await provider.classify(question);
+      const classified = await provider.classify(question, options);
       if (!classified.ok) {
         lastReason = classified.reason;
         log("classifier_failed", { readingId, generationId: claimed.id, attempts, reason: classified.reason, detail: classified.detail, durationMs: Date.now() - startedAt });
@@ -130,18 +115,21 @@ export async function requestInterpretation(readingId: string, sessionId: string
       }
       safetyCategory = classified.value;
       await db.update(readingGenerations).set({ safetyCategory, updatedAt: Date.now() }).where(eq(readingGenerations.id, claimed.id));
-      if (isRefusalCategory(safetyCategory)) {
-        const t = Date.now();
-        await db
-          .update(readingGenerations)
-          .set({ status: "refused", completedAt: t, updatedAt: t, leaseExpiresAt: t })
-          .where(eq(readingGenerations.id, claimed.id));
-        log("refused", { readingId, generationId: claimed.id, category: safetyCategory, attempts, durationMs: t - startedAt });
-        return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
-      }
     }
 
-    const outcome = await provider.interpret(input);
+    // Also checked on a reclaimed row: a previous request may have saved
+    // the classification and died before persisting the refusal status.
+    if (isRefusalCategory(safetyCategory)) {
+      const t = Date.now();
+      await db
+        .update(readingGenerations)
+        .set({ status: "refused", completedAt: t, updatedAt: t, leaseExpiresAt: t })
+        .where(eq(readingGenerations.id, claimed.id));
+      log("refused", { readingId, generationId: claimed.id, category: safetyCategory, attempts, durationMs: t - startedAt });
+      return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
+    }
+    const input = buildInterpretationInput(question, snapshot, safetyCategory === "stressful" ? "stressful" : "none");
+    const outcome = await provider.interpret(input, options);
     if (!outcome.ok) {
       lastReason = outcome.reason;
       log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, detail: outcome.detail, uncertain: outcome.uncertain, durationMs: Date.now() - startedAt });
@@ -201,7 +189,7 @@ async function claim(existing: GenerationRow | undefined, readingId: string, con
   }
   const [reclaimed] = await db
     .update(readingGenerations)
-    .set({ status: "pending", leaseExpiresAt, errorReason: null, updatedAt: now })
+    .set({ status: "pending", leaseExpiresAt, errorReason: null, promptVersion: INTERPRETATION_PROMPT_VERSION, updatedAt: now })
     .where(
       and(
         eq(readingGenerations.id, existing.id),

@@ -1,5 +1,6 @@
 import { ensureMigrated } from "@/server/db/migrate";
 import { resolveSession } from "@/server/session";
+import { GENERATION_REQUEST_DEADLINE_MS } from "@/server/generation/config";
 import { requestInterpretation } from "@/server/generation/service";
 import { getClientIp, privateJson } from "@/server/http";
 import { tracedRequest } from "@/server/requestLog";
@@ -14,6 +15,7 @@ export const maxDuration = 60;
  * reading's access grant, exactly like the result itself.
  */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const deadlineAt = Date.now() + GENERATION_REQUEST_DEADLINE_MS;
   await ensureMigrated();
   return tracedRequest("[interpretation]", async (trace) => {
     const { id } = await params;
@@ -21,7 +23,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     trace.stage("session");
     const session = await resolveSession();
     trace.stage("generate");
-    const view = await requestInterpretation(id, session.id, getClientIp(req));
+    const view = await requestInterpretation(id, session.id, getClientIp(req), { deadlineAt });
     return privateJson(view, { status: view.status === "pending" ? 202 : 200 });
   });
 }

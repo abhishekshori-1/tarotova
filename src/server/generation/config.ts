@@ -18,11 +18,12 @@ export const GENERATION_MAX_ATTEMPTS = 2; // paid passes through the chain per r
 export const GENERATION_LEASE_MS = 90_000; // a request holds the row this long
 export const GENERATION_KIND = "interpretation";
 /**
- * Don't start another attempt this late in the request; the route's
- * maxDuration is 60 s. A realistic worst case inside one attempt is the
- * preferred answer call timing out (30 s) and the fallback answering
- * (~10 s), which still fits.
+ * Stop provider work five seconds before the route's 60-second limit,
+ * leaving time to save the outcome and return it. The deadline starts at
+ * route entry, before migration/session/database work.
  */
+export const GENERATION_REQUEST_DEADLINE_MS = 55_000;
+/** Avoid starting a second paid attempt late in the request. */
 export const GENERATION_REQUEST_BUDGET_MS = 25_000;
 
 export type ProviderKind = "gemini" | "anthropic" | "stub";

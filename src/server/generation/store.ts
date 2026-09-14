@@ -4,6 +4,7 @@ import type { Executor } from "../access";
 import { SAFETY_RESPONSES, isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { GENERATION_KIND, GENERATION_MAX_ATTEMPTS, getGenerationConfig } from "./config";
 import type { InterpretationOutput, InterpretationView } from "./types";
+import { isProviderRefusal } from "./refusal";
 
 export type GenerationRow = typeof readingGenerations.$inferSelect;
 
@@ -25,35 +26,38 @@ export const BUDGET_REASON = "budget_exhausted";
  */
 export function viewOf(row: GenerationRow | undefined, grantBasis: string | undefined, question: string | null, now: number): InterpretationView {
   const config = getGenerationConfig();
+  // Turning off generation must not replace an existing support note with card advice.
+  if (row?.safetyCategory && isRefusalCategory(row.safetyCategory as SafetyCategory)) {
+    const category = row.safetyCategory as SafetyCategory;
+    return { status: "refused", category, response: SAFETY_RESPONSES[category as keyof typeof SAFETY_RESPONSES] };
+  }
+  const classifiedCategory = row?.safetyCategory === "none" || row?.safetyCategory === "stressful" ? row.safetyCategory : undefined;
+  const progress: { classifiedCategory?: "none" | "stressful" } = classifiedCategory ? { classifiedCategory } : {};
   if (!config.enabled) return { status: "disabled" };
   if (!question) return { status: "not_applicable" };
   if (row?.status === "succeeded" && row.output) {
     return { status: "succeeded", answer: JSON.parse(row.output) as InterpretationOutput, model: row.model ?? "unknown", promptVersion: row.promptVersion };
   }
-  if (row?.status === "refused" && row.safetyCategory && isRefusalCategory(row.safetyCategory as SafetyCategory)) {
-    const category = row.safetyCategory as SafetyCategory;
-    return { status: "refused", category, response: SAFETY_RESPONSES[category as keyof typeof SAFETY_RESPONSES] };
-  }
   // Configuration and the guest switch come after stored results: an answer
   // already paid for stays readable when generation is paused later.
-  if (config.providers.length === 0) return { status: "unavailable", reason: "not_configured" };
-  if (grantBasis === "guest" && !config.guestEnabled) return { status: "unavailable", reason: "guest_paused" };
+  if (config.providers.length === 0) return { ...progress, status: "unavailable", reason: "not_configured" };
+  if (grantBasis === "guest" && !config.guestEnabled) return { ...progress, status: "unavailable", reason: "guest_paused" };
   if (!row) return { status: "idle" };
 
   if (row.status === "pending" || row.status === "provider_called") {
-    if (row.leaseExpiresAt > now) return { status: "pending" };
+    if (row.leaseExpiresAt > now) return { ...progress, status: "pending" };
     // A lost request. A pending lease spent nothing; a provider_called one did.
     return row.attempts >= GENERATION_MAX_ATTEMPTS
-      ? { status: "failed", reason: "attempts_exhausted", retryable: false }
-      : { status: "failed", reason: "lease_expired", retryable: true };
+      ? { ...progress, status: "failed", reason: "attempts_exhausted", retryable: false }
+      : { ...progress, status: "failed", reason: "lease_expired", retryable: true };
   }
   if (row.status === "failed") {
     // A budget refusal parks the row until the window turns over, then it is
     // simply retryable again — no attempt was spent.
     if (row.errorReason === BUDGET_REASON && row.leaseExpiresAt > now) {
-      return { status: "unavailable", reason: "busy", retryAfterSeconds: Math.max(1, Math.ceil((row.leaseExpiresAt - now) / 1000)) };
+      return { ...progress, status: "unavailable", reason: "busy", retryAfterSeconds: Math.max(1, Math.ceil((row.leaseExpiresAt - now) / 1000)) };
     }
-    return { status: "failed", reason: row.errorReason ?? "unknown", retryable: row.attempts < GENERATION_MAX_ATTEMPTS };
+    return { ...progress, status: "failed", reason: row.errorReason ?? "unknown", retryable: row.attempts < GENERATION_MAX_ATTEMPTS && !isProviderRefusal(row.errorReason ?? "") };
   }
-  return { status: "failed", reason: "unknown_state", retryable: false };
+  return { ...progress, status: "failed", reason: "unknown_state", retryable: false };
 }

@@ -1,20 +1,17 @@
 "use client";
 
+import { classifiedCategory } from "@/lib/interpretationProgress";
 import type { InterpretationView } from "@/lib/api";
 
 const RETRY_REASONS: Record<string, string> = {
-  busy: "I can't get to your question right now, the table's full. The cards and their reading below stand on their own. Come back in a bit.",
-  not_configured: "I can't read against your question right now. The cards and their reading below stand on their own.",
-  guest_paused: "Reading against your question is paused for first readings at the moment. The cards and their reading below stand on their own.",
+  busy: "Your question couldn't be read right now. Please come back in a little while.",
+  not_configured: "Reading against your question is unavailable at the moment.",
+  guest_paused: "Reading against your question is paused for first readings at the moment.",
 };
 
-/**
- * The contextual answer's panel (docs/PLAN-EXTENDED.md section 4D/5). The
- * editorial reading never waits on this: it renders as a reserved slot
- * that fills in, degrades to an honest "unavailable" line, or is replaced
- * by an authored safety response.
- */
+/** The answer or support note appears before any card advice. */
 export function InterpretationPanel({ view, onRetry, retryUsed }: { view: InterpretationView; onRetry: () => void; retryUsed: boolean }) {
+  const triaged = classifiedCategory(view) !== undefined;
   if (view.status === "disabled" || view.status === "not_applicable") return null;
 
   if (view.status === "refused") {
@@ -32,7 +29,7 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
         <ul className="mt-4 space-y-2">
           {view.response.resources.map((r) => (
             <li key={r.label} className="prose-measure text-sm">
-              <span className="font-medium">{r.label}.</span> <span className="text-[var(--fg-soft)]">{r.detail}</span>
+              {r.href ? <a href={r.href} className="font-medium underline" rel="noreferrer">{r.label}</a> : <span className="font-medium">{r.label}.</span>} <span className="text-[var(--fg-soft)]">{r.detail}</span>
             </li>
           ))}
         </ul>
@@ -48,7 +45,7 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
       <div className="answer-slot mt-2">
         {(view.status === "idle" || view.status === "pending") && (
           <div role="status" className="space-y-3 pt-1">
-            <p className="text-sm text-[var(--fg-soft)]">Reading your cards against what you asked…</p>
+            <p className="text-sm text-[var(--fg-soft)]">{triaged ? "Your cards are below. Writing the answer to your question…" : "Taking a moment with your question…"}</p>
             <div className="skeleton-line w-full" />
             <div className="skeleton-line w-11/12" />
             <div className="skeleton-line w-4/5" />
@@ -63,7 +60,7 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
         {view.status === "unavailable" && <p className="prose-measure text-[var(--fg-soft)]">{RETRY_REASONS[view.reason]}</p>}
         {view.status === "failed" && (
           <div>
-            <p className="prose-measure text-[var(--fg-soft)]">Couldn&apos;t get a read on your question this time. The cards and their reading below stand on their own.</p>
+            <p className="prose-measure text-[var(--fg-soft)]">{triaged ? "The answer to your question couldn’t be completed. Your cards and their general meanings are still here." : "Couldn’t read your question this time. Your question and drawn cards are saved."}</p>
             {view.retryable && !retryUsed && (
               <button type="button" onClick={onRetry} className="btn-secondary mt-3 px-4 text-sm">
                 Ask once more

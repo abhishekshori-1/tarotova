@@ -37,15 +37,19 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   await expect(page).toHaveURL(/\/reading\/[^/]+\/choose$/);
   await expect(page.getByText("What should I consider before changing jobs?", { exact: true })).toBeVisible();
   await chooseThreeAndReveal(page);
-  await expectResult(page);
+  await expect(page).toHaveURL(/\/reading\/[^/]+\/result$/);
   await expect(page.getByRole("heading", { name: "What should I consider before changing jobs?" })).toBeVisible();
 
-  // Release B: the contextual answer arrives after the editorial reading,
-  // into its reserved slot, and is repeated per card (stub provider in e2e).
+  // Release B: one contextual answer, with optional general library text.
   await expect(page.getByText("On your question").first()).toBeVisible();
   await expect(page.getByText(/Here's the short of it for what you asked/)).toBeVisible();
-  await expect(page.getByText("On your question", { exact: true })).toHaveCount(4);
-  await expect(page.getByText("Try this")).toBeVisible();
+  await expect(page.getByText("On your question", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("One to take with you", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("The short of it", { exact: true })).toHaveCount(0);
+  await expect(page.locator("details")).toHaveCount(3);
+  await expect(page.locator("details[open]")).toHaveCount(0);
+  await page.locator("summary").first().click();
+  await expect(page.getByText("This library text is the same", { exact: false }).first()).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
   // Refresh shows the same stored answer without another request cycle.
@@ -73,9 +77,14 @@ test("a general reading has no personalized section; a crisis question gets the 
   await page.getByLabel("6-digit verification code").fill(code!);
   await page.getByRole("button", { name: "Confirm and continue" }).click();
   await chooseThreeAndReveal(page);
-  await expectResult(page);
+  await expect(page).toHaveURL(/\/reading\/[^/]+\/result$/);
   await expect(page.getByRole("heading", { name: /bigger than a card reading/ })).toBeVisible();
-  await expect(page.getByText("Find a helpline.")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Find a helpline" })).toHaveAttribute("href", "https://findahelpline.com/");
+  await expect(page.getByText("The short of it", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("One to take with you", { exact: true })).toHaveCount(0);
+  await expect(page.getByRole("list", { name: "Your three cards" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Pull again" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
   await expect(page.getByText("On your question")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expect(page.url()).not.toBe(firstResult);

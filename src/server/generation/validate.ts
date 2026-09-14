@@ -11,10 +11,10 @@ import type { InterpretationOutput } from "./types";
 export const LIMITS = { perspective: 900, relevance: 600, reflection: 320, beyondSpread: 480 } as const;
 const MINIMUMS = { perspective: 80, relevance: 40, reflection: 20 } as const;
 
-const outputSchema = z.object({
+const outputSchema = z.strictObject({
   perspective: z.string().trim().min(MINIMUMS.perspective).max(LIMITS.perspective),
   cards: z
-    .array(z.object({ position: z.enum(POSITIONS), relevance: z.string().trim().min(MINIMUMS.relevance).max(LIMITS.relevance) }))
+    .array(z.strictObject({ position: z.enum(POSITIONS), relevance: z.string().trim().min(MINIMUMS.relevance).max(LIMITS.relevance) }))
     .length(3)
     .refine((cards) => cards.every((c, i) => c.position === POSITIONS[i]), "cards must be in Situation, Challenge, Guidance order"),
   reflection: z.string().trim().min(MINIMUMS.reflection).max(LIMITS.reflection),
@@ -63,7 +63,9 @@ export function findAssertedCertainty(text: string): string | undefined {
   for (const pattern of CERTAINTY_ASSERTIONS) {
     for (const match of text.matchAll(new RegExp(pattern.source, "gi"))) {
       // The clause: back to the previous sentence or semicolon boundary.
-      const clause = text.slice(0, match.index).split(/[.!?;]\s/).pop() ?? "";
+      // A denial before a contrast/new sentence cannot excuse an assertion
+      // after it ("I can't know, but I guarantee...").
+      const clause = text.slice(0, match.index).split(/[.!?;\n]|\b(?:but|however|yet)\b/i).pop() ?? "";
       if (!NEGATION.test(clause)) return match[0];
     }
   }
@@ -79,7 +81,8 @@ function allText(output: InterpretationOutput): string {
 /**
  * A name of another deck card appearing in the text. Case-sensitive so the
  * plain words "strength", "justice" or "death" pass; a capitalized match at
- * the start of a sentence is also tolerated because it is ambiguous.
+ * the start of a sentence is tolerated only for ambiguous single-word
+ * names, e.g. "Justice matters". "The Star" is still a card reference.
  */
 export function findForeignCardName(text: string, drawnCardIds: string[]): string | undefined {
   for (const card of CARDS) {
@@ -89,7 +92,7 @@ export function findForeignCardName(text: string, drawnCardIds: string[]): strin
       const start = match.index + match[1].length;
       const before = text.slice(0, start).trimEnd();
       const sentenceStart = before === "" || /[.!?:\n"“]$/.test(before);
-      if (!sentenceStart) return card.name;
+      if (!sentenceStart || card.name.includes(" ")) return card.name;
     }
   }
   return undefined;

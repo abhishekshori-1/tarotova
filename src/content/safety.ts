@@ -18,10 +18,10 @@ export function isRefusalCategory(category: SafetyCategory): category is Refusal
 export interface SafetyResponse {
   heading: string;
   body: string[];
-  resources: { label: string; detail: string }[];
+  resources: { label: string; detail: string; href?: string }[];
 }
 
-export const SAFETY_CONTENT_VERSION = "safety.v1";
+export const SAFETY_CONTENT_VERSION = "safety.v2";
 
 export const SAFETY_RESPONSES: Record<RefusalCategory, SafetyResponse> = {
   crisis: {
@@ -31,7 +31,7 @@ export const SAFETY_RESPONSES: Record<RefusalCategory, SafetyResponse> = {
       "If you're in danger right now, please contact your local emergency number. If you can, reach out to someone you trust and tell them what you told us. Talking to a trained listener is free, confidential and available at any hour in most countries.",
     ],
     resources: [
-      { label: "Find a helpline", detail: "findahelpline.com lists free, confidential crisis lines by country." },
+      { label: "Find a helpline", href: "https://findahelpline.com/", detail: "findahelpline.com lists free, confidential crisis lines by country." },
       { label: "Immediate danger", detail: "Call your local emergency number." },
     ],
   },
@@ -64,7 +64,7 @@ export const SAFETY_RESPONSES: Record<RefusalCategory, SafetyResponse> = {
       "If what you wrote is about wanting to hurt someone else, that's also outside what this reading can help with. Talking to someone you trust, or a counsellor, is a better next step than any card.",
     ],
     resources: [
-      { label: "Find a helpline", detail: "findahelpline.com lists domestic-abuse and support lines by country." },
+      { label: "Find a helpline", href: "https://findahelpline.com/", detail: "findahelpline.com lists domestic-abuse and support lines by country." },
       { label: "Immediate danger", detail: "Call your local emergency number." },
     ],
   },

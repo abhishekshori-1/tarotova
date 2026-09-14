@@ -17,14 +17,20 @@ export type InterpretationView =
   | { status: "disabled" }
   | { status: "not_applicable" }
   | { status: "idle" }
-  | { status: "pending" }
-  | { status: "unavailable"; reason: "not_configured" | "guest_paused" | "busy"; retryAfterSeconds?: number }
+  | { status: "pending"; classifiedCategory?: "none" | "stressful" }
+  | { status: "unavailable"; reason: "not_configured" | "guest_paused" | "busy"; retryAfterSeconds?: number; classifiedCategory?: "none" | "stressful" }
   | { status: "succeeded"; answer: InterpretationOutput; model: string; promptVersion: string }
   | { status: "refused"; category: SafetyCategory; response: SafetyResponse }
-  | { status: "failed"; reason: string; retryable: boolean };
+  | { status: "failed"; reason: string; retryable: boolean; classifiedCategory?: "none" | "stressful" };
+
+export interface ProviderCallOptions {
+  /** Absolute request deadline, shared by triage, answer, fallback and retries. */
+  deadlineAt: number;
+}
 
 export interface InterpretationInput {
   question: string;
+  safetyCategory: "none" | "stressful";
   focusLabel: string;
   cards: { position: Position; name: string; keywords: string[]; coreMeaning: string; positionText: string; focusNote: string }[];
 }
@@ -44,6 +50,6 @@ export type ProviderOutcome<T> =
 
 export interface GenerationProvider {
   readonly name: string;
-  classify(question: string): Promise<ProviderOutcome<SafetyCategory>>;
-  interpret(input: InterpretationInput): Promise<ProviderOutcome<unknown>>;
+  classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>>;
+  interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>>;
 }

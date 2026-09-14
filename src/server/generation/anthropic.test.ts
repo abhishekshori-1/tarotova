@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnthropicProvider } from "./anthropic";
+import { INTERPRETATION_SYSTEM } from "./prompts";
 import type { InterpretationInput } from "./types";
 
 const INPUT: InterpretationInput = {
   question: "What should I consider before changing jobs?",
+  safetyCategory: "none",
   focusLabel: "Work",
   cards: [
     { position: "situation", name: "The Fool", keywords: ["beginnings"], coreMeaning: "A step into the unknown.", positionText: "You're at the edge.", focusNote: "A new role is on the table." },
@@ -44,7 +46,7 @@ describe("AnthropicProvider", () => {
     expect(body.tools[0].name).toBe("deliver_reading");
     expect(body.messages[0].content).toContain("<question>\nWhat should I consider before changing jobs?\n</question>");
     expect(body.messages[0].content).toContain("## Guidance: The Hermit");
-    expect(body.system).toContain("Never mention reversals");
+    expect(body.system).toBe(INTERPRETATION_SYSTEM);
   });
 
   it("names the workspace when the key is organization-level", async () => {
@@ -84,6 +86,11 @@ describe("AnthropicProvider", () => {
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, { content: [{ type: "text", text: "Sure!" }] })));
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_no_tool_call", retryable: true });
+  });
+
+  it("recognizes a refusal before looking for a tool call", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, { stop_reason: "refusal", content: [{ type: "text", text: "Declined." }] })));
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_refused", retryable: false });
   });
 
   it("rejects a category outside the taxonomy", async () => {

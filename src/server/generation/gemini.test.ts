@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GeminiProvider, toGeminiSchema } from "./gemini";
 import { READING_TOOL } from "./prompts";
+import { INTERPRETATION_SYSTEM } from "./prompts";
 import type { InterpretationInput } from "./types";
 
 const INPUT: InterpretationInput = {
   question: "What should I consider before changing jobs?",
+  safetyCategory: "none",
   focusLabel: "Work",
   cards: [
     { position: "situation", name: "The Fool", keywords: ["beginnings"], coreMeaning: "A step into the unknown.", positionText: "You're at the edge.", focusNote: "A new role is on the table." },
@@ -52,7 +54,7 @@ describe("GeminiProvider", () => {
     expect(url).toBe("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent");
     expect((init.headers as Record<string, string>)["x-goog-api-key"]).toBe("g-test");
     const body = JSON.parse(init.body as string);
-    expect(body.systemInstruction.parts[0].text).toContain("You are the reader");
+    expect(body.systemInstruction.parts[0].text).toBe(INTERPRETATION_SYSTEM);
     expect(body.contents[0].parts[0].text).toContain("<question>\nWhat should I consider before changing jobs?\n</question>");
     expect(body.generationConfig.responseMimeType).toBe("application/json");
     expect(body.generationConfig.responseSchema.properties.beyondSpread.nullable).toBe(true);

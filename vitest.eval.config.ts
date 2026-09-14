@@ -10,7 +10,7 @@ import path from "node:path";
  */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  for (const key of ["GENERATION_PROVIDER", "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_CLASSIFIER_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "ANTHROPIC_MODEL", "ANTHROPIC_CLASSIFIER_MODEL", "GENERATION_MODEL", "CLASSIFIER_MODEL"]) {
+  for (const key of ["GENERATION_PROVIDER", "GENERATION_TIMEOUT_MS", "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_CLASSIFIER_MODEL", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID", "ANTHROPIC_MODEL", "ANTHROPIC_CLASSIFIER_MODEL", "GENERATION_MODEL", "CLASSIFIER_MODEL"]) {
     if (!process.env[key] && env[key]) process.env[key] = env[key];
   }
   return {
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
       environment: "node",
       include: ["eval/**/*.eval.ts"],
       testTimeout: 120_000,
-      hookTimeout: 600_000,
+      hookTimeout: 1_200_000,
       fileParallelism: false,
     },
   };

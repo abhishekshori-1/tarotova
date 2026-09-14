@@ -9,6 +9,8 @@ import { confirmSessionCode, requestSessionCode } from "@/server/sessionVerifica
 import { requestInterpretation } from "@/server/generation/service";
 import { GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS } from "@/server/generation/config";
 import { INTERPRETATION_PROMPT_VERSION } from "@/server/generation/prompts";
+import { StubProvider } from "@/server/generation/stub";
+import { CARDS } from "@/content/cards";
 import { deleteExpired } from "@/server/cleanup";
 
 // Release B's contract (docs/REVIEW-V2.md findings 1, 2, 8 and the adopted
@@ -154,12 +156,98 @@ describe("the happy path", () => {
   });
 });
 
+describe("reading quality and safety handoffs", () => {
+  it("passes the classified emotional context to the writer", async () => {
+    const spy = vi.spyOn(StubProvider.prototype, "interpret");
+    const session = await createSession();
+    const reading = await lockedReading(session, "I was laid off. What now?");
+    await requestInterpretation(reading.id, session, "1.1.1.1");
+    expect(spy).toHaveBeenCalledWith(expect.objectContaining({ safetyCategory: "stressful" }), expect.objectContaining({ deadlineAt: expect.any(Number) }));
+  });
+
+  it("exposes completed triage while the answer is pending, then keeps it on failure", async () => {
+    let resolveClassification!: (value: { ok: true; value: "stressful"; model: string }) => void;
+    const classify = vi.spyOn(StubProvider.prototype, "classify").mockImplementation(() => new Promise((resolve) => { resolveClassification = resolve; }));
+    let resolveAnswer!: (value: { ok: false; reason: string; retryable: boolean; uncertain: boolean }) => void;
+    const interpret = vi.spyOn(StubProvider.prototype, "interpret").mockImplementation(() => new Promise((resolve) => { resolveAnswer = resolve; }));
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    const generating = requestInterpretation(reading.id, session, "1.1.1.1");
+    await vi.waitFor(() => expect(classify).toHaveBeenCalled());
+    expect((await getResult(reading.id, session)).interpretation).toEqual({ status: "pending" });
+    resolveClassification({ ok: true, value: "stressful", model: "test" });
+    await vi.waitFor(() => expect(interpret).toHaveBeenCalled());
+    expect((await getResult(reading.id, session)).interpretation).toEqual({ status: "pending", classifiedCategory: "stressful" });
+    resolveAnswer({ ok: false, reason: "provider_http_400", retryable: false, uncertain: false });
+    expect(await generating).toMatchObject({ status: "failed", classifiedCategory: "stressful" });
+    expect((await getResult(reading.id, session)).interpretation).toMatchObject({ status: "failed", classifiedCategory: "stressful" });
+  });
+
+  it("does not claim or spend when the request deadline is already exhausted", async () => {
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    const spy = vi.spyOn(StubProvider.prototype, "classify");
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1", { deadlineAt: Date.now() - 1 })).toEqual({ status: "failed", reason: "request_deadline", retryable: true });
+    expect(await generationRow(reading.id)).toBeUndefined();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("keeps the core meaning frozen when the library changes after locking", async () => {
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    const result = await getResult(reading.id, session);
+    const card = CARDS.find((c) => c.id === result.cards[0].id)!;
+    const original = card.coreMeaning;
+    const spy = vi.spyOn(StubProvider.prototype, "interpret");
+    try {
+      card.coreMeaning = "A later editorial revision.";
+      await requestInterpretation(reading.id, session, "1.1.1.1");
+      expect(spy.mock.calls[0][0].cards[0].coreMeaning).toBe(original);
+    } finally {
+      card.coreMeaning = original;
+    }
+  });
+
+  it("retains a support response when generation is switched off", async () => {
+    const session = await createSession();
+    const reading = await lockedReading(session, "I don't want to be here anymore.");
+    const view = await requestInterpretation(reading.id, session, "1.1.1.1");
+    expect(view.status).toBe("refused");
+    vi.stubEnv("GENERATION_ENABLED", "false");
+    expect((await getResult(reading.id, session)).interpretation).toEqual(view);
+  });
+
+  it("does not generate after a crash between recording triage and completing refusal", async () => {
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    const spy = vi.spyOn(StubProvider.prototype, "interpret");
+    const t = Date.now() - GENERATION_LEASE_MS - 1;
+    await db.insert(readingGenerations).values({
+      id: randomId(), readingId: reading.id, kind: "interpretation", status: "provider_called",
+      attempts: 1, leaseExpiresAt: t + GENERATION_LEASE_MS, safetyCategory: "crisis",
+      promptVersion: "interpretation.v1", contentVersion: "content.v1-draft", createdAt: t, updatedAt: t,
+    });
+    expect((await requestInterpretation(reading.id, session, "1.1.1.1")).status).toBe("refused");
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it("does not retry a provider content refusal on a later request", async () => {
+    const spy = vi.spyOn(StubProvider.prototype, "interpret").mockResolvedValue({ ok: false, reason: "provider_blocked", retryable: false, uncertain: false });
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    const first = await requestInterpretation(reading.id, session, "1.1.1.1");
+    expect(first).toEqual({ status: "failed", reason: "provider_blocked", retryable: false, classifiedCategory: "none" });
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toEqual(first);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("attempts, retries and leases", () => {
   it("caps paid attempts at two and then fails for good", async () => {
     const session = await createSession();
     const reading = await lockedReading(session, "What now? [stub:fail]");
     const view = await requestInterpretation(reading.id, session, "1.1.1.1");
-    expect(view).toEqual({ status: "failed", reason: "provider_http_529", retryable: false });
+    expect(view).toEqual({ status: "failed", reason: "provider_http_529", retryable: false, classifiedCategory: "none" });
     const row = await generationRow(reading.id);
     expect(row.attempts).toBe(GENERATION_MAX_ATTEMPTS);
     // A later request spends nothing more.
@@ -170,14 +258,14 @@ describe("attempts, retries and leases", () => {
   it("counts an uncertain (timed-out) call as a spent attempt", async () => {
     const session = await createSession();
     const reading = await lockedReading(session, "What now? [stub:uncertain]");
-    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toEqual({ status: "failed", reason: "provider_timeout", retryable: false });
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toEqual({ status: "failed", reason: "provider_timeout", retryable: false, classifiedCategory: "none" });
     expect((await generationRow(reading.id)).attempts).toBe(2);
   });
 
   it("never stores output that fails validation", async () => {
     const session = await createSession();
     const reading = await lockedReading(session, "What now? [stub:invalid]");
-    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toEqual({ status: "failed", reason: "output_invalid:foreign_card", retryable: false });
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toEqual({ status: "failed", reason: "output_invalid:foreign_card", retryable: false, classifiedCategory: "none" });
     expect((await generationRow(reading.id)).output).toBeNull();
   });
 
@@ -214,6 +302,7 @@ describe("attempts, retries and leases", () => {
     const view = await requestInterpretation(reading.id, session, "1.1.1.1");
     expect(view.status).toBe("succeeded");
     expect((await generationRow(reading.id)).attempts).toBe(2);
+    expect((await generationRow(reading.id)).promptVersion).toBe(INTERPRETATION_PROMPT_VERSION);
   });
 
   it("treats a lost lease with no attempts left as exhausted", async () => {
