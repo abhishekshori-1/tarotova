@@ -13,9 +13,12 @@ DNS host, not a proxy) and redirects to `www.tarotova.com`, served by a
 Vercel-hosted Next.js app running in Tokyo. The app talks to a Postgres
 database on Supabase (Tokyo) for all state, calls Resend (from the dedicated
 `mail.tarotova.com` sending subdomain) to deliver one-time codes when a
-browser starts its second reading, and calls Cloudflare Turnstile before
-sending a code. Vercel Cron calls the app's cleanup route once a day. GitHub
-is the source of truth; pushing to `main` runs CI and auto-deploys.
+browser starts its second reading, calls Cloudflare Turnstile before
+sending a code and before an email-free reveal, and — once Release B is
+switched on — calls the Anthropic API to classify the typed question and
+write the personalized reflection. Vercel Cron calls the app's cleanup route
+once a day. GitHub is the source of truth; pushing to `main` runs CI and
+auto-deploys.
 
 ```
 Visitor
@@ -25,10 +28,10 @@ Cloudflare DNS (tarotova.com — "DNS only", not proxied)
   │  A/CNAME → Vercel
   ▼
 Vercel (Next.js 16, Node serverless, region hnd1 Tokyo)  ◀── Vercel Cron, daily → /api/internal/cleanup
-  │                          │                         │
-  ▼                          ▼                         ▼
-Supabase Postgres (Tokyo)   Resend (mail.tarotova.com) Cloudflare Turnstile
-  all app state              one-time codes            bot check before a code is sent
+  │                          │                         │                          │
+  ▼                          ▼                         ▼                          ▼
+Supabase Postgres (Tokyo)   Resend (mail.tarotova.com) Cloudflare Turnstile       Anthropic API (Release B, flag off)
+  all app state              one-time codes            code request + guest reveal  intent classifier + reflection
 ```
 
 ## Domain
@@ -67,9 +70,12 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 - Site key → `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Vercel type **Config** — it
   must be inlined into the browser bundle at build time; changing it needs a
   rebuild). Secret key → `TURNSTILE_SECRET_KEY` (type Secret).
-- Used on the session-verification form (`/verify`). Client:
-  `src/components/TurnstileWidget.tsx`; server: `src/server/turnstile.ts`,
-  which **fails closed in production** if the secret is missing.
+- Used on the session-verification form (`/verify`) and, since Release B,
+  on the card-selection page for an unverified session's reveal (the
+  email-free reading). Client: `src/components/TurnstileWidget.tsx`;
+  server: `src/server/turnstile.ts`, which **fails closed in production**
+  if the secret is missing — with Release B deployed, a missing secret also
+  blocks every guest reveal (503 `bot_check_not_configured`).
 
 ## Hosting (Vercel)
 
@@ -78,7 +84,7 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | Team | Mosho (Hobby plan) |
 | Project | `tarotova` |
 | Source | GitHub `abhishekshori-1/tarotova`, branch `main` — every push builds and deploys to Production |
-| Branch deployments | Disabled for `feat/v2` via `vercel.json` `git.deploymentEnabled`; other branches get Preview deployments by default |
+| Branch deployments | Disabled for `feat/v2` and `feat/release-b` via `vercel.json` `git.deploymentEnabled`; other branches get Preview deployments by default |
 | Domains | `tarotova.vercel.app`, `tarotova.com` (redirects to www), `www.tarotova.com` (canonical) |
 | Framework / runtime | Next.js 16 App Router, Node.js serverless functions |
 | Function region | `hnd1` (Tokyo) via `vercel.json` `regions` — confirmed live (`x-vercel-id: bom1::hnd1::…`); warm API calls ~0.3–0.4 s from India |
@@ -99,6 +105,13 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Config | Public Turnstile site key (build time) |
 | `TURNSTILE_SECRET_KEY` | Secret | Turnstile server verification |
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
+| `GENERATION_ENABLED` | Config | Release B master flag. **Unset/false until the eval gate passes** (`IMPLEMENTATION.md`); false hides the personalized section entirely |
+| `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
+| `GENERATION_PROVIDER` | Config | `anthropic` (the only value production accepts) |
+| `ANTHROPIC_API_KEY` | Secret | Anthropic API key; set a monthly spend limit in the Anthropic console too |
+| `GENERATION_MODEL`, `CLASSIFIER_MODEL` | Config | Optional overrides; defaults `claude-sonnet-5` and `claude-haiku-4-5-20251001` |
+| `GENERATION_LIMIT_SESSION_DAY`, `GENERATION_LIMIT_IP_DAY`, `GENERATION_LIMIT_GLOBAL_DAY` | Config | Optional; defaults 10 / 30 / 400 per UTC day |
+| `GENERATION_TIMEOUT_MS` | Config | Optional; default 20000 (two attempts + classifier must fit the route's 60 s `maxDuration`) |
 
 Editing a variable never changes a running deployment — redeploy afterwards.
 Two lessons from v1 (details in `ISSUES.md`): the public Turnstile key had to
@@ -112,12 +125,13 @@ existed but held an empty value had to be deleted and re-added.
 | Project region | `ap-northeast-1` (Tokyo) |
 | Connection | Transaction pooler `aws-0-ap-northeast-1.pooler.supabase.com:6543`; `postgres.js` with `max: 5`, `prepare: false` |
 | Driver | `drizzle-orm/postgres-js`; pglite locally and in tests when `DATABASE_URL` is unset |
-| Migrations | `drizzle/0000`–`0002`, applied automatically on the first query of each cold start (`ensureMigrated()`, idempotent) with the runtime credential — a separate migration credential is still pending |
-| Tables | `browser_sessions`, `readings`, `verified_emails`, `session_email_challenges`, `reading_access_grants`, `rate_limit_buckets`, `delivery_events`, `suppressed_emails` |
+| Migrations | `drizzle/0000`–`0003`, applied automatically on the first query of each cold start (`ensureMigrated()`, idempotent) with the runtime credential — a separate migration credential is still pending |
+| Tables | `browser_sessions`, `readings`, `verified_emails`, `session_email_challenges`, `reading_access_grants`, `reading_generations` (Release B), `rate_limit_buckets`, `delivery_events`, `suppressed_emails` |
 | Backups | No automatic backups on the free tier; take a `pg_dump` before releases (`VERSIONING.md`) |
 
 Retention is enforced by the daily cleanup cron (24-hour drafts, 30-day
-reading access, spent codes, 7-day delivery events, orphaned sessions).
+reading access and the generated answers with them, spent codes, 7-day
+delivery events, orphaned sessions).
 
 ## Email (Resend)
 
@@ -132,6 +146,16 @@ reading access, spent codes, 7-day delivery events, orphaned sessions).
 DNS resolving is not the same as Resend verification: the domain must be
 submitted for verification in Resend's dashboard (the "Verify" button) and
 show **Verified** there. Check that page, not `dig`, when something is off.
+
+## AI provider (Anthropic) — Release B
+
+| Item | Value |
+| --- | --- |
+| Account | Not yet created; key goes into `ANTHROPIC_API_KEY` (Secret) and a spend limit into the console |
+| Endpoint | `https://api.anthropic.com/v1/messages`, plain `fetch`, forced tool use, 20 s timeout, `user-agent: Tarotova/0.2` |
+| What is sent | The question, the focus label and the three drawn cards' curated meanings. Never email, session ids or other readings |
+| Data handling | Anthropic API terms: not used for training. The privacy page says so |
+| Status | Code complete on `feat/release-b`; **no real call has been made yet**. `npm run eval` is the first one, on purpose |
 
 ## Deployment flow
 

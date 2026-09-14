@@ -1,8 +1,9 @@
 # Implementation status
 
 What actually exists in this repo, measured against `PLAN.md` (v1) and
-`PLAN-EXTENDED.md` / `ACCESS-FLOW.md` (v2). Updated 2026-09-14 after v2
-Release A went live (`VERSIONING.md` has the transition and rollback).
+`PLAN-EXTENDED.md` / `ACCESS-FLOW.md` (v2). Updated 2026-09-14 with v2
+Release B built on `feat/release-b` (not yet merged; `VERSIONING.md` has
+the transition, rollback and the release checklist).
 
 ## Scope this build targets
 
@@ -11,10 +12,12 @@ force: no illustrator or RWS practitioner has been sourced (section 13).
 `CONTENT_VERSION` is `content.v1-draft` because the copy has not had the
 practitioner review section 9 sets as a release gate.
 
-Of the v2 plan, **Release A** is built: guest-first access, question capture
-(shown, not interpreted), fast selection, the visual foundation, retention,
-CI and browser tests. Releases B (contextual answer) and C (follow-ups,
-guided journeys) are not started. See "Incomplete" below.
+Of the v2 plan, **Release A** (guest-first access, question capture, fast
+selection, visual foundation, retention, CI and browser tests) is live, and
+**Release B** — the contextual answer — is built behind a server flag that
+is **off by default** (`GENERATION_ENABLED`). Its release gate is the
+evaluation run in `eval/` (see "Release B" below). Release C (follow-ups,
+guided journeys) is not started.
 
 ## Done
 
@@ -30,6 +33,8 @@ verification once per browser per 30 days → further readings.
 | Session verification | `session_email_challenges`: 6-digit code, HMAC-SHA256 digest bound to purpose + session + challenge + generation + email, constant-time compare, 10-minute expiry, 5 attempts (counter committed before the error), resend supersedes, single-use consumption via conditional update, idempotent re-confirm. `verified_until` = verification + 30 days, never extended by activity |
 | Sessions | 256-bit token, SHA-256 hash stored, `Secure` `HttpOnly` `SameSite=Lax` cookie, 30 days, renewed on activity at most once a day |
 | Question | Optional, ≤500 chars, trimmed; set at creation or `PATCH /api/readings/[id]/context` (revision-checked); frozen at lock; returned with the result |
+| Contextual answer (Release B) | `POST /api/readings/[id]/interpretation`, idempotent, authorized by the same grant as the result. One `reading_generations` row per reading is the lease: claimed with a conditional update, `provider_called` + `attempts` recorded *before* the provider is awaited, at most 2 paid attempts ever, 90 s lease. Budget reserved before the call (per session/day, per IP/day, global/day in `rate_limit_buckets`). Intent classifier (Haiku) routes `crisis` / `medical` / `legal` / `abuse` to authored responses in `src/content/safety.ts`; otherwise Sonnet writes a structured answer through forced tool use, validated (`src/server/generation/validate.ts`: shape, lengths, banned reversal/certainty/advice phrases, no foreign card names) before it is stored. Only readings with a question generate. Kill switches: `GENERATION_ENABLED`, `GUEST_GENERATION_ENABLED` (guest readings only). Production with no key reports "unavailable" — never a fake answer |
+| Bot check on the guest lock | `PUT …/selection` with `lock: true` from an unverified session requires a Turnstile token (fails closed in production); the choose page renders the widget only for those sessions |
 | Rate limiting | Atomic fixed-window counters: reading creation 30/h per IP and 20/h per session; codes 3/h and 5/day per email, 10/h per IP; 60 s resend cooldown checked before any budget is spent |
 | Suppression | `suppressed_emails` checked before every send; populated by the (unsigned) webhook |
 | Expiry & retention | Drafts and unclaimed locks are gone at read time after 24 h; `deleteExpired()` removes expired drafts, ended-access readings and grants, spent challenges, rate buckets, 7-day-old delivery events and orphaned sessions. Exposed at `/api/internal/cleanup` behind `CRON_SECRET`; Vercel Cron daily (`vercel.json`) |
@@ -41,15 +46,36 @@ verification once per browser per 30 days → further readings.
 | Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
 | Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
 | Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
-| Tests | 116 Vitest tests in 15 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety); 9 Playwright tests × 3 viewports (golden path, gate then remembered verification, rapid taps, stranger denied, no horizontal overflow) |
+| Tests | 157 Vitest tests in 21 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
 | CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
+
+## Release B — what is built and what gates it
+
+Built (behind `GENERATION_ENABLED=false` by default): the schema (`0003`,
+additive), the lease/budget service, the Anthropic adapter (plain `fetch`,
+forced tool use, 20 s timeout), the intent classifier and authored safety
+responses, output validation, the result-page panel with a reserved
+four-line slot, per-card relevance and "One thing to try", the privacy
+copy, the `eval/` set (49 questions across the four focuses, ambiguous,
+long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
+
+**Not yet done, and required before the flag goes on in production:**
+
+1. Run `npm run eval` with a real key; the automated gates (100 % on crisis
+   and abuse routing, ≥ 90 % medical/legal, no ordinary question refused,
+   ≥ 90 % valid answers, injection ignored) must pass and a person must
+   score the report per the rubric (mean ≥ 4, no Agency/Honesty below 3).
+2. Set `ANTHROPIC_API_KEY`, `GENERATION_PROVIDER=anthropic` and a spend
+   limit in the Anthropic console; confirm `TURNSTILE_SECRET_KEY` is set
+   (the guest lock now fails closed without it).
+3. Turn on `GENERATION_ENABLED` and redeploy; watch `[generation]` logs for
+   `durationMs`, `usage` and `output_rejected` reasons for the first day.
 
 ## Incomplete / not built yet
 
-- **Release B — contextual answer.** No model adapter, no prompt, no
-  evaluation set or rubric, no sensitive-intent classifier, no generation
-  budgets or global spend cap, no Turnstile on the guest lock. The question is
-  displayed only. `REVIEW-V2.md` findings 1, 2 and 8 are the entry criteria.
+- **Release B follow-through.** The three gate steps above; suggested
+  follow-up questions are not generated (Release C); the classifier and
+  answer prompts are v1 and unreviewed by a practitioner.
 - **Release C — follow-ups and guided journeys.** Nothing built.
 - **78-card deck and recognizable card art.** Decision: restyle the
   public-domain 1909 Rider–Waite–Smith deck in a later phase; until all 22
@@ -58,8 +84,9 @@ verification once per browser per 30 days → further readings.
   still has the `TODO`; anyone can POST fake bounce events and suppress an
   address. Not linked from anywhere, but it is reachable.
 - **Practitioner review** of the 22 cards' copy; **legal copy** (`/privacy`,
-  `/terms`) is still a placeholder and must mention that typed questions are
-  stored for up to 30 days.
+  `/terms`) is still a placeholder. `/privacy` now explains the question
+  storage and the AI provider, but operator name, jurisdiction and contact
+  are still missing.
 - **Migrations run at cold start with the runtime credential.** `PLAN.md`
   section 7 asks for a separate credential and a deploy-time step; still
   pending. Migrations are additive except `0002` (see `VERSIONING.md`).
@@ -93,14 +120,18 @@ verification once per browser per 30 days → further readings.
   `prepare: false`. Single-statement atomic operations cover the rest
   (rate counters, attempt increments, code consumption).
 - **Guest allowance is per browser session, not per person.** Clearing
-  cookies or a private window yields a new session and a new free reading;
-  IP limits are the only backstop. Accepted for Release A; generation
-  budgets are a Release B gate.
+  cookies or a private window yields a new session and a new free reading.
+  The backstops are the Turnstile check on the guest lock and the generation
+  budgets (defaults 10/session/day, 30/IP/day, 400 global/day, all env
+  overridable); the provider-side spend limit is the last line.
+- **Generation logs** (`[generation]`, `[interpretation]`) carry reading and
+  generation ids, attempt counts, reasons, token usage and durations — never
+  the question or the answer.
 - **`npm audit --omit=dev` reports 0 vulnerabilities**; dev-only findings
   come via `drizzle-kit`'s bundled esbuild.
 - **pglite** needs `serverExternalPackages` and a lazy connection (see
   `db/client.ts`); `PGLITE_DATA_DIR` lets the e2e suite use its own database.
-- **Deployments are disabled for `feat/v2`** in `vercel.json`
+- **Deployments are disabled for `feat/v2` and `feat/release-b`** in `vercel.json`
   (`git.deploymentEnabled`); other branches would get preview deployments
   and, if `DATABASE_URL` is scoped to Preview, would migrate production —
   disable per branch before pushing work in progress.

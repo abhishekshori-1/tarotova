@@ -4,8 +4,11 @@ A free three-card tarot reading — Situation, Challenge, Guidance — from the
 22 Major Arcana. Bring a question; your first reading needs no email.
 Live at [tarotova.com](https://www.tarotova.com).
 
-This is **v2, Release A** (guest-first reading, question capture, visual
-foundation). It still ships PLAN.md's section-1 **scope contingency**: the
+Production runs **v2, Release A** (guest-first reading, question capture,
+visual foundation). **Release B** — the personalized reflection written for
+the typed question — is built on `feat/release-b` behind a server flag and
+waits on its evaluation gate (`eval/RUBRIC.md`). The build still ships
+PLAN.md's section-1 **scope contingency**: the
 22-card Major Arcana, not the full 78-card deck, and the interpretive copy has
 not had the practitioner review PLAN.md section 9 requires — treat readings
 as a working product with draft content.
@@ -37,8 +40,9 @@ production.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | 116 Vitest unit/integration tests against an in-memory Postgres |
-| `npm run test:e2e` | 9 Playwright browser tests at 320, 390 and 1440 px (starts its own dev server on 47102 with a throwaway database; first run needs `npx playwright install chromium`) |
+| `npm test` | 157 Vitest unit/integration tests against an in-memory Postgres; no network, no keys |
+| `npm run test:e2e` | 4 Playwright browser tests at 320, 390 and 1440 px (starts its own dev server on 47102 with a throwaway database and the stub answer provider; first run needs `npx playwright install chromium`) |
+| `npm run eval` | Release B's gate: runs `eval/questions.json` through the real Anthropic provider and writes a report to `eval/report/` for scoring against `eval/RUBRIC.md`. Needs `ANTHROPIC_API_KEY`; makes paid calls |
 | `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
 | `npm run db:generate` | Generate a migration after editing `src/server/db/schema.ts` |
 | `npm run cards:gen` | Regenerate the placeholder card SVGs |
@@ -68,7 +72,12 @@ Keep new local services in the same `471xx` block.
    both win — and issues this browser's access grant in the same transaction.
 3. **Result** (parchment surface): the question, a combined perspective, the
    three cards with position-specific interpretations, and one reflection.
-   Readable in this browser for 30 days.
+   Readable in this browser for 30 days. With Release B on, a reflection
+   written for the question fills a reserved slot under the heading and
+   each card gets a "For your question" paragraph; the editorial reading
+   never waits on it. Questions about a crisis, or asking for medical or
+   legal instruction, get an authored response with resources instead of a
+   card reading.
 4. **Second reading**: the first is free of email; starting another draw asks
    for a one-time email code at `/verify`. Verification is remembered for 30
    days in that browser (a fixed window; browser sessions themselves slide on
@@ -95,8 +104,10 @@ skipped bot check — configured by absence, see `.env.example`.
   gold frame (`scripts/generate-card-svgs.mjs`). Coherent, not the
   recognizable RWS scenes the plan wants; a public-domain 1909 Rider–Waite–Smith
   restyle is the chosen next step.
-- **The question is shown, not interpreted.** Contextual answers (Release B)
-  and follow-ups/guided journeys (Release C) are planned, not built.
+- **The personalized reflection is off until its evaluation passes.** The
+  code, prompts, safety routing, budgets and tests exist; `GENERATION_ENABLED`
+  stays false in production until `npm run eval` and the human pass clear
+  the rubric. Follow-ups and guided journeys (Release C) are not built.
 - **Content is unreviewed** (`CONTENT_VERSION` ends in `-draft`).
 - **The webhook** at `src/app/api/webhooks/email/route.ts` does not verify
   Resend's signature yet; don't rely on it until it does.
@@ -106,7 +117,10 @@ skipped bot check — configured by absence, see `.env.example`.
 `src/app/(night)` — home and card selection; `src/app/(parchment)` —
 verification, result, privacy, terms; `src/app/api` — route handlers;
 `src/server` — access grants, sessions, OTP, rate limits, email, cleanup;
-`src/content` — the 22-card deck and copy; `src/components`; `src/lib` — zod
+`src/server/generation` — Release B: config, lease service, Anthropic and
+stub providers, prompts, validation; `src/content` — the 22-card deck, copy
+and the authored safety responses; `eval/` — the question set, rubric and
+runner; `src/components`; `src/lib` — zod
 schemas, client API, save queue; `drizzle/` — SQL migrations; `tests/` —
 integration tests (unit tests sit next to their code as `*.test.ts`);
 `e2e/` — Playwright; `docs/`.

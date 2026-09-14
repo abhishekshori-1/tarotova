@@ -39,6 +39,46 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   await chooseThreeAndReveal(page);
   await expectResult(page);
   await expect(page.getByRole("heading", { name: "What should I consider before changing jobs?" })).toBeVisible();
+
+  // Release B: the contextual answer arrives after the editorial reading,
+  // into its reserved slot, and is repeated per card (stub provider in e2e).
+  await expect(page.getByText("For your question").first()).toBeVisible();
+  await expect(page.getByText(/Read together for your question/)).toBeVisible();
+  await expect(page.getByText("For your question", { exact: true })).toHaveCount(4);
+  await expect(page.getByText("One thing to try")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+
+  // Refresh shows the same stored answer without another request cycle.
+  await page.reload();
+  await expect(page.getByText(/Read together for your question/)).toBeVisible();
+});
+
+test("a general reading has no personalized section; a crisis question gets the authored response", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Explore a general reading" }).click();
+  await chooseThreeAndReveal(page);
+  await expectResult(page);
+  await expect(page.getByText("For your question")).toHaveCount(0);
+  await expect(page.getByText("Writing a reflection")).toHaveCount(0);
+  const firstResult = page.url();
+
+  // The second reading (the gate) with a crisis question: no card reading for it.
+  await page.getByRole("link", { name: "Begin another reading" }).click();
+  await page.getByLabel(/Your question/).fill("I don't want to be here anymore. Is there any point?");
+  await page.getByRole("button", { name: "Choose my cards" }).click();
+  await expect(page).toHaveURL(/\/verify\?next=/);
+  await page.getByLabel("Email address").fill("crisis-check@example.com");
+  await page.getByRole("button", { name: "Send my code" }).click();
+  const code = await page.locator("strong.font-mono").textContent();
+  await page.getByLabel("6-digit verification code").fill(code!);
+  await page.getByRole("button", { name: "Confirm and continue" }).click();
+  await chooseThreeAndReveal(page);
+  await expectResult(page);
+  await expect(page.getByRole("heading", { name: /bigger than a card reading/ })).toBeVisible();
+  await expect(page.getByText("Find a helpline.")).toBeVisible();
+  await expect(page.getByText("For your question")).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+  expect(page.url()).not.toBe(firstResult);
 });
 
 test("a second reading asks for email once, then later draws go straight through", async ({ page }) => {

@@ -6,12 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { CardBackSlot } from "@/components/CardBackSlot";
 import { ReadingProgress } from "@/components/ReadingProgress";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "@/components/TurnstileWidget";
 import { getStatus, reshuffle, updateSelection, type ApiError, type ReadingStatus } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { createSaveQueue, type SaveState } from "@/lib/saveQueue";
 
 const SLOT_COUNT = 22;
 const POSITIONS = ["Situation", "Challenge", "Guidance"] as const;
+const TURNSTILE_CONFIGURED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function ChoosePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,6 +25,8 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const revisionRef = useRef(0);
 
   const resultHref = `/reading/${id}/result`;
@@ -107,7 +111,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     try {
       // Lock only the acknowledged selection: wait for queued saves first.
       await queue.flush();
-      const s = await updateSelection(id, revisionRef.current, selected, { lock: true });
+      const s = await updateSelection(id, revisionRef.current, selected, { lock: true, turnstileToken });
       setStatus(s);
       // A lost race with another tab locks the draw but grants nothing;
       // verification then unlocks this same reading.
@@ -118,7 +122,14 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         await load();
       } else if (queue.state === "failed") {
         setError("Your choices aren't saved yet. Retry saving, then reveal.");
+      } else if ((e as ApiError).body?.error === "bot_check_failed") {
+        setError("The security check expired. Please complete it again, then reveal.");
+      } else if ((e as ApiError).body?.error === "bot_check_not_configured") {
+        setError("Readings can't be revealed right now. Please try again later.");
       } else setError("Couldn't lock your selection. Please try again.");
+      // Turnstile tokens are single-use; a failed lock needs a fresh one.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setBusy(false);
     }
@@ -145,6 +156,9 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
   const canShuffle = selected.length === 0 && saveState !== "failed";
   const saveLabel = saveState === "saving" ? "Saving…" : saveState === "failed" ? "Not saved" : "Saved";
+  // The email-free reveal carries the bot check a verified session already passed (docs/REVIEW-V2.md finding 2).
+  const needsBotCheck = TURNSTILE_CONFIGURED && !status.sessionVerified;
+  const canReveal = selected.length === 3 && !busy && saveState !== "failed" && (!needsBotCheck || turnstileToken !== null);
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-44 pt-8">
@@ -183,6 +197,15 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         })}
       </div>
 
+      {needsBotCheck && (
+        <div className="mt-8">
+          <p className="text-sm text-[var(--fg-soft)]">A quick check before your first reveal — no email needed.</p>
+          <div className="mt-2">
+            <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
+          </div>
+        </div>
+      )}
+
       <div className="sticky-tray fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[rgba(20,17,31,0.92)] px-4 pt-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
           <ol className="flex items-center gap-3" aria-label="Your three positions">
@@ -210,7 +233,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
                 Retry saving
               </button>
             )}
-            <button type="button" onClick={reveal} disabled={selected.length !== 3 || busy || saveState === "failed"} className="btn-primary px-6 text-sm">
+            <button type="button" onClick={reveal} disabled={!canReveal} className="btn-primary px-6 text-sm">
               {busy ? "Saving your choices…" : "Reveal these cards"}
             </button>
           </div>

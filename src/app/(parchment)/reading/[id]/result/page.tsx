@@ -1,11 +1,12 @@
 "use client";
 
-import { use, useCallback, useEffect, useState } from "react";
+import { use, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { ReadingProgress } from "@/components/ReadingProgress";
-import { getResult, getStatus, type ApiError, type ReadingResult } from "@/lib/api";
+import { InterpretationPanel } from "@/components/Interpretation";
+import { getResult, getStatus, requestInterpretation, type ApiError, type InterpretationView, type ReadingResult } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { FOCUS_META } from "@/content/focuses";
 
@@ -15,28 +16,65 @@ const POSITION_LABEL: Record<ReadingResult["cards"][number]["position"], string>
   guidance: "Guidance",
 };
 
+const POLL_INTERVAL_MS = 2500;
+const POLL_LIMIT_MS = 75_000;
+
 export default function ResultPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const [result, setResult] = useState<ReadingResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [interpretation, setInterpretation] = useState<InterpretationView | null>(null);
+  const [retryUsed, setRetryUsed] = useState(false);
+  const pollingRef = useRef(false);
+
+  // The editorial reading is already on screen; the contextual answer is
+  // requested once (idempotent server-side) and polled while it is written.
+  // A lost tab never triggers a second paid call: the server holds the lease.
+  const generate = useCallback(async () => {
+    if (pollingRef.current) return;
+    pollingRef.current = true;
+    setInterpretation({ status: "pending" });
+    const startedAt = Date.now();
+    try {
+      let view = await requestInterpretation(id);
+      while (view.status === "pending" && Date.now() - startedAt < POLL_LIMIT_MS) {
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
+        view = (await getResult(id)).interpretation;
+        if (view.status === "idle") view = await requestInterpretation(id);
+      }
+      setInterpretation(view.status === "pending" ? { status: "failed", reason: "timeout", retryable: true } : view);
+    } catch {
+      setInterpretation({ status: "failed", reason: "request_failed", retryable: true });
+    } finally {
+      pollingRef.current = false;
+    }
+  }, [id]);
 
   const load = useCallback(async () => {
     try {
       const status = await getStatus(id);
       if (status.state === "drafting") return router.replace(`/reading/${id}/choose`);
-      setResult(await getResult(id));
+      const r = await getResult(id);
+      setResult(r);
+      setInterpretation(r.interpretation);
+      if (r.interpretation.status === "idle" || r.interpretation.status === "pending") generate();
     } catch (e) {
       // Owned but not yet granted: verification unlocks this same reading.
       if ((e as ApiError).status === 403) return router.replace(verifyHref(`/reading/${id}/result`));
       setError("This result isn't available. It may have expired.");
     }
-  }, [id, router]);
+  }, [generate, id, router]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- fetch-on-mount is the intended pattern for this build's plain client-fetch pages
     load();
   }, [load]);
+
+  function retry() {
+    setRetryUsed(true);
+    generate();
+  }
 
   if (error) {
     return (
@@ -62,6 +100,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
       <ReadingProgress current={2} />
       <p className="eyebrow mt-6">{result.question ? "Your question" : `${FOCUS_META[result.focus].label} reading`}</p>
       <h1 className="prose-measure title mt-1">{result.question ?? "A general reading"}</h1>
+
+      {interpretation && <InterpretationPanel view={interpretation} onRetry={retry} retryUsed={retryUsed} />}
 
       <section className="mt-8 grid gap-6 lg:grid-cols-[auto_minmax(0,1fr)] lg:items-start">
         <ol className="flex min-w-0 justify-center gap-3 lg:justify-start" aria-label="Your three cards">
@@ -94,12 +134,25 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <p className="mt-1 text-sm text-[var(--fg-soft)]">{c.keywords.join(" · ")}</p>
               <p className="prose-measure mt-4 leading-relaxed">{c.interpretation}</p>
               <p className="prose-measure mt-3 italic text-[var(--fg-soft)]">{c.focusNote}</p>
+              {interpretation?.status === "succeeded" && (
+                <div className="mt-4 border-l-2 border-[var(--accent)] pl-4">
+                  <p className="eyebrow">For your question</p>
+                  <p className="prose-measure mt-1 leading-relaxed">{interpretation.answer.cards.find((a) => a.position === c.position)?.relevance}</p>
+                </div>
+              )}
             </div>
           </section>
         ))}
       </div>
 
-      <section className="panel mt-12 p-5 sm:p-6">
+      {interpretation?.status === "succeeded" && (
+        <section className="panel mt-12 p-5 sm:p-6">
+          <p className="eyebrow">One thing to try</p>
+          <p className="prose-measure mt-2 text-lg">{interpretation.answer.reflection}</p>
+        </section>
+      )}
+
+      <section className={`panel p-5 sm:p-6 ${interpretation?.status === "succeeded" ? "mt-6" : "mt-12"}`}>
         <p className="eyebrow">A question to sit with</p>
         <p className="prose-measure mt-2 text-lg">{result.reflection}</p>
       </section>
