@@ -27,13 +27,6 @@ export const selectionSchema = z.object({
   focus: focusSchema.optional(),
 });
 
-export const otpSchema = z.object({
-  revision: z.number().int().min(0),
-  intent: z.enum(["send", "resend", "change"]),
-  email: z.string().trim().min(3).max(254).email(),
-  turnstileToken: z.string().optional(),
-});
-
 export const verifySchema = z.object({
   code: z
     .string()

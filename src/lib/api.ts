@@ -12,7 +12,7 @@ export interface PendingChallenge {
 
 export interface ReadingStatus {
   id: string;
-  state: "drafting" | "locked" | "verified";
+  state: "drafting" | "locked";
   revision: number;
   focus: Focus;
   question: string | null;
@@ -22,8 +22,6 @@ export interface ReadingStatus {
   entitlement: Entitlement;
   accessExpiresAt?: number;
   sessionVerified: boolean;
-  maskedEmail?: string;
-  pendingChallenge?: PendingChallenge;
   resultAvailable: boolean;
 }
 
@@ -81,18 +79,6 @@ export function updateSelection(id: string, revision: number, slots: number[], o
   return fetch(`/api/readings/${id}/selection`, json("PUT", { revision, slots, lock: opts?.lock ?? false, focus: opts?.focus })).then((r) =>
     asJson<ReadingStatus>(r),
   );
-}
-
-/** Legacy reading-bound code request. */
-export function sendOtp(id: string, revision: number, email: string, intent: "send" | "resend" | "change", turnstileToken?: string | null) {
-  return fetch(`/api/readings/${id}/otp`, json("POST", { revision, email, intent, turnstileToken: turnstileToken ?? undefined })).then((r) =>
-    asJson<{ sendStatus: "accepted" | "pending"; devCode?: string }>(r),
-  );
-}
-
-/** Legacy reading-bound code confirmation. */
-export function verifyCode(id: string, code: string) {
-  return fetch(`/api/readings/${id}/verify`, json("POST", { code })).then((r) => asJson<{ ok: boolean }>(r));
 }
 
 export function getSession() {

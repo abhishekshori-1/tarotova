@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db/client";
-import { readings, readingAccessGrants, verifiedEmails } from "./db/schema";
+import { readings } from "./db/schema";
 import { randomId } from "./ids";
 import { cryptoShuffle } from "./shuffle";
 import { CARDS } from "@/content/cards";
@@ -9,9 +9,7 @@ import { DEFAULT_FOCUS } from "@/content/focuses";
 import { POSITIONS, type Focus } from "@/content/types";
 import { buildOverview } from "@/content/overview";
 import { pickReflection } from "@/content/reflections";
-import { ACCESS_TTL_MS, entitlementFor, getGrant, getSessionRow, isActive, issueGrant, sessionIsVerified, type Entitlement, type Executor } from "./access";
-import { checkCode, issueCode, maskEmail, pendingChallengeSummary, readingChallenges } from "./otpChallenge";
-import { hashEmailForLookup } from "./emailHash";
+import { entitlementFor, getGrant, getSessionRow, isActive, issueGrant, sessionIsVerified, type Entitlement, type Executor } from "./access";
 import { AccessRequiredError, ConflictError, OwnershipError, ValidationError } from "./errors";
 
 export { AccessRequiredError, ConflictError, OwnershipError, RateLimitedError, ValidationError } from "./errors";
@@ -80,8 +78,10 @@ async function getOwnedReading(ex: Executor, id: string, sessionId: string): Pro
   requireOwnership(sessionId, row.browserSessionId);
   // An abandoned draft (or a locked draw nobody ever gained access to) is
   // gone after the draft TTL, whether or not the deletion job has run yet.
-  if (row.state === "drafting" && row.draftExpiresAt <= now()) throw new OwnershipError();
-  if (row.state === "locked" && row.draftExpiresAt <= now() && !isActive(await getGrant(ex, row.id), now())) throw new OwnershipError();
+  if (row.draftExpiresAt <= now()) {
+    if (row.state === "drafting") throw new OwnershipError();
+    if (!isActive(await getGrant(ex, row.id), now())) throw new OwnershipError();
+  }
   return row;
 }
 
@@ -109,17 +109,6 @@ export async function safeStatus(row: ReadingRow, sessionId: string) {
     ? "eligible"
     : entitlementFor(row.id, session, grant, t);
 
-  // Legacy reading-bound verification details, only while that path is live.
-  let maskedEmail: string | undefined;
-  let pendingChallenge: ReturnType<typeof pendingChallengeSummary>;
-  if (row.state === "locked" && entitlement !== "granted") {
-    pendingChallenge = pendingChallengeSummary(await readingChallenges.list(row.id));
-  }
-  if (row.verifiedEmailId) {
-    const [ve] = await db.select().from(verifiedEmails).where(eq(verifiedEmails.id, row.verifiedEmailId)).limit(1);
-    if (ve) maskedEmail = maskEmail(ve.email);
-  }
-
   return {
     id: row.id,
     state: row.state,
@@ -131,8 +120,6 @@ export async function safeStatus(row: ReadingRow, sessionId: string) {
     entitlement,
     accessExpiresAt: isActive(grant, t) ? grant.expiresAt : undefined,
     sessionVerified: sessionIsVerified(session, t),
-    maskedEmail,
-    pendingChallenge,
     resultAvailable: entitlement === "granted",
   };
 }
@@ -184,7 +171,7 @@ export async function updateSelection(
 
   // Locking is idempotent: an identical retry against an already-locked
   // reading with the same slots is a safe no-op (PLAN.md section 3).
-  if (row.state === "locked" || row.state === "verified") {
+  if (row.state !== "drafting") {
     const already = JSON.parse(row.lockedSlots ?? "[]") as number[];
     const sameSlots = lock && already.length === 3 && already.every((s, i) => s === slots[i]);
     if (sameSlots) return safeStatus(row, sessionId);
@@ -230,7 +217,7 @@ export async function updateSelection(
     deckVersion: row.deckVersion,
     spreadVersion: row.spreadVersion,
     contentVersion: row.contentVersion,
-  });
+  } satisfies ResultSnapshot);
   patch.state = "locked";
 
   // The draw freezes and the access grant (guest claim included) commit
@@ -244,53 +231,6 @@ export async function updateSelection(
   return safeStatus(locked, sessionId);
 }
 
-/**
- * Legacy reading-bound verification (PLAN.md section 6). Still honored for
- * readings locked before session-level verification existed.
- */
-export async function requestOtp(readingId: string, sessionId: string, expectedRevision: number, email: string, ip: string) {
-  const row = await getOwnedReading(db, readingId, sessionId);
-  if (row.revision !== expectedRevision) throw new ConflictError(row.revision);
-  if (row.state !== "locked") throw new ValidationError("reading_not_locked");
-  const result = await issueCode(readingChallenges, readingId, email, ip);
-  return { readingId, ...result };
-}
-
-export async function verifyOtp(readingId: string, sessionId: string, code: string) {
-  const row = await getOwnedReading(db, readingId, sessionId);
-  const t = now();
-
-  // Idempotent success: a repeat verify from the same session succeeds
-  // quietly while access lasts (PLAN.md section 6).
-  if (row.state === "verified") {
-    if ((row.accessExpiresAt ?? 0) > t) return { ok: true as const };
-    throw new ValidationError("access_expired");
-  }
-  if (row.state !== "locked") throw new ValidationError("no_pending_challenge");
-
-  const result = await checkCode(readingChallenges, readingId, code);
-  if (!result.ok) return result;
-
-  const lookupHash = hashEmailForLookup(result.email);
-  const [ve] = await db
-    .insert(verifiedEmails)
-    .values({ id: randomId(), email: result.email, normalizedLookup: lookupHash, verifiedAt: t, lastActivityAt: t })
-    .onConflictDoUpdate({ target: verifiedEmails.normalizedLookup, set: { lastActivityAt: t } })
-    .returning();
-
-  await db.transaction(async (tx) => {
-    await tx
-      .update(readings)
-      .set({ state: "verified", verifiedEmailId: ve.id, verifiedAt: t, accessExpiresAt: t + ACCESS_TTL_MS, revision: row.revision + 1, updatedAt: t })
-      .where(and(eq(readings.id, readingId), eq(readings.state, "locked")));
-    await tx
-      .insert(readingAccessGrants)
-      .values({ id: randomId(), readingId, browserSessionId: sessionId, basis: "legacy_email", createdAt: t, expiresAt: t + ACCESS_TTL_MS })
-      .onConflictDoNothing({ target: readingAccessGrants.readingId });
-  });
-  return { ok: true as const };
-}
-
 export async function getResult(readingId: string, sessionId: string) {
   const row = await getOwnedReading(db, readingId, sessionId);
   if (row.state === "drafting" || !row.resultSnapshot) throw new OwnershipError();
@@ -299,8 +239,8 @@ export async function getResult(readingId: string, sessionId: string) {
   let grant = await getGrant(db, readingId);
   if (!isActive(grant, t)) {
     if (grant) throw new OwnershipError(); // expired access is simply gone
-    // No grant yet (the losing tab of a race, or a legacy lock) — a session
-    // that has since become entitled claims it here, idempotently.
+    // No grant yet (the losing tab of a race) — a session that has since
+    // become entitled claims it here, idempotently.
     grant = await db.transaction((tx) => issueGrant(tx, readingId, sessionId, t));
     if (!grant) throw new AccessRequiredError();
   }

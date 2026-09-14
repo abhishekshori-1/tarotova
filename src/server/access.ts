@@ -11,7 +11,7 @@ export type Executor = Pick<typeof db, "select" | "insert" | "update" | "delete"
 
 export type SessionRow = typeof browserSessions.$inferSelect;
 export type GrantRow = typeof readingAccessGrants.$inferSelect;
-export type GrantBasis = "guest" | "verified_session" | "legacy_email";
+export type GrantBasis = "guest" | "verified_session";
 
 /**
  * granted: this session holds an unexpired grant → the result is readable.

@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { eq } from "drizzle-orm";
 import { db } from "@/server/db/client";
-import { browserSessions, emailChallenges, rateLimitBuckets, readingAccessGrants, readings, sessionEmailChallenges } from "@/server/db/schema";
+import { browserSessions, rateLimitBuckets, readingAccessGrants, readings, sessionEmailChallenges } from "@/server/db/schema";
 import { randomId } from "@/server/ids";
 import { deleteExpired } from "@/server/cleanup";
-import { createReading, requestOtp, updateSelection } from "@/server/readingService";
+import { createReading, updateSelection } from "@/server/readingService";
 import { requestSessionCode } from "@/server/sessionVerification";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -22,7 +22,6 @@ async function count<T extends { id: unknown }>(rows: Promise<T[]>) {
 
 beforeEach(async () => {
   // Tests in this file share one database; each starts from empty tables.
-  await db.delete(emailChallenges);
   await db.delete(readingAccessGrants);
   await db.delete(sessionEmailChallenges);
   await db.delete(readings);
@@ -33,23 +32,20 @@ beforeEach(async () => {
 afterEach(() => vi.restoreAllMocks());
 
 describe("deleteExpired", () => {
-  it("removes abandoned drafts and locked-but-unclaimed readings after the draft window, with their challenges", async () => {
+  it("removes abandoned drafts and locked-but-unclaimed readings after the draft window", async () => {
     const session = await createSession();
     const granted = await createReading(session);
     await updateSelection(granted.id, session, granted.revision, [0, 1, 2], true, undefined);
     const abandoned = await createReading(session);
     const loser = await createReading(session);
-    const lockedLoser = await updateSelection(loser.id, session, loser.revision, [3, 4, 5], true, undefined);
-    await requestOtp(lockedLoser.id, session, lockedLoser.revision, "cleanup@example.com", "127.0.0.1");
+    await updateSelection(loser.id, session, loser.revision, [3, 4, 5], true, undefined);
 
     expect((await deleteExpired()).readings).toBe(0);
 
     const result = await deleteExpired(Date.now() + DAY + 1000);
     expect(result.readings).toBe(2);
-    expect(result.challenges).toBeGreaterThanOrEqual(1);
     expect(await count(db.select().from(readings).where(eq(readings.id, abandoned.id)))).toBe(0);
     expect(await count(db.select().from(readings).where(eq(readings.id, loser.id)))).toBe(0);
-    expect(await count(db.select().from(emailChallenges).where(eq(emailChallenges.readingId, loser.id)))).toBe(0);
     expect(await count(db.select().from(readings).where(eq(readings.id, granted.id)))).toBe(1);
   });
 

@@ -1,14 +1,6 @@
 import { and, eq, inArray, isNull, lte, notExists, or, sql } from "drizzle-orm";
 import { db } from "./db/client";
-import {
-  browserSessions,
-  deliveryEvents,
-  emailChallenges,
-  rateLimitBuckets,
-  readingAccessGrants,
-  readings,
-  sessionEmailChallenges,
-} from "./db/schema";
+import { browserSessions, deliveryEvents, rateLimitBuckets, readingAccessGrants, readings, sessionEmailChallenges } from "./db/schema";
 
 const DELIVERY_EVENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // PLAN.md section 7
 
@@ -29,14 +21,11 @@ export async function deleteExpired(now = Date.now()) {
     .where(and(lte(readings.draftExpiresAt, now), or(isNull(readings.accessExpiresAt), lte(readings.accessExpiresAt, now)), notExists(activeGrant)));
   const readingIds = expiredReadings.map((r) => r.id);
 
-  let challenges = 0;
   let grants = 0;
   if (readingIds.length > 0) {
-    challenges += (await db.delete(emailChallenges).where(inArray(emailChallenges.readingId, readingIds)).returning({ id: emailChallenges.id })).length;
     grants += (await db.delete(readingAccessGrants).where(inArray(readingAccessGrants.readingId, readingIds)).returning({ id: readingAccessGrants.id })).length;
     await db.delete(readings).where(inArray(readings.id, readingIds));
   }
-  challenges += (await db.delete(emailChallenges).where(lte(emailChallenges.expiresAt, now)).returning({ id: emailChallenges.id })).length;
   const sessionChallengesDeleted = (await db.delete(sessionEmailChallenges).where(lte(sessionEmailChallenges.expiresAt, now)).returning({ id: sessionEmailChallenges.id })).length;
   const buckets = (await db.delete(rateLimitBuckets).where(lte(rateLimitBuckets.expiresAt, now)).returning({ id: rateLimitBuckets.id })).length;
   const events = (await db.delete(deliveryEvents).where(lte(deliveryEvents.occurredAt, now - DELIVERY_EVENT_RETENTION_MS)).returning({ id: deliveryEvents.id })).length;
@@ -55,7 +44,6 @@ export async function deleteExpired(now = Date.now()) {
 
   return {
     readings: readingIds.length,
-    challenges,
     sessionChallenges: sessionChallengesDeleted,
     grants,
     rateLimitBuckets: buckets,

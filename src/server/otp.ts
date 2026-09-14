@@ -9,12 +9,12 @@ export function generateCode(): string {
   return randomInt(0, 10 ** CODE_DIGITS).toString().padStart(CODE_DIGITS, "0");
 }
 
-/** What a code unlocks. A digest for one purpose can never verify another. */
-export type OtpPurpose = "reading" | "session_continuation";
+/** What a code unlocks; part of the digest so a future purpose can never reuse a code. */
+export type OtpPurpose = "session_continuation";
 
 export interface OtpContext {
   purpose: OtpPurpose;
-  /** The reading id or browser session id the challenge belongs to. */
+  /** The browser session id the challenge belongs to. */
   subjectId: string;
   challengeId: string;
   generation: number;

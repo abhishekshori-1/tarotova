@@ -28,7 +28,7 @@ export const readings = pgTable(
     browserSessionId: text("browser_session_id")
       .notNull()
       .references(() => browserSessions.id),
-    state: text("state").notNull().default("drafting"), // drafting | locked | verified
+    state: text("state").notNull().default("drafting"), // drafting | locked
     revision: integer("revision").notNull().default(0),
     focus: text("focus").notNull().default("general"),
     question: text("question"), // optional intention, editable while drafting, frozen at lock
@@ -40,10 +40,8 @@ export const readings = pgTable(
     spreadVersion: text("spread_version").notNull(),
     contentVersion: text("content_version").notNull(),
     resultSnapshot: text("result_snapshot"), // JSON, frozen at lock time
-    verifiedEmailId: text("verified_email_id").references(() => verifiedEmails.id),
     draftExpiresAt: epochMs("draft_expires_at").notNull(),
     accessExpiresAt: epochMs("access_expires_at"),
-    verifiedAt: epochMs("verified_at"),
     createdAt: epochMs("created_at").notNull(),
     updatedAt: epochMs("updated_at").notNull(),
   },
@@ -62,31 +60,9 @@ export const verifiedEmails = pgTable(
   (t) => [uniqueIndex("verified_emails_lookup_idx").on(t.normalizedLookup)],
 );
 
-export const emailChallenges = pgTable(
-  "email_challenges",
-  {
-    id: text("id").primaryKey(),
-    readingId: text("reading_id")
-      .notNull()
-      .references(() => readings.id),
-    intendedEmail: text("intended_email").notNull(),
-    codeHmac: text("code_hmac").notNull(),
-    keyVersion: integer("key_version").notNull(),
-    generation: integer("generation").notNull(),
-    attempts: integer("attempts").notNull().default(0),
-    expiresAt: epochMs("expires_at").notNull(),
-    consumedAt: epochMs("consumed_at"),
-    supersededAt: epochMs("superseded_at"),
-    providerMessageId: text("provider_message_id"),
-    sendStatus: text("send_status").notNull().default("pending"), // pending | accepted | failed
-    createdAt: epochMs("created_at").notNull(),
-  },
-  (t) => [index("email_challenges_reading_idx").on(t.readingId, t.generation)],
-);
-
 // Who may read a locked reading's result, independent of email identity
 // (docs/ACCESS-FLOW.md section 5). One grant per reading; a browser that
-// merely knows the URL never gets one.
+// merely knows the URL never gets one. Basis: guest | verified_session.
 export const readingAccessGrants = pgTable(
   "reading_access_grants",
   {

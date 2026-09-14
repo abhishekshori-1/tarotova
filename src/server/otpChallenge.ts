@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "./db/client";
-import { emailChallenges, sessionEmailChallenges, suppressedEmails } from "./db/schema";
+import { sessionEmailChallenges, suppressedEmails } from "./db/schema";
 import { randomId } from "./ids";
 import { generateCode, hashCode, verifyCodeDigest, OTP_TTL_MS, MAX_ATTEMPTS, type OtpPurpose } from "./otp";
 import { getEmailProvider } from "./email";
@@ -36,10 +36,7 @@ interface NewChallenge {
   createdAt: number;
 }
 
-/**
- * The two challenge tables (per reading, per browser session) share one
- * lifecycle; only the subject column differs. Each store adapts one table.
- */
+/** Persistence for one kind of challenge; the lifecycle below is table-agnostic. */
 export interface ChallengeStore {
   purpose: OtpPurpose;
   list(subjectId: string): Promise<ChallengeRow[]>;
@@ -51,36 +48,6 @@ export interface ChallengeStore {
   /** Atomic single-use claim; false if another request consumed it first. */
   consume(id: string, at: number): Promise<boolean>;
 }
-
-export const readingChallenges: ChallengeStore = {
-  purpose: "reading",
-  list: (readingId) => db.select().from(emailChallenges).where(eq(emailChallenges.readingId, readingId)),
-  supersede: async (id, at) => {
-    await db.update(emailChallenges).set({ supersededAt: at }).where(eq(emailChallenges.id, id));
-  },
-  insert: async ({ subjectId, ...row }) => {
-    await db.insert(emailChallenges).values({ ...row, readingId: subjectId, attempts: 0, sendStatus: "pending" });
-  },
-  markDelivery: async (id, sendStatus, providerMessageId) => {
-    await db.update(emailChallenges).set({ sendStatus, providerMessageId }).where(eq(emailChallenges.id, id));
-  },
-  incrementAttempts: async (id) => {
-    const [row] = await db
-      .update(emailChallenges)
-      .set({ attempts: sql`${emailChallenges.attempts} + 1` })
-      .where(and(eq(emailChallenges.id, id), isNull(emailChallenges.consumedAt), isNull(emailChallenges.supersededAt)))
-      .returning({ attempts: emailChallenges.attempts });
-    return row?.attempts;
-  },
-  consume: async (id, at) => {
-    const [row] = await db
-      .update(emailChallenges)
-      .set({ consumedAt: at })
-      .where(and(eq(emailChallenges.id, id), isNull(emailChallenges.consumedAt), isNull(emailChallenges.supersededAt)))
-      .returning({ id: emailChallenges.id });
-    return !!row;
-  },
-};
 
 export const sessionChallenges: ChallengeStore = {
   purpose: "session_continuation",
