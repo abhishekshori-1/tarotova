@@ -9,11 +9,11 @@ import { FOCUS_META } from "./focuses";
  * direct, no forecast.
  */
 export function buildOverview(situation: CardContent, challenge: CardContent, guidance: CardContent, focus: Focus): string {
-  const about = focus === "general" ? "" : ` You asked about ${FOCUS_META[focus].label.toLowerCase()}, so read it that way.`;
+  const about = focus === "general" ? "" : ` Hold these themes alongside what matters to you about ${FOCUS_META[focus].label.toLowerCase()}.`;
   return (
-    `Where you are is ${situation.name}. ${situation.coreMeaning} ` +
-    `What's in the way is ${challenge.name}. ${challenge.coreMeaning} ` +
-    `The way through is ${guidance.name}, and it asks for ${guidance.keywords[0]}, not a quick fix.${about} ` +
-    `That's the shape of it, as I read it. Not a forecast, just a way in. What you do with it is yours.`
+    `${situation.name} offers a starting point. ${situation.coreMeaning} ` +
+    `The challenge card is ${challenge.name}. ${challenge.coreMeaning} What might be difficult about that theme? ` +
+    `For guidance, consider ${guidance.name}. ${guidance.coreMeaning}${about} ` +
+    `What connects with your experience, and what would you leave aside?`
   );
 }

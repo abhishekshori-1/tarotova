@@ -9,8 +9,15 @@ the transition, rollback and the release checklist).
 
 `PLAN.md` section 1's contingency — 22 Major Arcana, not 78 — remains in
 force: no illustrator or RWS practitioner has been sourced (section 13).
-`CONTENT_VERSION` is `content.v4-draft` (v2: overview and reflections in the reader's voice; v3: core meaning frozen into snapshots; v4: all 22 cards rewritten as themes to consider, never findings about the reader, with a test that bans verdict phrasing) because the copy has not had the
-practitioner review section 9 sets as a release gate.
+`CONTENT_VERSION` is `content.v5-draft` (v2: overview and reflections in the
+reader's voice; v3: core meaning frozen into snapshots; v4: all 22 cards
+rewritten as themes to consider; v5: remaining assumptions revised, with
+the overview and reflections brought into the same stance). A wording test
+guards selected past verdict phrases; it does not replace editorial review.
+The copy has not had the practitioner review section 9 sets as a release gate.
+Content version is recorded again at lock, alongside the text actually used,
+so drafts spanning a deployment receive the correct label. Previously locked
+readings retain their frozen text and version.
 
 Of the v2 plan, **Release A** (guest-first access, question capture, fast
 selection, visual foundation, retention, CI and browser tests) is live, and

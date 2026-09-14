@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { eq } from "drizzle-orm";
+import { CARDS } from "@/content/cards";
+import { CONTENT_VERSION } from "@/content/versions";
 import { db } from "@/server/db/client";
-import { browserSessions, rateLimitBuckets } from "@/server/db/schema";
+import { browserSessions, rateLimitBuckets, readings } from "@/server/db/schema";
 import { randomId } from "@/server/ids";
 import { consoleEmailProvider } from "@/server/email/console-provider";
 import {
@@ -155,6 +158,49 @@ describe("reshuffle", () => {
 });
 
 describe("updateSelection locking", () => {
+  it("labels content with the release used at lock when a draft spans a deployment", async () => {
+    const session = await createSession();
+    const draft = await createReading(session, "work");
+    // Persist the state of a draft created by an earlier deployment.
+    await db.update(readings).set({ contentVersion: "content.previous-draft" }).where(eq(readings.id, draft.id));
+
+    await updateSelection(draft.id, session, draft.revision, [0, 1, 2], true, undefined);
+
+    const [row] = await db.select().from(readings).where(eq(readings.id, draft.id));
+    const snapshot = JSON.parse(row.resultSnapshot!);
+    expect(row.contentVersion).toBe(CONTENT_VERSION);
+    expect(snapshot.contentVersion).toBe(CONTENT_VERSION);
+    const result = await getResult(draft.id, session);
+    for (const card of result.cards) {
+      const source = CARDS.find((c) => c.id === card.id)!;
+      expect(card.coreMeaning).toBe(source.coreMeaning);
+      expect(card.interpretation).toBe(source.position[card.position]);
+      expect(card.focusNote).toBe(source.focus.work);
+    }
+  });
+
+  it("preserves an earlier locked snapshot and its version on read and re-lock", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    const [row] = await db.select().from(readings).where(eq(readings.id, locked.id));
+    const snapshot = JSON.parse(row.resultSnapshot!);
+    snapshot.contentVersion = "content.previous-draft";
+    snapshot.overview = "An overview frozen by the earlier release.";
+    snapshot.reflection = "A reflection frozen by the earlier release.";
+    snapshot.cards[0].coreMeaning = "A core meaning frozen by the earlier release.";
+    const frozen = JSON.stringify(snapshot);
+    await db.update(readings).set({ contentVersion: snapshot.contentVersion, resultSnapshot: frozen }).where(eq(readings.id, locked.id));
+
+    const result = await getResult(locked.id, session);
+    expect(result.overview).toBe(snapshot.overview);
+    expect(result.reflection).toBe(snapshot.reflection);
+    expect(result.cards).toEqual(snapshot.cards);
+    await updateSelection(locked.id, session, locked.revision, [0, 1, 2], true, undefined);
+    const [after] = await db.select().from(readings).where(eq(readings.id, locked.id));
+    expect(after.contentVersion).toBe(snapshot.contentVersion);
+    expect(after.resultSnapshot).toBe(frozen);
+  });
+
   it("locks exactly three distinct slots and freezes a result snapshot", async () => {
     const session = await createSession();
     const locked = await lockedReading(session);

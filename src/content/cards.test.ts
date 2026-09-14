@@ -54,10 +54,12 @@ describe("CARDS deck composition", () => {
     }
   });
 
-  it("never states a verdict about the reader (docs/RELEASE-B-QUALITY-REVIEW.md, library stance)", () => {
+  it("does not reintroduce known verdict phrases from the library review", () => {
     // The personalized answer grounds itself on this text, so a finding
     // written here ("you have more than you credit", "looser than it
     // feels", "no catch") becomes a finding in someone's reading.
+    // These are selected wording regressions, not a semantic guarantee.
+    // New copy and complete readings still need editorial review.
     const verdicts = [
       /than it (feels|deserves|needs|probably)/i,
       /isn'?t actually/i,
@@ -67,6 +69,7 @@ describe("CARDS deck composition", () => {
       /(worry|anxiety) (can|will|tends to) fill/i,
       /is(n'?t| not) (permanent|fixed|true)\b/i,
       /(usually|tends to) (isn'?t|is not)/i,
+      /ambiguity here is real|some of this is still unclear|the extreme you are used to|rather than a setback to fear/i,
     ];
     for (const card of CARDS) {
       const texts = [card.coreMeaning, ...Object.values(card.position), ...Object.values(card.focus)];

@@ -202,6 +202,9 @@ export async function updateSelection(
   const effectiveFocus = (focus ?? row.focus) as Focus;
   patch.lockedSlots = JSON.stringify(slots);
   patch.resolvedCardIds = JSON.stringify(resolvedCardIds);
+  // Drafts can span a deployment. The text below comes from this release,
+  // so record its version with the snapshot in the same atomic update.
+  patch.contentVersion = CONTENT_VERSION;
   patch.resultSnapshot = JSON.stringify({
     focus: effectiveFocus,
     overview: buildOverview(situation, challenge, guidance, effectiveFocus),
@@ -218,7 +221,7 @@ export async function updateSelection(
     })),
     deckVersion: row.deckVersion,
     spreadVersion: row.spreadVersion,
-    contentVersion: row.contentVersion,
+    contentVersion: CONTENT_VERSION,
   } satisfies ResultSnapshot);
   patch.state = "locked";
 
