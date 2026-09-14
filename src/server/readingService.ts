@@ -11,6 +11,7 @@ import { buildOverview } from "@/content/overview";
 import { pickReflection } from "@/content/reflections";
 import { entitlementFor, getGrant, getSessionRow, isActive, issueGrant, sessionIsVerified, type Entitlement, type Executor } from "./access";
 import { AccessRequiredError, ConflictError, OwnershipError, ValidationError } from "./errors";
+import { getGeneration, viewOf } from "./generation/store";
 
 export { AccessRequiredError, ConflictError, OwnershipError, RateLimitedError, ValidationError } from "./errors";
 
@@ -231,7 +232,12 @@ export async function updateSelection(
   return safeStatus(locked, sessionId);
 }
 
-export async function getResult(readingId: string, sessionId: string) {
+/**
+ * The locked reading plus the grant that authorizes reading it. Shared by
+ * the result endpoint and the contextual-answer service so both enforce
+ * exactly the same entitlement (docs/ACCESS-FLOW.md section 7).
+ */
+export async function loadGrantedReading(readingId: string, sessionId: string) {
   const row = await getOwnedReading(db, readingId, sessionId);
   if (row.state === "drafting" || !row.resultSnapshot) throw new OwnershipError();
   const t = now();
@@ -245,5 +251,11 @@ export async function getResult(readingId: string, sessionId: string) {
     if (!grant) throw new AccessRequiredError();
   }
 
-  return { question: row.question, ...(JSON.parse(row.resultSnapshot) as ResultSnapshot) };
+  return { row, grant, snapshot: JSON.parse(row.resultSnapshot) as ResultSnapshot };
+}
+
+export async function getResult(readingId: string, sessionId: string) {
+  const { row, grant, snapshot } = await loadGrantedReading(readingId, sessionId);
+  const interpretation = viewOf(await getGeneration(db, readingId), grant.basis, row.question, now());
+  return { question: row.question, ...snapshot, interpretation };
 }

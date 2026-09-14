@@ -1,4 +1,7 @@
 import type { Focus } from "@/content/types";
+import type { InterpretationView } from "@/server/generation/types";
+
+export type { InterpretationOutput, InterpretationView } from "@/server/generation/types";
 
 export type Entitlement = "granted" | "eligible" | "verification_required";
 export type SendStatus = "pending" | "accepted" | "failed";
@@ -75,10 +78,11 @@ export function reshuffle(id: string, revision: number) {
   return fetch(`/api/readings/${id}/shuffle`, json("POST", { revision })).then((r) => asJson<ReadingStatus>(r));
 }
 
-export function updateSelection(id: string, revision: number, slots: number[], opts?: { lock?: boolean; focus?: Focus }) {
-  return fetch(`/api/readings/${id}/selection`, json("PUT", { revision, slots, lock: opts?.lock ?? false, focus: opts?.focus })).then((r) =>
-    asJson<ReadingStatus>(r),
-  );
+export function updateSelection(id: string, revision: number, slots: number[], opts?: { lock?: boolean; focus?: Focus; turnstileToken?: string | null }) {
+  return fetch(
+    `/api/readings/${id}/selection`,
+    json("PUT", { revision, slots, lock: opts?.lock ?? false, focus: opts?.focus, turnstileToken: opts?.turnstileToken ?? undefined }),
+  ).then((r) => asJson<ReadingStatus>(r));
 }
 
 export function getSession() {
@@ -110,8 +114,15 @@ export interface ReadingResult {
   overview: string;
   reflection: string;
   cards: ResultCard[];
+  /** The contextual answer's state; `disabled` means the feature is off server-side. */
+  interpretation: InterpretationView;
 }
 
 export function getResult(id: string) {
   return fetch(`/api/readings/${id}/result`, { cache: "no-store" }).then((r) => asJson<ReadingResult>(r));
+}
+
+/** Idempotent: claims or reports the reading's contextual answer (202 while it is being written). */
+export function requestInterpretation(id: string) {
+  return fetch(`/api/readings/${id}/interpretation`, json("POST")).then((r) => asJson<InterpretationView>(r));
 }

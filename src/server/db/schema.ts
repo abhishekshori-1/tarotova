@@ -136,3 +136,37 @@ export const suppressedEmails = pgTable("suppressed_emails", {
   firstSuppressedAt: epochMs("first_suppressed_at").notNull(),
   sourceEventId: text("source_event_id"),
 });
+
+// One contextual answer per reading (docs/PLAN-EXTENDED.md section 9,
+// docs/REVIEW-V2.md "Leases do not guarantee one paid call"). The row is the
+// lease: a request claims it with a conditional update, records
+// `provider_called` (and bumps `attempts`) *before* awaiting the provider,
+// and commits the validated output afterwards. Status:
+//   pending         claimed, lease active, no paid call made yet in this attempt
+//   provider_called paid call in flight (or lost — treat an expired lease as spent)
+//   succeeded       `output` holds the validated structured answer
+//   refused         safety routing chose an authored response; `safety_category` says which
+//   failed          `error_reason` says why; retryable while attempts < the cap
+export const readingGenerations = pgTable(
+  "reading_generations",
+  {
+    id: text("id").primaryKey(),
+    readingId: text("reading_id")
+      .notNull()
+      .references(() => readings.id),
+    kind: text("kind").notNull().default("interpretation"),
+    status: text("status").notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0), // paid provider calls made
+    leaseExpiresAt: epochMs("lease_expires_at").notNull(),
+    model: text("model"),
+    promptVersion: text("prompt_version").notNull(),
+    contentVersion: text("content_version").notNull(),
+    safetyCategory: text("safety_category"),
+    output: text("output"), // JSON, validated before it is stored
+    errorReason: text("error_reason"),
+    createdAt: epochMs("created_at").notNull(),
+    updatedAt: epochMs("updated_at").notNull(),
+    completedAt: epochMs("completed_at"),
+  },
+  (t) => [uniqueIndex("reading_generations_reading_kind_idx").on(t.readingId, t.kind)],
+);

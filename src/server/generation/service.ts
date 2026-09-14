@@ -1,0 +1,210 @@
+import { and, eq, inArray, lte, or, sql } from "drizzle-orm";
+import { db } from "../db/client";
+import { readingGenerations } from "../db/schema";
+import { randomId } from "../ids";
+import { checkAndIncrement } from "../rateLimit";
+import { loadGrantedReading } from "../readingService";
+import { CARDS } from "@/content/cards";
+import { FOCUS_META } from "@/content/focuses";
+import { isRefusalCategory, type SafetyCategory } from "@/content/safety";
+import { AnthropicProvider } from "./anthropic";
+import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, getGenerationConfig, type GenerationConfig } from "./config";
+import { INTERPRETATION_PROMPT_VERSION } from "./prompts";
+import { StubProvider } from "./stub";
+import { BUDGET_REASON, getGeneration, viewOf, type GenerationRow } from "./store";
+import type { GenerationProvider, InterpretationInput, InterpretationView } from "./types";
+import { validateInterpretation } from "./validate";
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+let stub: StubProvider | undefined;
+export function getGenerationProvider(config: GenerationConfig): GenerationProvider | undefined {
+  if (config.provider === "anthropic" && config.apiKey) {
+    return new AnthropicProvider(config.apiKey, { answer: config.model, classifier: config.classifierModel }, config.timeoutMs);
+  }
+  if (config.provider === "stub") return (stub ??= new StubProvider());
+  return undefined;
+}
+
+function log(event: string, fields: Record<string, unknown>) {
+  // Never the question, the answer or the key — ids, states and timings only.
+  console.info("[generation]", { event, ...fields });
+}
+
+/**
+ * The one entry point (docs/PLAN-EXTENDED.md section 9 "Contextual answer"):
+ * idempotent, authorized by the reading's access grant, and safe to call
+ * from several tabs — the row is a lease claimed with conditional updates,
+ * the budget is reserved *before* the provider is called, and the paid
+ * attempt is recorded *before* the response is awaited so a crash after
+ * the call can never produce an unbounded retry.
+ */
+export async function requestInterpretation(readingId: string, sessionId: string, ip: string): Promise<InterpretationView> {
+  const { row: reading, grant, snapshot } = await loadGrantedReading(readingId, sessionId);
+  const config = getGenerationConfig();
+  const now = Date.now();
+  const existing = await getGeneration(db, readingId);
+  const current = viewOf(existing, grant.basis, reading.question, now);
+
+  if (config.provider === null && config.enabled && reading.question) {
+    console.error("[generation_configuration]", { reason: config.configurationProblem });
+  }
+  // Only idle and retryable failures do work; everything else is already the answer.
+  if (current.status !== "idle" && !(current.status === "failed" && current.retryable)) return current;
+  const provider = getGenerationProvider(config);
+  if (!provider) return { status: "unavailable", reason: "not_configured" };
+
+  const claimed = await claim(existing, readingId, reading.contentVersion, now);
+  if (!claimed) {
+    // Another request holds the lease (or finished): report its state.
+    return viewOf(await getGeneration(db, readingId), grant.basis, reading.question, Date.now());
+  }
+  log("claimed", { readingId, generationId: claimed.id, attempts: claimed.attempts, basis: grant.basis });
+
+  // Budgets, reserved before any paid call (docs/REVIEW-V2.md finding 2).
+  const budget = await reserveBudget(sessionId, ip, config);
+  if (!budget.allowed) {
+    await db
+      .update(readingGenerations)
+      .set({ status: "failed", errorReason: BUDGET_REASON, leaseExpiresAt: now + budget.retryAfterMs, updatedAt: Date.now() })
+      .where(eq(readingGenerations.id, claimed.id));
+    log("budget_exhausted", { readingId, generationId: claimed.id, scope: budget.scope, retryAfterMs: budget.retryAfterMs });
+    return { status: "unavailable", reason: "busy", retryAfterSeconds: Math.max(1, Math.ceil(budget.retryAfterMs / 1000)) };
+  }
+
+  const question = reading.question!;
+  const drawnCardIds = snapshot.cards.map((c) => c.id);
+  const input: InterpretationInput = {
+    question,
+    focusLabel: FOCUS_META[snapshot.focus].label,
+    // The frozen snapshot carries the position text and focus note; the core
+    // meaning is looked up from the deck by id so the model sees exactly the
+    // curated meanings and nothing else.
+    cards: snapshot.cards.map((c) => ({
+      position: c.position,
+      name: c.name,
+      keywords: c.keywords,
+      coreMeaning: CARDS.find((card) => card.id === c.id)?.coreMeaning ?? "",
+      positionText: c.interpretation,
+      focusNote: c.focusNote,
+    })),
+  };
+
+  let attempts = claimed.attempts;
+  let safetyCategory = (claimed.safetyCategory as SafetyCategory | null) ?? null;
+  let lastReason = "unknown";
+
+  while (attempts < GENERATION_MAX_ATTEMPTS) {
+    attempts += 1;
+    const startedAt = Date.now();
+    // Recorded before the await: a lost response still counts as a paid attempt.
+    await db
+      .update(readingGenerations)
+      .set({ status: "provider_called", attempts, leaseExpiresAt: startedAt + GENERATION_LEASE_MS, model: config.model, updatedAt: startedAt })
+      .where(eq(readingGenerations.id, claimed.id));
+
+    if (safetyCategory === null) {
+      const classified = await provider.classify(question);
+      if (!classified.ok) {
+        lastReason = classified.reason;
+        log("classifier_failed", { readingId, generationId: claimed.id, attempts, reason: classified.reason, durationMs: Date.now() - startedAt });
+        if (classified.retryable) continue;
+        break;
+      }
+      safetyCategory = classified.value;
+      await db.update(readingGenerations).set({ safetyCategory, updatedAt: Date.now() }).where(eq(readingGenerations.id, claimed.id));
+      if (isRefusalCategory(safetyCategory)) {
+        const t = Date.now();
+        await db
+          .update(readingGenerations)
+          .set({ status: "refused", completedAt: t, updatedAt: t, leaseExpiresAt: t })
+          .where(eq(readingGenerations.id, claimed.id));
+        log("refused", { readingId, generationId: claimed.id, category: safetyCategory, attempts, durationMs: t - startedAt });
+        return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
+      }
+    }
+
+    const outcome = await provider.interpret(input);
+    if (!outcome.ok) {
+      lastReason = outcome.reason;
+      log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, uncertain: outcome.uncertain, durationMs: Date.now() - startedAt });
+      if (outcome.retryable) continue;
+      break;
+    }
+    const validated = validateInterpretation(outcome.value, drawnCardIds);
+    if (!validated.ok) {
+      lastReason = `output_invalid:${validated.reason}`;
+      log("output_rejected", { readingId, generationId: claimed.id, attempts, reason: validated.reason, detail: validated.detail, durationMs: Date.now() - startedAt });
+      continue;
+    }
+    const t = Date.now();
+    await db
+      .update(readingGenerations)
+      .set({ status: "succeeded", output: JSON.stringify(validated.output), model: outcome.model, completedAt: t, updatedAt: t, leaseExpiresAt: t })
+      .where(eq(readingGenerations.id, claimed.id));
+    log("succeeded", { readingId, generationId: claimed.id, attempts, model: outcome.model, usage: outcome.usage, durationMs: t - startedAt });
+    return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
+  }
+
+  const t = Date.now();
+  await db
+    .update(readingGenerations)
+    .set({ status: "failed", errorReason: lastReason, attempts, updatedAt: t, leaseExpiresAt: t })
+    .where(eq(readingGenerations.id, claimed.id));
+  log("failed", { readingId, generationId: claimed.id, attempts, reason: lastReason });
+  return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
+}
+
+/**
+ * Takes the lease. A missing row is inserted (a concurrent insert loses on
+ * the unique index); an existing row is re-claimed only when its lease has
+ * lapsed or it failed, and only while attempts remain. Returns undefined
+ * when someone else holds it.
+ */
+async function claim(existing: GenerationRow | undefined, readingId: string, contentVersion: string, now: number): Promise<GenerationRow | undefined> {
+  const leaseExpiresAt = now + GENERATION_LEASE_MS;
+  if (!existing) {
+    const [inserted] = await db
+      .insert(readingGenerations)
+      .values({
+        id: randomId(),
+        readingId,
+        kind: GENERATION_KIND,
+        status: "pending",
+        attempts: 0,
+        leaseExpiresAt,
+        promptVersion: INTERPRETATION_PROMPT_VERSION,
+        contentVersion,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoNothing({ target: [readingGenerations.readingId, readingGenerations.kind] })
+      .returning();
+    return inserted;
+  }
+  const [reclaimed] = await db
+    .update(readingGenerations)
+    .set({ status: "pending", leaseExpiresAt, errorReason: null, updatedAt: now })
+    .where(
+      and(
+        eq(readingGenerations.id, existing.id),
+        or(and(inArray(readingGenerations.status, ["pending", "provider_called"]), lte(readingGenerations.leaseExpiresAt, now)), eq(readingGenerations.status, "failed")),
+        sql`${readingGenerations.attempts} < ${GENERATION_MAX_ATTEMPTS}`,
+      ),
+    )
+    .returning();
+  return reclaimed;
+}
+
+async function reserveBudget(sessionId: string, ip: string, config: GenerationConfig) {
+  const scopes = [
+    { scope: "session", identifier: `session:${sessionId}`, limit: config.limits.sessionPerDay },
+    { scope: "ip", identifier: `ip:${ip}`, limit: config.limits.ipPerDay },
+    { scope: "global", identifier: "global", limit: config.limits.globalPerDay },
+  ];
+  for (const { scope, identifier, limit } of scopes) {
+    const result = await checkAndIncrement(identifier, { action: "generation_day", windowMs: DAY_MS, limit });
+    if (!result.allowed) return { allowed: false as const, scope, retryAfterMs: result.retryAfterMs };
+  }
+  return { allowed: true as const };
+}

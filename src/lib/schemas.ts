@@ -25,6 +25,8 @@ export const selectionSchema = z.object({
     .refine((s) => new Set(s).size === s.length, "Slots must be distinct."),
   lock: z.boolean().default(false),
   focus: focusSchema.optional(),
+  /** Required by the server for a guest lock when Turnstile is configured (docs/REVIEW-V2.md finding 2). */
+  turnstileToken: z.string().optional(),
 });
 
 export const verifySchema = z.object({
