@@ -72,14 +72,6 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
           </div>
         )}
       </div>
-      <details className="mt-4 text-sm text-[var(--fg-soft)]">
-        <summary className="cursor-pointer">Where this comes from</summary>
-        <p className="prose-measure mt-2">
-          The meanings of the cards are written by people. The part about your question is written by an AI (Claude, made by Anthropic),
-          using only those meanings and what you typed. Take it as one reader&apos;s take, not a prediction. It&apos;s kept with this reading for
-          30 days.
-        </p>
-      </details>
     </section>
   );
 }

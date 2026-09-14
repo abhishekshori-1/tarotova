@@ -16,15 +16,14 @@ export default function PrivacyPage() {
         marketing, and we don&apos;t require an account.
       </p>
 
-      <h2 className="mt-8 text-lg font-semibold">Your question and the personalized reflection</h2>
+      <h2 className="mt-8 text-lg font-semibold">Your question</h2>
       <p className="mt-2">
-        If you type a question, it is stored with your reading and used to write the reflection that
-        appears under &ldquo;For your question&rdquo;. That reflection is written by an AI model run by
-        Anthropic: we send it your question, the focus you chose and the meanings of your three cards —
-        never your email address, your session or any other reading. Before that, a separate model call
-        checks whether the question is one a card reading should not answer (a crisis, or a request for
-        medical or legal instruction); in that case you see a written note and resources instead. Questions
-        are processed under Anthropic&apos;s API terms and are not used to train their models.
+        If you type a question, it is stored with your reading and used to write the part of the reading
+        that responds to it. To do that, the question, the focus you chose and the meanings of your three
+        cards are processed by a third-party service provider on our behalf, under terms that do not allow
+        it to be used for any other purpose. Your email address, your session and your other readings are
+        never sent with it. Some questions, such as those describing a crisis or asking for medical or
+        legal instruction, are not read against the cards; you see a written note and resources instead.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Cookies</h2>
