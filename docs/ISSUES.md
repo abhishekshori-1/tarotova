@@ -39,14 +39,26 @@ latency measurement has been made for these fixes yet.
 
 ## Issue 2: OTP emails do not arrive; no Resend records
 
-**Status:** Several reproducible code defects fixed locally. Production's
-underlying send failure is not yet confirmed. The user reports an error or
-“Too many attempts” on the latest attempt.
+**Status:** Root cause found and confirmed on 2026-09-14: the `mail.tarotova.com`
+sending domain's status in the Resend dashboard was **"Not Started"** —
+verification had never been submitted, despite the DKIM/SPF/MX/DMARC records
+being correctly configured and resolving (re-confirmed independently via
+`dig @1.1.1.1` at the time this was found). An unverified domain rejects
+sends silently at Resend's end; a request never gets far enough to leave any
+dashboard or log trail, which matches exactly what was observed (no email,
+no Resend records, no obvious error). The DNS-resolves check done during
+initial setup was necessary but not sufficient — it never confirmed Resend's
+own dashboard had actually flipped the domain to verified.
 
-A genuine `429 rate_limited` occurs before provider submission, so that
-request cannot send an email. Absence of dashboard entries alone does not
-prove that every request failed before reaching Resend: check the key's
-account, log filters, and actual HTTP result too.
+Verification was manually triggered from the Resend dashboard; status moved
+to **"Pending"** (Resend's own message: "Looking for DNS records: this may
+take a few hours depending on Cloudflare's propagation time"). Awaiting
+"Verified" before a real send test.
+
+Separately, a genuine `429 rate_limited` occurs before provider submission,
+so that request cannot send an email. Absence of dashboard entries alone
+does not prove that every request failed before reaching Resend: check the
+key's account, log filters, and actual HTTP result too.
 
 ### Confirmed defects and changes
 

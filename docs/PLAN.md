@@ -1,5 +1,15 @@
 Tarotova (proposed name) — v1 product, engineering, and launch plan
 
+> **Planning update — 14 September 2026:** This is the original v1 baseline.
+> [PLAN-EXTENDED.md](./PLAN-EXTENDED.md) defines the proposed UI/UX redesign,
+> question companion and guided journeys, visual direction, responsive behavior,
+> motion and phased implementation. It supersedes this document's minimal visual and
+> no-free-text-question scope where explicitly stated. [ACCESS-FLOW.md](./ACCESS-FLOW.md)
+> replaces the planned per-reading email gate with one guest reading and
+> second-reading continuation verification. For what is actually
+> built/deployed, use [IMPLEMENTATION.md](./IMPLEMENTATION.md) and
+> [INFRA.md](./INFRA.md); the dated setup assumptions below are historical.
+
 Prepared and reviewed 13 September 2026; revised same day after a second review pass. Status: proposed implementation; no application or external services have been created. Tarotova is the recommended working name, replacing Quiet Arcana. A live registry lookup found no registration for `tarotova.com`; registrar checkout and a brand-conflict check remain necessary before purchase. See [DOMAIN-RESEARCH.md](./DOMAIN-RESEARCH.md) for evidence, alternatives, and prices. See section 14 for what changed in this revision and why.
 
 All local project files, generated assets, caches, temporary files, and project tooling configuration must remain under `/Users/abhishekshori/dev/288b8f92d9/`. Do not inspect other local directories. Any future tool that requires access elsewhere must be identified before use.

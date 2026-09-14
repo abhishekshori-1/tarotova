@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Chariot">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f1e8" stroke="#30253b" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#30253b">VII</text>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">VII</text>
   <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <rect x="85" y="170" width="70" height="45"/>
-    <circle cx="90" cy="235" r="16" stroke="#9b7849"/>
-    <circle cx="150" cy="235" r="16" stroke="#9b7849"/>
+    <circle cx="90" cy="235" r="16" stroke="#b8955a"/>
+    <circle cx="150" cy="235" r="16" stroke="#b8955a"/>
   </g>
   <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Chariot</text>
 </svg>

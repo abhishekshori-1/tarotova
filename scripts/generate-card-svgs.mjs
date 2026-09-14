@@ -12,10 +12,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.resolve(__dirname, "../public/cards");
 mkdirSync(OUT, { recursive: true });
 
-const PLUM = "#30253b";
-const BRONZE = "#9b7849";
-const IVORY = "#f6f1e8";
+// Palette follows docs/PLAN-EXTENDED.md section 3: faces are parchment with
+// ink linework and a gold frame (they are revealed on the parchment reading
+// surface); the back belongs to the night stage.
+const PLUM = "#30253b"; // ink
+const BRONZE = "#b8955a"; // gold, darkened for contrast on parchment
+const IVORY = "#f6f0e7"; // parchment
 const SAGE = "#4f5e48";
+const NIGHT = "#211b30";
+const GOLD = "#d5b47a";
+const VIOLET = "#ac9bcb";
 
 const W = 240;
 const H = 384;
@@ -23,9 +29,9 @@ const CX = W / 2;
 
 function frame({ glyph, numeral, name }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${name}">
-  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="${IVORY}" stroke="${PLUM}" stroke-width="3"/>
-  <rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="8" fill="none" stroke="${BRONZE}" stroke-width="1.5"/>
-  <text x="${CX}" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="${PLUM}">${numeral}</text>
+  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="${IVORY}" stroke="${BRONZE}" stroke-width="3"/>
+  <rect x="12" y="12" width="${W - 24}" height="${H - 24}" rx="8" fill="none" stroke="${VIOLET}" stroke-width="1" opacity="0.7"/>
+  <text x="${CX}" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="${BRONZE}">${numeral}</text>
   <g stroke="${PLUM}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
     ${glyph}
   </g>
@@ -117,11 +123,17 @@ for (const card of CARDS) {
 }
 
 const back = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Card back">
-  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="${PLUM}" stroke="${BRONZE}" stroke-width="3"/>
-  <rect x="14" y="14" width="${W - 28}" height="${H - 28}" rx="8" fill="none" stroke="${BRONZE}" stroke-width="1.5"/>
-  <circle cx="${CX}" cy="${CY}" r="46" fill="none" stroke="${IVORY}" stroke-width="2"/>
-  <circle cx="${CX}" cy="${CY}" r="26" fill="none" stroke="${IVORY}" stroke-width="2"/>
-  <path d="M ${CX} ${CY - 70} l 0 140 M ${CX - 70} ${CY} l 140 0" stroke="${IVORY}" stroke-width="1.5" opacity="0.6"/>
+  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14" fill="${NIGHT}" stroke="${GOLD}" stroke-width="3"/>
+  <rect x="14" y="14" width="${W - 28}" height="${H - 28}" rx="8" fill="none" stroke="${GOLD}" stroke-width="1" opacity="0.7"/>
+  <circle cx="${CX}" cy="${CY}" r="58" fill="none" stroke="${VIOLET}" stroke-width="1" opacity="0.5"/>
+  <circle cx="${CX}" cy="${CY}" r="42" fill="none" stroke="${GOLD}" stroke-width="1.5"/>
+  <circle cx="${CX}" cy="${CY}" r="22" fill="none" stroke="${GOLD}" stroke-width="1.5"/>
+  <circle cx="${CX}" cy="${CY}" r="4" fill="${GOLD}"/>
+  <path d="M ${CX} ${CY - 74} l 0 148 M ${CX - 74} ${CY} l 148 0" stroke="${IVORY}" stroke-width="1" opacity="0.35"/>
+  <g fill="${IVORY}" opacity="0.7">
+    <circle cx="42" cy="58" r="1.5"/><circle cx="196" cy="84" r="1.2"/><circle cx="64" cy="318" r="1.2"/>
+    <circle cx="184" cy="300" r="1.5"/><circle cx="120" cy="40" r="1"/><circle cx="120" cy="344" r="1"/>
+  </g>
 </svg>`;
 writeFileSync(path.join(OUT, "back.svg"), back, "utf-8");
 

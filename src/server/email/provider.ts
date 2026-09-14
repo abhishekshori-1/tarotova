@@ -1,7 +1,8 @@
 export interface SendCodeParams {
   to: string;
   code: string;
-  readingId: string;
+  /** The reading or browser session the code belongs to (for dev tooling; never sent to the recipient). */
+  subjectId: string;
   idempotencyKey: string;
 }
 

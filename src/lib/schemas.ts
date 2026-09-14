@@ -3,6 +3,20 @@ import { FOCUSES } from "@/content/types";
 
 export const focusSchema = z.enum(FOCUSES);
 
+export const questionSchema = z.string().trim().max(500, "Keep your question under 500 characters.");
+
+export const createReadingSchema = z.object({ focus: focusSchema.optional(), question: questionSchema.optional() });
+
+export const contextSchema = z.object({
+  revision: z.number().int().min(0),
+  question: questionSchema.nullable(),
+});
+
+export const sessionCodeSchema = z.object({
+  email: z.string().trim().min(3).max(254).email(),
+  turnstileToken: z.string().optional(),
+});
+
 export const selectionSchema = z.object({
   revision: z.number().int().min(0),
   slots: z
@@ -11,13 +25,6 @@ export const selectionSchema = z.object({
     .refine((s) => new Set(s).size === s.length, "Slots must be distinct."),
   lock: z.boolean().default(false),
   focus: focusSchema.optional(),
-});
-
-export const otpSchema = z.object({
-  revision: z.number().int().min(0),
-  intent: z.enum(["send", "resend", "change"]),
-  email: z.string().trim().min(3).max(254).email(),
-  turnstileToken: z.string().optional(),
 });
 
 export const verifySchema = z.object({

@@ -12,16 +12,16 @@ class ConsoleEmailProvider implements EmailProvider {
   private lastCodes = new Map<string, string>();
 
   async sendVerificationCode(params: SendCodeParams): Promise<SendResult> {
-    this.lastCodes.set(params.readingId, params.code);
+    this.lastCodes.set(params.subjectId, params.code);
     console.log(
-      `[dev-email] reading=${params.readingId} to=${params.to} idempotencyKey=${params.idempotencyKey}\n` +
+      `[dev-email] subject=${params.subjectId} to=${params.to} idempotencyKey=${params.idempotencyKey}\n` +
         `[dev-email] verification code: ${params.code} (expires in 10 minutes)`,
     );
     return { status: "accepted", providerMessageId: `dev_${randomId(8)}` };
   }
 
-  lastCodeFor(readingId: string): string | undefined {
-    return this.lastCodes.get(readingId);
+  lastCodeFor(subjectId: string): string | undefined {
+    return this.lastCodes.get(subjectId);
   }
 }
 

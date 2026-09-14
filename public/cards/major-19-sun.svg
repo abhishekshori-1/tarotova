@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Sun">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f1e8" stroke="#30253b" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#30253b">XIX</text>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XIX</text>
   <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="120" cy="185" r="26"/>
-    <g stroke="#9b7849">
+    <g stroke="#b8955a">
       <line x1="120" y1="135" x2="120" y2="125"/>
       <line x1="159" y1="185" x2="169" y2="185"/>
       <line x1="81" y1="185" x2="71" y2="185"/>

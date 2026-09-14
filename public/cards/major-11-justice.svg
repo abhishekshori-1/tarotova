@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="Justice">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f1e8" stroke="#30253b" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#9b7849" stroke-width="1.5"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#30253b">XI</text>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XI</text>
   <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
     <line x1="120" y1="135" x2="120" y2="220"/>
     <line x1="70" y1="160" x2="170" y2="160"/>
-    <path d="M 70 160 l -14 30 h 28 z" stroke="#9b7849"/>
-    <path d="M 170 160 l -14 30 h 28 z" stroke="#9b7849"/>
+    <path d="M 70 160 l -14 30 h 28 z" stroke="#b8955a"/>
+    <path d="M 170 160 l -14 30 h 28 z" stroke="#b8955a"/>
   </g>
   <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">Justice</text>
 </svg>

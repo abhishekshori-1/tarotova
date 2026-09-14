@@ -13,6 +13,12 @@ export const browserSessions = pgTable("browser_sessions", {
   tokenHash: text("token_hash").notNull().unique(),
   createdAt: epochMs("created_at").notNull(),
   expiresAt: epochMs("expires_at").notNull(),
+  // The one email-free reading this browser gets; claimed atomically at lock.
+  guestReadingId: text("guest_reading_id"),
+  // Session-level verification (docs/ACCESS-FLOW.md section 5). Fixed
+  // window from the moment of verification; activity never extends it.
+  verifiedEmailId: text("verified_email_id"),
+  verifiedUntil: epochMs("verified_until"),
 });
 
 export const readings = pgTable(
@@ -22,9 +28,10 @@ export const readings = pgTable(
     browserSessionId: text("browser_session_id")
       .notNull()
       .references(() => browserSessions.id),
-    state: text("state").notNull().default("drafting"), // drafting | locked | verified
+    state: text("state").notNull().default("drafting"), // drafting | locked
     revision: integer("revision").notNull().default(0),
     focus: text("focus").notNull().default("general"),
+    question: text("question"), // optional intention, editable while drafting, frozen at lock
     shuffleMapping: text("shuffle_mapping").notNull(), // JSON: slot index -> card id (private)
     selectedSlots: text("selected_slots").notNull().default("[]"), // JSON int[], editable, order matters
     lockedSlots: text("locked_slots"), // JSON int[3], set once, order = Situation/Challenge/Guidance
@@ -33,10 +40,8 @@ export const readings = pgTable(
     spreadVersion: text("spread_version").notNull(),
     contentVersion: text("content_version").notNull(),
     resultSnapshot: text("result_snapshot"), // JSON, frozen at lock time
-    verifiedEmailId: text("verified_email_id").references(() => verifiedEmails.id),
     draftExpiresAt: epochMs("draft_expires_at").notNull(),
     accessExpiresAt: epochMs("access_expires_at"),
-    verifiedAt: epochMs("verified_at"),
     createdAt: epochMs("created_at").notNull(),
     updatedAt: epochMs("updated_at").notNull(),
   },
@@ -55,13 +60,36 @@ export const verifiedEmails = pgTable(
   (t) => [uniqueIndex("verified_emails_lookup_idx").on(t.normalizedLookup)],
 );
 
-export const emailChallenges = pgTable(
-  "email_challenges",
+// Who may read a locked reading's result, independent of email identity
+// (docs/ACCESS-FLOW.md section 5). One grant per reading; a browser that
+// merely knows the URL never gets one. Basis: guest | verified_session.
+export const readingAccessGrants = pgTable(
+  "reading_access_grants",
   {
     id: text("id").primaryKey(),
     readingId: text("reading_id")
       .notNull()
       .references(() => readings.id),
+    browserSessionId: text("browser_session_id")
+      .notNull()
+      .references(() => browserSessions.id),
+    basis: text("basis").notNull(), // guest | verified_session | legacy_email
+    createdAt: epochMs("created_at").notNull(),
+    expiresAt: epochMs("expires_at").notNull(),
+  },
+  (t) => [uniqueIndex("reading_access_grants_reading_idx").on(t.readingId), index("reading_access_grants_expiry_idx").on(t.expiresAt)],
+);
+
+// Session-continuation OTP (docs/ACCESS-FLOW.md section 6): verifies the
+// browser session, not a single reading. Separate from email_challenges so
+// a code for one purpose can never satisfy the other.
+export const sessionEmailChallenges = pgTable(
+  "session_email_challenges",
+  {
+    id: text("id").primaryKey(),
+    browserSessionId: text("browser_session_id")
+      .notNull()
+      .references(() => browserSessions.id),
     intendedEmail: text("intended_email").notNull(),
     codeHmac: text("code_hmac").notNull(),
     keyVersion: integer("key_version").notNull(),
@@ -74,7 +102,7 @@ export const emailChallenges = pgTable(
     sendStatus: text("send_status").notNull().default("pending"), // pending | accepted | failed
     createdAt: epochMs("created_at").notNull(),
   },
-  (t) => [index("email_challenges_reading_idx").on(t.readingId, t.generation)],
+  (t) => [index("session_email_challenges_session_idx").on(t.browserSessionId, t.generation)],
 );
 
 export const rateLimitBuckets = pgTable(

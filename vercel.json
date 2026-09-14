@@ -1,4 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["hnd1"]
+  "regions": ["hnd1"],
+  "crons": [{ "path": "/api/internal/cleanup", "schedule": "0 3 * * *" }],
+  "git": {
+    "deploymentEnabled": {
+      "feat/v2": false
+    }
+  }
 }

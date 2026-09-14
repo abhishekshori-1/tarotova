@@ -1,32 +1,50 @@
 import type { Focus } from "@/content/types";
 
+export type Entitlement = "granted" | "eligible" | "verification_required";
+export type SendStatus = "pending" | "accepted" | "failed";
+
+export interface PendingChallenge {
+  expiresAt: number;
+  sendStatus: SendStatus;
+  attemptsRemaining: number;
+  resendAvailableAt: number;
+}
+
 export interface ReadingStatus {
   id: string;
-  state: "drafting" | "locked" | "verified";
+  state: "drafting" | "locked";
   revision: number;
   focus: Focus;
+  question: string | null;
   selectedSlots: number[];
   locked: boolean;
-  maskedEmail?: string;
-  pendingChallenge?: {
-    expiresAt: number;
-    sendStatus: "pending" | "accepted" | "failed";
-    attemptsRemaining: number;
-    resendAvailableAt: number;
-  };
+  /** Whether this browser can read the result now, will be able to once it locks, or must verify first. */
+  entitlement: Entitlement;
+  accessExpiresAt?: number;
+  sessionVerified: boolean;
   resultAvailable: boolean;
+}
+
+export interface SessionVerification {
+  verified: boolean;
+  verifiedUntil?: number;
+  guestReadingUsed: boolean;
+  maskedEmail?: string;
+  pendingChallenge?: PendingChallenge;
+}
+
+export interface ApiError extends Error {
+  status: number;
+  body: { error?: string; reason?: string; currentRevision?: number };
+  retryAfterSeconds?: number;
 }
 
 async function asJson<T>(res: Response): Promise<T> {
   const body = (await res.json().catch(() => ({}))) as T & { error?: string };
   if (!res.ok) {
-    const err = new Error((body as { error?: string }).error ?? `http_${res.status}`) as Error & {
-      status: number;
-      body: unknown;
-      retryAfterSeconds?: number;
-    };
+    const err = new Error((body as { error?: string }).error ?? `http_${res.status}`) as ApiError;
     err.status = res.status;
-    err.body = body;
+    err.body = body as ApiError["body"];
     const retryAfter = res.headers.get("Retry-After");
     if (retryAfter !== null) {
       const seconds = Number(retryAfter);
@@ -37,55 +55,44 @@ async function asJson<T>(res: Response): Promise<T> {
   return body;
 }
 
-export function createReading() {
-  return fetch("/api/readings", { method: "POST" }).then((r) => asJson<ReadingStatus>(r));
+function json(method: string, body?: unknown) {
+  return { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) };
+}
+
+export function createReading(focus?: Focus, question?: string) {
+  return fetch("/api/readings", json("POST", { focus, question: question || undefined })).then((r) => asJson<ReadingStatus>(r));
 }
 
 export function getStatus(id: string) {
   return fetch(`/api/readings/${id}/status`, { cache: "no-store" }).then((r) => asJson<ReadingStatus>(r));
 }
 
+export function updateContext(id: string, revision: number, question: string | null) {
+  return fetch(`/api/readings/${id}/context`, json("PATCH", { revision, question })).then((r) => asJson<ReadingStatus>(r));
+}
+
 export function reshuffle(id: string, revision: number) {
-  return fetch(`/api/readings/${id}/shuffle`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ revision }),
-  }).then((r) => asJson<ReadingStatus>(r));
+  return fetch(`/api/readings/${id}/shuffle`, json("POST", { revision })).then((r) => asJson<ReadingStatus>(r));
 }
 
-export function updateSelection(
-  id: string,
-  revision: number,
-  slots: number[],
-  opts?: { lock?: boolean; focus?: Focus },
-) {
-  return fetch(`/api/readings/${id}/selection`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ revision, slots, lock: opts?.lock ?? false, focus: opts?.focus }),
-  }).then((r) => asJson<ReadingStatus>(r));
+export function updateSelection(id: string, revision: number, slots: number[], opts?: { lock?: boolean; focus?: Focus }) {
+  return fetch(`/api/readings/${id}/selection`, json("PUT", { revision, slots, lock: opts?.lock ?? false, focus: opts?.focus })).then((r) =>
+    asJson<ReadingStatus>(r),
+  );
 }
 
-export function sendOtp(
-  id: string,
-  revision: number,
-  email: string,
-  intent: "send" | "resend" | "change",
-  turnstileToken?: string | null,
-) {
-  return fetch(`/api/readings/${id}/otp`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ revision, email, intent, turnstileToken: turnstileToken ?? undefined }),
-  }).then((r) => asJson<{ sendStatus: "accepted" | "pending"; devCode?: string }>(r));
+export function getSession() {
+  return fetch("/api/session", { cache: "no-store" }).then((r) => asJson<SessionVerification>(r));
 }
 
-export function verifyCode(id: string, code: string) {
-  return fetch(`/api/readings/${id}/verify`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ code }),
-  }).then((r) => asJson<{ ok: boolean }>(r));
+export function requestSessionCode(email: string, turnstileToken?: string | null) {
+  return fetch("/api/session/verification", json("POST", { email, turnstileToken: turnstileToken ?? undefined })).then((r) =>
+    asJson<{ sendStatus: "accepted" | "pending"; devCode?: string }>(r),
+  );
+}
+
+export function confirmSessionCode(code: string) {
+  return fetch("/api/session/verification/confirm", json("POST", { code })).then((r) => asJson<{ ok: boolean }>(r));
 }
 
 export interface ResultCard {
@@ -98,6 +105,7 @@ export interface ResultCard {
   focusNote: string;
 }
 export interface ReadingResult {
+  question: string | null;
   focus: Focus;
   overview: string;
   reflection: string;

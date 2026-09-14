@@ -6,11 +6,21 @@ import { browserSessions } from "./db/schema";
 import { randomId } from "./ids";
 
 const COOKIE_NAME = "tarotova_sid";
-const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, PLAN.md section 6/9
+export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days, PLAN.md section 6/9
+const RENEW_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
 function hashToken(token: string): string {
   const secret = process.env.SESSION_HASH_SECRET ?? "";
   return createHash("sha256").update(secret).update(token).digest("hex");
+}
+
+/**
+ * The session slides on activity so a returning visitor keeps their
+ * readings, but the write is throttled to once a day so ordinary browsing
+ * doesn't touch the row on every request.
+ */
+export function sessionNeedsRenewal(expiresAt: number, now: number): boolean {
+  return expiresAt - now < SESSION_TTL_MS - RENEW_INTERVAL_MS;
 }
 
 export interface Session {
@@ -30,20 +40,29 @@ export interface Session {
 export async function resolveSession(): Promise<Session> {
   const store = await cookies();
   const existingToken = store.get(COOKIE_NAME)?.value;
+  const now = Date.now();
 
   if (existingToken) {
     const hash = hashToken(existingToken);
     const [row] = await db.select().from(browserSessions).where(eq(browserSessions.tokenHash, hash)).limit(1);
-    if (row && row.expiresAt > Date.now()) {
+    if (row && row.expiresAt > now) {
+      if (sessionNeedsRenewal(row.expiresAt, now)) {
+        await db.update(browserSessions).set({ expiresAt: now + SESSION_TTL_MS }).where(eq(browserSessions.id, row.id));
+        setCookie(store, existingToken);
+      }
       return { id: row.id, isNew: false };
     }
   }
 
   const token = randomBytes(32).toString("base64url");
   const id = randomId();
-  const now = Date.now();
   await db.insert(browserSessions).values({ id, tokenHash: hashToken(token), createdAt: now, expiresAt: now + SESSION_TTL_MS });
+  setCookie(store, token);
 
+  return { id, isNew: true };
+}
+
+function setCookie(store: Awaited<ReturnType<typeof cookies>>, token: string) {
   store.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: true,
@@ -51,6 +70,4 @@ export async function resolveSession(): Promise<Session> {
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
   });
-
-  return { id, isNew: true };
 }

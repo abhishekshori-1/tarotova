@@ -18,13 +18,13 @@ export function CardBackSlot({ slot, order, disabled, onClick }: Props) {
       disabled={disabled}
       aria-pressed={selected}
       aria-label={selected ? `Card slot ${slot + 1}, selected as card ${order}. Activate to deselect.` : `Card slot ${slot + 1}. Activate to select.`}
-      className={`group relative aspect-[5/8] w-full min-h-11 rounded-lg transition-transform duration-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-plum)] ${
-        selected ? "-translate-y-2" : "hover:-translate-y-1"
+      className={`card-frame group relative aspect-[5/8] w-full min-h-11 rounded-[0.6rem] transition-transform duration-200 ease-out ${
+        selected ? "-translate-y-2 ring-2 ring-[var(--gold)] ring-offset-2 ring-offset-[var(--night)]" : "hover:-translate-y-1"
       } disabled:opacity-40 disabled:pointer-events-none motion-reduce:transform-none`}
     >
-      <Image src="/cards/back.svg" alt="" fill sizes="120px" priority={slot < 8} />
+      <Image src="/cards/back.svg" alt="" fill sizes="(min-width: 1200px) 140px, (min-width: 600px) 16vw, 22vw" priority={slot < 8} className="rounded-[0.6rem]" />
       {selected && (
-        <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-bronze)] text-xs font-semibold text-[var(--color-ivory)]">
+        <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--gold)] text-xs font-semibold text-[var(--night)]">
           {order}
         </span>
       )}

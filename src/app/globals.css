@@ -1,19 +1,41 @@
 @import "tailwindcss";
 
+/*
+ * Two surfaces (docs/PLAN-EXTENDED.md section 3): the night stage for the
+ * opening and the card ritual, warm parchment for extended reading. Pages
+ * pick one via the (night) / (parchment) route groups; the body is always
+ * the night stage so parchment reads as a surface laid on it.
+ */
 :root {
-  --color-ivory: #f6f1e8;
-  --color-plum: #30253b;
+  --night: #14111f;
+  --night-raised: #211b30;
+  --night-line: rgba(245, 235, 221, 0.16);
+  --on-night: #f5ebdd;
+  --on-night-soft: #c4b9d0;
+  --gold: #d5b47a;
+  --gold-deep: #b8955a; /* gold on parchment needs the darker step for AA text */
+  --violet: #ac9bcb;
+
+  --parchment: #f6f0e7;
+  --parchment-raised: rgba(255, 255, 255, 0.45);
+  --parchment-line: #e2d9c8;
+  --ink: #30253b;
+  --ink-soft: #4a3a5c;
+  --sage: #4f5e48;
+
+  /* Legacy names still used by older components. */
+  --color-ivory: var(--parchment);
+  --color-plum: var(--ink);
   --color-bronze: #9b7849;
-  --color-sage: #4f5e48; /* darkened from the plan's #66745e for AA text contrast on ivory */
-  --color-plum-soft: #4a3a5c;
-  --color-border: #e2d9c8;
+  --color-sage: var(--sage);
+  --color-plum-soft: var(--ink-soft);
+  --color-border: var(--parchment-line);
+
+  --measure: 38rem; /* 55–70 characters of body text */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @theme inline {
-  --color-background: var(--color-ivory);
-  --color-foreground: var(--color-plum);
-  --color-accent: var(--color-bronze);
-  --color-success: var(--color-sage);
   --font-serif: var(--font-fraunces);
   --font-sans: var(--font-inter);
 }
@@ -29,24 +51,210 @@
   }
 }
 
+html {
+  background: var(--night);
+}
+
 body {
-  background: var(--color-ivory);
-  color: var(--color-plum);
+  background: var(--night);
+  color: var(--on-night);
   font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  font-size: 16px;
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-text-size-adjust: 100%;
 }
 
 h1,
 h2,
 h3 {
   font-family: var(--font-fraunces), Georgia, serif;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
 }
 
-:focus-visible {
-  outline: 2px solid var(--color-plum);
-  outline-offset: 2px;
+.display {
+  font-size: clamp(2.125rem, 1.4rem + 3vw, 4.25rem);
+  line-height: 1.05;
+}
+
+.title {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem);
 }
 
 .prose-measure {
-  max-width: 38rem; /* ~65 characters at 16px Inter */
+  max-width: var(--measure);
+}
+
+/* --- Surfaces --- */
+
+.surface-night {
+  --fg: var(--on-night);
+  --fg-soft: var(--on-night-soft);
+  --line: var(--night-line);
+  --accent: var(--gold);
+  --raised: var(--night-raised);
+  --field: rgba(245, 235, 221, 0.06);
+  --focus: var(--gold);
+  background: var(--night);
+  color: var(--fg);
+}
+
+.surface-parchment {
+  --fg: var(--ink);
+  --fg-soft: var(--ink-soft);
+  --line: var(--parchment-line);
+  --accent: var(--gold-deep);
+  --raised: var(--parchment-raised);
+  --field: rgba(255, 255, 255, 0.6);
+  --focus: var(--ink);
+  background: var(--parchment);
+  color: var(--fg);
+}
+
+/* A faint halo and a sparse engraved star map, kept behind content. */
+.star-map {
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(172, 155, 203, 0.22), transparent 70%),
+    radial-gradient(1.5px 1.5px at 12% 18%, rgba(245, 235, 221, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 28% 62%, rgba(245, 235, 221, 0.5) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 41% 30%, rgba(213, 180, 122, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 57% 75%, rgba(245, 235, 221, 0.45) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 66% 14%, rgba(245, 235, 221, 0.65) 50%, transparent 51%),
+    radial-gradient(1px 1px at 78% 48%, rgba(213, 180, 122, 0.55) 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 88% 82%, rgba(245, 235, 221, 0.5) 50%, transparent 51%),
+    radial-gradient(1px 1px at 8% 88%, rgba(245, 235, 221, 0.4) 50%, transparent 51%),
+    radial-gradient(1px 1px at 93% 26%, rgba(172, 155, 203, 0.6) 50%, transparent 51%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus, var(--gold));
+  outline-offset: 3px;
+}
+
+/* --- Shared controls (Tailwind utilities do layout; these carry the surface) --- */
+
+.btn-primary,
+.btn-secondary,
+.chip {
+  min-height: 2.75rem; /* 44px targets (docs/PLAN-EXTENDED.md section 7) */
+  border-radius: 0.625rem;
+  font-weight: 500;
+  transition: background-color 150ms, border-color 150ms, color 150ms, opacity 150ms, transform 150ms;
+}
+
+.surface-night .btn-primary {
+  background: var(--gold);
+  color: var(--night);
+}
+.surface-night .btn-primary:hover:not(:disabled) {
+  background: #e3c68e;
+}
+.surface-parchment .btn-primary {
+  background: var(--ink);
+  color: var(--parchment);
+}
+.surface-parchment .btn-primary:hover:not(:disabled) {
+  background: #3d3050;
+}
+
+.btn-secondary {
+  border: 1px solid var(--line);
+  color: var(--fg);
+  background: transparent;
+}
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.45;
+}
+
+.chip {
+  border-radius: 9999px;
+  border: 1px solid var(--line);
+  color: var(--fg);
+  background: transparent;
+  padding-inline: 1rem;
+  font-size: 0.875rem;
+  text-align: left;
+}
+.chip:hover {
+  border-color: var(--accent);
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--night);
+}
+.surface-parchment .chip[aria-pressed="true"] {
+  color: var(--parchment);
+}
+
+.field {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--field);
+  color: var(--fg);
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+}
+.field::placeholder {
+  color: var(--fg-soft);
+  opacity: 0.8;
+}
+
+.panel {
+  border: 1px solid var(--line);
+  background: var(--raised);
+  border-radius: 0.875rem;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.card-frame {
+  border-radius: 0.6rem;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+.sticky-tray {
+  padding-bottom: calc(1rem + var(--safe-bottom));
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.settle-in {
+  animation: settle-in 420ms ease-out both;
+}
+@keyframes reveal-card {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.reveal-card {
+  animation: reveal-card 360ms ease-out both;
 }
