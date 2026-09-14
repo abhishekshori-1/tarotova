@@ -9,7 +9,7 @@ the transition, rollback and the release checklist).
 
 `PLAN.md` section 1's contingency — 22 Major Arcana, not 78 — remains in
 force: no illustrator or RWS practitioner has been sourced (section 13).
-`CONTENT_VERSION` is `content.v1-draft` because the copy has not had the
+`CONTENT_VERSION` is `content.v2-draft` (v2: the templated overview and the reflections rewritten in the reader's voice) because the copy has not had the
 practitioner review section 9 sets as a release gate.
 
 Of the v2 plan, **Release A** (guest-first access, question capture, fast
@@ -22,7 +22,7 @@ guided journeys) is not started.
 ## Done
 
 **Product flow.** Home (question composer, focus, two actions) → choose 3 of
-22 face-down cards → reveal → result → "Begin another reading" → email
+22 face-down cards → turn them over → result → "Pull again" → email
 verification once per browser per 30 days → further readings.
 
 | Layer | What's implemented |
@@ -46,7 +46,7 @@ verification once per browser per 30 days → further readings.
 | Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
 | Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
 | Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
-| Tests | 157 Vitest tests in 21 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
+| Tests | 172 Vitest tests in 21 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
 | CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
 
 ## Release B — what is built and what gates it
@@ -55,8 +55,10 @@ Built (behind `GENERATION_ENABLED=false` by default): the schema (`0003`,
 additive), the lease/budget service, the Anthropic adapter (plain `fetch`,
 forced tool use, 20 s timeout), the intent classifier and authored safety
 responses, output validation, the result-page panel with a reserved
-four-line slot, per-card relevance and "One thing to try", the privacy
-copy, the `eval/` set (49 questions across the four focuses, ambiguous,
+four-line slot, per-card paragraphs and "Try this", the privacy copy (a
+third-party processor is named, no AI or vendor anywhere in the app), the
+reader's voice in the prompt (`interpretation.v3`, see `RELEASE-B.md`) and
+the interface, the `eval/` set (49 questions across the four focuses, ambiguous,
 long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
 
 **Not yet done, and required before the flag goes on in production:**

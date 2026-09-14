@@ -155,8 +155,8 @@ show **Verified** there. Check that page, not `dig`, when something is off.
 | Account | Not yet created; key goes into `ANTHROPIC_API_KEY` (Secret) and a spend limit into the console |
 | Endpoint | `https://api.anthropic.com/v1/messages`, plain `fetch`, forced tool use, 20 s timeout, `user-agent: Tarotova/0.2` |
 | What is sent | The question, the focus label and the three drawn cards' curated meanings. Never email, session ids or other readings |
-| Data handling | Anthropic API terms: not used for training. The privacy page says so |
-| Status | Code complete on `feat/release-b`; **no real call has been made yet**. `npm run eval` is the first one, on purpose |
+| Data handling | Anthropic API terms (no training on API data). The app never names the vendor; the privacy page says "a third-party service provider on our behalf" |
+| Status | Live locally against the real API since 2026-09-14 (organization-level key + `ANTHROPIC_WORKSPACE_ID`); three eval runs done, routing passes; not yet enabled in production |
 
 ## Deployment flow
 

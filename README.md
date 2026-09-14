@@ -20,6 +20,7 @@ as a working product with draft content.
 | [`docs/PLAN.md`](./docs/PLAN.md) | The original v1 product/engineering plan (`PLAN.md section N` below refers to it) |
 | [`docs/PLAN-EXTENDED.md`](./docs/PLAN-EXTENDED.md), [`docs/JOURNEY-DESIGN.md`](./docs/JOURNEY-DESIGN.md), [`docs/ACCESS-FLOW.md`](./docs/ACCESS-FLOW.md) | The v2 plan: question companion, guided journeys, guest-first access |
 | [`docs/REVIEW-V2.md`](./docs/REVIEW-V2.md) | Pre-implementation review of that plan and the adjustments adopted |
+| [`docs/RELEASE-B.md`](./docs/RELEASE-B.md) | Release B from the product owner's side: what changed, what the model does and doesn't, cost, protections, the gate |
 | [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) | What is actually built, what isn't, and known limitations |
 | [`docs/INFRA.md`](./docs/INFRA.md) | The live deployment: domain, DNS, Vercel, Supabase, Resend, Turnstile, cron |
 | [`docs/VERSIONING.md`](./docs/VERSIONING.md) | v1→v2 transition, backups, rollback procedure, release checklist |
@@ -40,7 +41,7 @@ production.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | 157 Vitest unit/integration tests against an in-memory Postgres; no network, no keys |
+| `npm test` | 172 Vitest unit/integration tests against an in-memory Postgres; no network, no keys |
 | `npm run test:e2e` | 4 Playwright browser tests at 320, 390 and 1440 px (starts its own dev server on 47102 with a throwaway database and the stub answer provider; first run needs `npx playwright install chromium`) |
 | `npm run eval` | Release B's gate: runs `eval/questions.json` through the real Anthropic provider and writes a report to `eval/report/` for scoring against `eval/RUBRIC.md`. Needs `ANTHROPIC_API_KEY`; makes paid calls |
 | `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
@@ -62,20 +63,19 @@ Keep new local services in the same `471xx` block.
 ## How a reading works
 
 1. **Home** (night stage): an optional question (≤500 characters, editable
-   examples), a focus, and either "Choose my cards" or "Explore a general
-   reading". One request creates the reading with a private, cryptographically
-   shuffled mapping of the 22 cards to 22 face-down slots.
+   examples), a focus, and either "Pull my cards" or "Just read for me". One
+   request creates the reading with a private, cryptographically shuffled
+   mapping of the 22 cards to 22 face-down slots.
 2. **Choose**: tap three slots in order (Situation, Challenge, Guidance).
    Taps respond immediately; saves are serialized in the background with a
-   truthful Saving / Saved / Not saved state. "Reveal these cards" locks the
+   truthful Saving / Saved / Not saved state. "Turn them over" locks the
    draw — a conditional update on the reading's revision, so two tabs can't
    both win — and issues this browser's access grant in the same transaction.
 3. **Result** (parchment surface): the question, a combined perspective, the
    three cards with position-specific interpretations, and one reflection.
-   Readable in this browser for 30 days. With Release B on, a reflection
-   written for the question fills a reserved slot under the heading and
-   each card gets a "For your question" paragraph; the editorial reading
-   never waits on it. Questions about a crisis, or asking for medical or
+   Readable in this browser for 30 days. With Release B on, "On your
+   question" fills a reserved slot under the heading and each card gets its
+   own paragraph on the question; the library reading never waits on it. Questions about a crisis, or asking for medical or
    legal instruction, get an authored response with resources instead of a
    card reading.
 4. **Second reading**: the first is free of email; starting another draw asks
