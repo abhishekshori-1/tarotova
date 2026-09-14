@@ -1,34 +1,27 @@
-# Tarotova (working build)
+# Tarotova
 
-Implements PLAN.md's section-1 **scope contingency**: the 22-card Major
-Arcana v1, not the full 78-card deck, because no illustrator or RWS
-practitioner has been sourced yet (PLAN.md section 13). Treat every reading
-from this build as a working demo — the interpretive copy has not had the
-practitioner review PLAN.md section 9 requires as a release gate.
+A free three-card tarot reading — Situation, Challenge, Guidance — from the
+22 Major Arcana. Bring a question; your first reading needs no email.
+Live at [tarotova.com](https://www.tarotova.com).
 
-Planning docs live in [`docs/`](./docs): [`docs/PLAN.md`](./docs/PLAN.md) is
-the full product/engineering plan this build follows (`PLAN.md section N`
-below refers to it), [`docs/DOMAIN-RESEARCH.md`](./docs/DOMAIN-RESEARCH.md)
-is the domain-name research it cites,
-[`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) is the current
-done/incomplete/limitations status of this build specifically,
-[`docs/INFRA.md`](./docs/INFRA.md) documents the actual live deployment
-(domain, DNS, Vercel, Supabase, Resend, Turnstile — how they're wired
-together), and [`docs/ISSUES.md`](./docs/ISSUES.md) tracks open bugs found
-in the deployed app.
+This is **v2, Release A** (guest-first reading, question capture, visual
+foundation). It still ships PLAN.md's section-1 **scope contingency**: the
+22-card Major Arcana, not the full 78-card deck, and the interpretive copy has
+not had the practitioner review PLAN.md section 9 requires — treat readings
+as a working product with draft content.
 
-The next product/design phase is specified in
-[`docs/PLAN-EXTENDED.md`](./docs/PLAN-EXTENDED.md): a more atmospheric UI,
-a question companion and guided journeys, responsive phone/tablet/desktop
-layouts, motion and performance targets. Journaling, additional spreads and
-other expansions remain future scope. These are planned features, not
-implemented behavior.
+## Documents
 
-[`docs/JOURNEY-DESIGN.md`](./docs/JOURNEY-DESIGN.md) details the proposed journey
-screens, wireframe, content sources, model input/output and persistence flow.
-[`docs/ACCESS-FLOW.md`](./docs/ACCESS-FLOW.md) specifies the proposed first reading
-without email, verification when starting another reading, and remembered
-verification in the same browser. This requires a backend access-policy change.
+| File | What it is |
+| --- | --- |
+| [`docs/PLAN.md`](./docs/PLAN.md) | The original v1 product/engineering plan (`PLAN.md section N` below refers to it) |
+| [`docs/PLAN-EXTENDED.md`](./docs/PLAN-EXTENDED.md), [`docs/JOURNEY-DESIGN.md`](./docs/JOURNEY-DESIGN.md), [`docs/ACCESS-FLOW.md`](./docs/ACCESS-FLOW.md) | The v2 plan: question companion, guided journeys, guest-first access |
+| [`docs/REVIEW-V2.md`](./docs/REVIEW-V2.md) | Pre-implementation review of that plan and the adjustments adopted |
+| [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) | What is actually built, what isn't, and known limitations |
+| [`docs/INFRA.md`](./docs/INFRA.md) | The live deployment: domain, DNS, Vercel, Supabase, Resend, Turnstile, cron |
+| [`docs/VERSIONING.md`](./docs/VERSIONING.md) | v1→v2 transition, backups, rollback procedure, release checklist |
+| [`docs/ISSUES.md`](./docs/ISSUES.md) | Production issues found and how they were resolved |
+| [`docs/DOMAIN-RESEARCH.md`](./docs/DOMAIN-RESEARCH.md) | Domain-name research behind `tarotova.com` |
 
 ## Running it
 
@@ -37,9 +30,18 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:47100**.
+Open **http://localhost:47100**. No accounts are needed locally: the database
+is an embedded Postgres (pglite) under `data/`, email codes print to the
+terminal and appear on the code page, and the bot check is skipped outside
+production.
 
-Run the test suite with `npm test` (or `npm run test:watch` while iterating).
+| Command | What it does |
+| --- | --- |
+| `npm test` | 116 Vitest unit/integration tests against an in-memory Postgres |
+| `npm run test:e2e` | 9 Playwright browser tests at 320, 390 and 1440 px (starts its own dev server on 47102 with a throwaway database; first run needs `npx playwright install chromium`) |
+| `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
+| `npm run db:generate` | Generate a migration after editing `src/server/db/schema.ts` |
+| `npm run cards:gen` | Regenerate the placeholder card SVGs |
 
 ### Port series
 
@@ -49,83 +51,62 @@ This project reserves a fixed, non-default port block instead of 3000/8000/8080:
 | ----- | ------- |
 | 47100 | Next.js app (`npm run dev` / `npm run start`) |
 | 47101 | `npm run db:studio` (Drizzle Studio, browses the local database) |
+| 47102 | The Playwright suite's own dev server |
 
-Keep new local services in the same `471xx` block so they never collide with
-whatever else is running on a dev machine.
+Keep new local services in the same `471xx` block.
 
-## What's real vs. stood in for a missing account
+## How a reading works
 
-Production uses Vercel, Supabase, Resend and Turnstile; see `docs/INFRA.md`
-for the deployed infrastructure. Local development still works without
-external accounts through the following configurable integrations:
+1. **Home** (night stage): an optional question (≤500 characters, editable
+   examples), a focus, and either "Choose my cards" or "Explore a general
+   reading". One request creates the reading with a private, cryptographically
+   shuffled mapping of the 22 cards to 22 face-down slots.
+2. **Choose**: tap three slots in order (Situation, Challenge, Guidance).
+   Taps respond immediately; saves are serialized in the background with a
+   truthful Saving / Saved / Not saved state. "Reveal these cards" locks the
+   draw — a conditional update on the reading's revision, so two tabs can't
+   both win — and issues this browser's access grant in the same transaction.
+3. **Result** (parchment surface): the question, a combined perspective, the
+   three cards with position-specific interpretations, and one reflection.
+   Readable in this browser for 30 days.
+4. **Second reading**: the first is free of email; starting another draw asks
+   for a one-time email code at `/verify`. Verification is remembered for 30
+   days in that browser (a fixed window; browser sessions themselves slide on
+   activity). Refreshing, reopening or re-reading never triggers it.
 
-| PLAN.md calls for | This build uses | Where |
-| --- | --- | --- |
-| Supabase-hosted Postgres, Drizzle + postgres.js | Real Postgres via `postgres.js` when `DATABASE_URL` is set (point it at Supabase — no code changes needed); embedded `pglite` (WASM Postgres, same schema/migrations) when it isn't, so dev/tests need no account | `src/server/db/client.ts` |
-| Resend transactional email | Resend in production; `ConsoleEmailProvider` logs/echoes codes only in development and tests | `src/server/email/` |
-| Cloudflare Turnstile bot check | The real client widget and server verification call both exist; both stay inert (no widget renders, server skips with a logged warning) until `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` are set | `src/components/TurnstileWidget.tsx`, `src/server/turnstile.ts` |
+Private pages are `noindex`; private API responses are `private, no-store`;
+a different browser that knows a URL gets a 404.
 
-A real `ResendEmailProvider` (plain `fetch`, no extra dependency) is already
-written and wired up — set `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` and
-`EMAIL_FROM` using a verified sender. Production rejects missing settings
-instead of falling back to console. `vercel.json` pins the next deployment
-to Tokyo; latency and live OTP verification remain pending in `docs/ISSUES.md`. The webhook route at `src/app/api/webhooks/email/route.ts`
-is a stub: **it does not verify the provider's signature yet** — that must be
-wired in (see the `TODO` in that file) before it's exposed publicly.
+## What's real
 
-## What's simplified relative to the full plan
+Everything in production is the real service: Supabase Postgres in Tokyo,
+Resend for codes from `mail.tarotova.com`, Cloudflare Turnstile on the code
+request, Vercel functions pinned to Tokyo, a daily cleanup cron. Production
+refuses to start a flow with missing configuration instead of silently
+degrading (no console email fallback, no skipped bot check).
 
-- **22 cards, one deck page.** PLAN.md's 78-card, three-page paginated deck
-  collapses to a single 22-slot grid since the whole fallback deck fits on
-  one screen. Re-introduce pagination if/when the deck grows back to 78.
-- **Rate limiting and OTP verification use real atomic Postgres operations**
-  (`INSERT ... ON CONFLICT DO UPDATE`, conditional `UPDATE ... WHERE
-  consumed_at IS NULL`) rather than relying on any one process being
-  single-connection — see `docs/IMPLEMENTATION.md` for the specific races
-  this closes and the one residual gap (concurrent send+resend on the same
-  reading isn't fully serialized, though the 60s cooldown covers normal use).
-- **Unit and integration tests exist; browser/accessibility/load tests
-  don't.** `npm test` runs Vitest against an in-memory pglite (Postgres)
-  database and covers the domain/unit and database-integration rows of PLAN.md section
-  9's matrix: deck composition and RWS numbering, OTP digest binding and
-  leading-zero preservation, shuffle uniformity, wrong-owner and
-  unverified-read denial, revision conflicts, locked-draw immutability,
-  idempotent re-lock and idempotent re-verify, generation supersession
-  (only the newest code verifies), committed failed-attempt counts,
-  attempt lockout, per-email rate limiting, resend cooldown, and the
-  suppression-list check. No CI, and PLAN.md section 9's Playwright/axe/load
-  rows still aren't built. `npm run lint`, `npx tsc --noEmit`, and all 70 tests pass. See
-  `docs/ISSUES.md` for the latest production-build verification status.
-- **Card art** (`public/cards/*.svg`, generated by
-  `scripts/generate-card-svgs.mjs`) is original but deliberately simple —
-  shared frame, numeral, and one small line glyph per card. It satisfies the
-  "coherent, shared frame" direction in PLAN.md section 2, not the
-  "recognizable RWS symbolism" full-scene illustration bar that section also
-  sets. Replace with commissioned art before any public release.
+Locally the same code runs on pglite, the console email provider and a
+skipped bot check — configured by absence, see `.env.example`.
 
-## Verified end-to-end (via curl; no browser tool was available this session)
+## What's simplified
 
-Create → select and lock 3 slots → request code (console-logged) → wrong
-code rejected and attempt counted → correct code verified → result returned
-with the right cards in the right positions → repeat verify is idempotent →
-a request with no session cookie is denied ownership → private responses
-carry `Cache-Control: private, no-store` → a stale revision is rejected with
-`409` → no card identity appears in the pre-verification page HTML. Also
-re-verified after the Postgres migration with a real `next build && next
-start` run (production mode) — same flow, plus confirmed `devCode` is
-correctly absent from the API response outside dev. That was a historical
-check: the 2026-09-14 fix now rejects the console provider in production, so
-a production OTP smoke test requires Resend configuration. Open it in an actual browser to
-check the visual/interaction layer (shuffle animation, focus states, mobile
-layout, the Turnstile widget once a site key is set) before trusting this
-further.
+- **22 cards, one deck page.** The 78-card, paginated deck stays future work.
+- **Card art** is the generated line-glyph set restyled onto parchment with a
+  gold frame (`scripts/generate-card-svgs.mjs`). Coherent, not the
+  recognizable RWS scenes the plan wants; a public-domain 1909 Rider–Waite–Smith
+  restyle is the chosen next step.
+- **The question is shown, not interpreted.** Contextual answers (Release B)
+  and follow-ups/guided journeys (Release C) are planned, not built.
+- **Content is unreviewed** (`CONTENT_VERSION` ends in `-draft`).
+- **The webhook** at `src/app/api/webhooks/email/route.ts` does not verify
+  Resend's signature yet; don't rely on it until it does.
 
 ## Layout
 
-Matches PLAN.md section 10's proposed folders where they apply to this
-scope: `src/app` (routes), `src/server` (db, session, OTP, rate limiting,
-email), `src/content` (the 22-card deck and copy), `src/components`,
-`src/lib` (zod schemas, client API wrapper), `drizzle/` (SQL migrations),
-`public/cards/`, `tests/` (integration tests + Vitest setup — pure-unit
-tests are colocated as `*.test.ts` next to the code they cover), `docs/`
-(the plan, its domain research, and this build's implementation status).
+`src/app/(night)` — home and card selection; `src/app/(parchment)` —
+verification, result, privacy, terms; `src/app/api` — route handlers;
+`src/server` — access grants, sessions, OTP, rate limits, email, cleanup;
+`src/content` — the 22-card deck and copy; `src/components`; `src/lib` — zod
+schemas, client API, save queue; `drizzle/` — SQL migrations; `tests/` —
+integration tests (unit tests sit next to their code as `*.test.ts`);
+`e2e/` — Playwright; `docs/`.

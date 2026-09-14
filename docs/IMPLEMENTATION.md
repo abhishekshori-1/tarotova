@@ -1,156 +1,108 @@
 # Implementation status
 
-What actually exists in this repo today, measured against `docs/PLAN.md` —
-not a restatement of the plan. Updated 2026-09-14 for the latency/OTP fixes. Infrastructure is live (see
-`INFRA.md`); the new fixes are local and still need deployment/verification.
+What actually exists in this repo, measured against `PLAN.md` (v1) and
+`PLAN-EXTENDED.md` / `ACCESS-FLOW.md` (v2). Updated 2026-09-14 after v2
+Release A went live (`VERSIONING.md` has the transition and rollback).
 
-## Scope this build actually targets
+## Scope this build targets
 
-`docs/PLAN.md` section 1 lays out a contingency: ship 22 Major Arcana cards
-first if an illustrator and an RWS practitioner aren't sourced in time, with
-the full 78-card deck as a v1.1 follow-up. Neither has been sourced
-(section 13), so **that's what this build is** — not a smaller "demo" of the
-78-card plan, but the plan's own documented fallback scope. Treat every
-reading this build produces as a working demo: `CONTENT_VERSION` is suffixed
-`-draft` in `src/content/versions.ts` specifically because the copy hasn't
-had the practitioner review section 9 sets as a release gate.
+`PLAN.md` section 1's contingency — 22 Major Arcana, not 78 — remains in
+force: no illustrator or RWS practitioner has been sourced (section 13).
+`CONTENT_VERSION` is `content.v1-draft` because the copy has not had the
+practitioner review section 9 sets as a release gate.
+
+Of the v2 plan, **Release A** is built: guest-first access, question capture
+(shown, not interpreted), fast selection, the visual foundation, retention,
+CI and browser tests. Releases B (contextual answer) and C (follow-ups,
+guided journeys) are not started. See "Incomplete" below.
 
 ## Done
 
-**Product flow.** Homepage (focus chips, honest disclosure copy) → choose
-3 of 22 face-down cards (shuffle, ordered selection tray, lock) → email →
-6-digit code confirmation → result (per-position interpretation, combined
-overview, one reflection prompt) → privacy/terms pages. All 8 routes below
-exist and were exercised end-to-end via curl (see "Verified" in README.md).
+**Product flow.** Home (question composer, focus, two actions) → choose 3 of
+22 face-down cards → reveal → result → "Begin another reading" → email
+verification once per browser per 30 days → further readings.
 
 | Layer | What's implemented |
 | --- | --- |
-| Draw engine | Server-side, crypto-random Fisher–Yates shuffle (`node:crypto.randomInt`); browser only ever sees opaque slot indices and card backs; card identity resolved server-side only at lock time |
-| Selection/lock | Revision-numbered optimistic concurrency (`readings.revision`), idempotent re-lock on identical retry, locked draw is immutable, reshuffle only permitted while selection is empty |
-| OTP | 6-digit `randomInt` code; HMAC-SHA256 digest bound to reading id + challenge id + generation + intended email; constant-time comparison; 10-minute expiry; 5-attempt cap with the failed-attempt counter committed before the error is returned; a resend/email-change supersedes the prior challenge (only the newest generation can ever verify); idempotent repeat-verify after success |
-| Session | 256-bit random token; only its SHA-256 hash is stored; `Secure`, `HttpOnly`, `SameSite=Lax`, host-only cookie; 30-day validity |
-| Rate limiting | Atomic counters (fixed-window) for per-email hourly/daily sends, per-IP hourly sends, per-session/per-IP reading creation, and a 60s per-reading resend cooldown checked before consuming send budgets |
-| Suppression | Dedicated `suppressed_emails` table on its own (longer) retention clock, checked before every send — added in the PLAN.md revision that fixed the original 7-day-retention/suppression conflict |
-| Data model | `browser_sessions`, `readings`, `verified_emails`, `email_challenges`, `rate_limit_buckets`, `delivery_events`, `suppressed_emails` — real Postgres via Drizzle: `postgres.js` when `DATABASE_URL` is set (Supabase in production), embedded `pglite` (WASM Postgres, same schema/migrations) when it isn't, so dev/tests still need no account |
-| Email delivery | Provider interface with two implementations behind one switch (`EMAIL_PROVIDER`): a console/dev provider (available only outside production) and Resend (plain `fetch`, 10s timeout); production requires explicit valid configuration, provider rejections surface as errors, and uncertain acceptance stays pending |
-| Bot protection | Full path implemented: a client-side Turnstile widget (`src/components/TurnstileWidget.tsx`) renders on the email page and gates the submit button when `NEXT_PUBLIC_TURNSTILE_SITE_KEY` is set, feeding a token to the server-side verification call; with no site/secret key configured (the default), the widget doesn't render and the server skips verification with a logged warning rather than failing closed (dev-only posture) |
-| Privacy hygiene | All private API responses set `Cache-Control: private, no-store`; `/reading/*` pages are `noindex,nofollow`; `robots.txt` disallows `/reading/` and `/api/` |
-| Content | 22 Major Arcana cards, correct RWS numbering (Strength VIII, Justice XI, etc.), core meaning + 3 position texts + 4 focus blurbs each; deterministic rule-based overview + reflection-prompt generator; deck/spread/content versions frozen into a result snapshot at lock time so later content edits can't change an already-locked reading |
-| Card art | 22 original SVG illustrations + 1 back, shared frame/palette/line-weight, generated by `scripts/generate-card-svgs.mjs` |
-| Visual design | Ivory/plum/bronze/sage palette (bronze/sage adjusted from the plan's raw hexes where needed for AA text contrast), Fraunces + Inter via `next/font/google`, `prefers-reduced-motion` support, visible focus outlines, 44px min touch targets, 4-column mobile grid |
-| Tests | Vitest — 7 files, 70 tests: content/shuffle/OTP primitives; Postgres integration for ownership, locking, verification, suppression and rate limiting; production email configuration, mocked Resend acceptance/failures, cooldown budget preservation, and OTP HTTP outcomes/diagnostics |
-| Tooling | Lint, TypeScript, all 70 tests and `npm run build -- --webpack` pass. This environment blocks Turbopack worker port binding; the default deployment build command is unchanged. |
+| Draw engine | Server-side crypto-random Fisher–Yates over 22 card ids per reading; the browser only sees slot indices and card backs; identity resolves at lock |
+| Selection / lock | Client save queue (`src/lib/saveQueue.ts`): one request in flight, edits collapse to the latest, failures stop and expose retry. Server: conditional `UPDATE … WHERE revision = $n AND state = 'drafting' RETURNING` — two tabs at the same revision cannot both succeed; identical re-lock is a no-op; reshuffle only with an empty selection |
+| Access grants | `reading_access_grants`, one per reading, basis `guest` or `verified_session`, 30-day expiry. Issued inside the lock transaction; the single guest slot is claimed with `UPDATE browser_sessions SET guest_reading_id … WHERE guest_reading_id IS NULL`. A locked reading with no grant (lost race) is claimed lazily on the next result read once the session is entitled; otherwise 403 `verification_required` |
+| Session verification | `session_email_challenges`: 6-digit code, HMAC-SHA256 digest bound to purpose + session + challenge + generation + email, constant-time compare, 10-minute expiry, 5 attempts (counter committed before the error), resend supersedes, single-use consumption via conditional update, idempotent re-confirm. `verified_until` = verification + 30 days, never extended by activity |
+| Sessions | 256-bit token, SHA-256 hash stored, `Secure` `HttpOnly` `SameSite=Lax` cookie, 30 days, renewed on activity at most once a day |
+| Question | Optional, ≤500 chars, trimmed; set at creation or `PATCH /api/readings/[id]/context` (revision-checked); frozen at lock; returned with the result |
+| Rate limiting | Atomic fixed-window counters: reading creation 30/h per IP and 20/h per session; codes 3/h and 5/day per email, 10/h per IP; 60 s resend cooldown checked before any budget is spent |
+| Suppression | `suppressed_emails` checked before every send; populated by the (unsigned) webhook |
+| Expiry & retention | Drafts and unclaimed locks are gone at read time after 24 h; `deleteExpired()` removes expired drafts, ended-access readings and grants, spent challenges, rate buckets, 7-day-old delivery events and orphaned sessions. Exposed at `/api/internal/cleanup` behind `CRON_SECRET`; Vercel Cron daily (`vercel.json`) |
+| Data model | `browser_sessions`, `readings`, `verified_emails`, `session_email_challenges`, `reading_access_grants`, `rate_limit_buckets`, `delivery_events`, `suppressed_emails`; Drizzle migrations 0000–0002; `postgres.js` with `DATABASE_URL`, pglite without |
+| Email | Console provider outside production only; Resend via `fetch` with a 10 s timeout, idempotency key per challenge, message-id validation. Production requires `EMAIL_PROVIDER=resend`, `RESEND_API_KEY`, `EMAIL_FROM` or returns 503 `email_not_configured`; a definite provider rejection is 502 `email_send_failed`, an uncertain one keeps the code usable |
+| Bot protection | Turnstile widget on the code form (single-use token, reset after any failure, render-once guard); server verification with a 10 s timeout; **fails closed in production** when the secret is missing (503 `bot_check_not_configured`) |
+| Observability | `[session_verification]`, `[session_confirm]`, `[otp_delivery]`, `[cleanup]`, `[bot_check_configuration]`, `[email_configuration]` structured logs with request id, stage, status, duration, region; `X-Request-Id` on responses; never addresses, codes or keys |
+| Privacy hygiene | Private responses `Cache-Control: private, no-store`; `/reading/*` and `/verify*` `noindex`; `robots.txt` disallows them and `/api/`; `next` redirect after verification limited to same-origin paths |
+| Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
+| Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
+| Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
+| Tests | 116 Vitest tests in 15 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety); 9 Playwright tests × 3 viewports (golden path, gate then remembered verification, rapid taps, stranger denied, no horizontal overflow) |
+| CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
 
 ## Incomplete / not built yet
 
-Relative to `docs/PLAN.md`, in roughly the order it would bite:
-
-- **78-card deck.** Only the 22 Major Arcana exist. The 56 Minor Arcana
-  (four suits × 14 ranks), their content, their art, and the 3-page
-  paginated deck-browsing UI section 2 describes are all unbuilt — a
-  single 22-slot grid stands in for pagination since the fallback deck
-  fits on one screen.
+- **Release B — contextual answer.** No model adapter, no prompt, no
+  evaluation set or rubric, no sensitive-intent classifier, no generation
+  budgets or global spend cap, no Turnstile on the guest lock. The question is
+  displayed only. `REVIEW-V2.md` findings 1, 2 and 8 are the entry criteria.
+- **Release C — follow-ups and guided journeys.** Nothing built.
+- **78-card deck and recognizable card art.** Decision: restyle the
+  public-domain 1909 Rider–Waite–Smith deck in a later phase; until all 22
+  faces exist, readings keep the uniform glyph deck.
 - **Webhook signature verification.** `src/app/api/webhooks/email/route.ts`
-  has a `TODO`: it does not verify Resend/Svix's webhook signature. **Do
-  not expose this endpoint publicly as-is** — anyone could POST fake
-  bounce/complaint events and get arbitrary addresses suppressed.
-- **Cloudflare Workers hosting.** The database migration (below) makes the
-  app deployable on Vercel as-is — plain Node runtime, `postgres.js` just
-  works. Actually hosting on Cloudflare Workers instead (discussed, not
-  yet built) needs a separate adapter pass: the OpenNext Cloudflare
-  adapter, and swapping the Postgres connection for Cloudflare Hyperdrive
-  (Workers' V8 isolate runtime can't use plain TCP the way Node can
-  without it). Not started.
-- **Playwright, axe, and load tests.** PLAN.md section 9's browser,
-  accessibility, and concurrency-under-load test rows aren't built. No CI
-  pipeline runs any of the existing tests automatically either.
-- **Scheduled cleanup job.** PLAN.md section 7's hourly deletion job
-  (expired drafts, consumed/expired challenges, expired sessions and rate
-  buckets, 7-day delivery-metadata window) doesn't exist. Expiry is
-  currently enforced only as a read-time check (an expired reading is
-  denied when accessed), not as an active deletion — data outlives its
-  stated retention window until something reads it or a job is added.
-- **CSRF defense is implicit, not explicit.** Mutations rely on the
-  browser's same-origin fetch behavior and `SameSite=Lax` on the session
-  cookie; there's no dedicated CSRF token check as a second layer.
-- **Production verification of the latest fixes.** The app is deployed on
-  Vercel with Supabase, Resend and Turnstile accounts provisioned; see
-  `INFRA.md`. Tokyo placement and the OTP fixes from 2026-09-14 still need
-  deployment, fresh latency measurements and successful inbox verification.
-- **Legal copy is a placeholder.** `/privacy` and `/terms` say so
-  explicitly in their own text; they need the operator's real entity
-  details before public release.
-- **Practitioner/illustrator review.** Zero content has been reviewed by
-  an RWS practitioner; the art is original but deliberately simple
-  placeholder work (see README's "What's simplified" section), not the
-  commissioned illustration PLAN.md section 2 calls for.
+  still has the `TODO`; anyone can POST fake bounce events and suppress an
+  address. Not linked from anywhere, but it is reachable.
+- **Practitioner review** of the 22 cards' copy; **legal copy** (`/privacy`,
+  `/terms`) is still a placeholder and must mention that typed questions are
+  stored for up to 30 days.
+- **Migrations run at cold start with the runtime credential.** `PLAN.md`
+  section 7 asks for a separate credential and a deploy-time step; still
+  pending. Migrations are additive except `0002` (see `VERSIONING.md`).
+- **CSRF** relies on same-origin fetch and `SameSite=Lax`; no token.
+- **No analytics** or funnel measurement (`PLAN-EXTENDED.md` section 12).
+- **Accessibility and device coverage** is automated only at the "no
+  overflow, keyboard-operable buttons" level; VoiceOver/TalkBack, real-device
+  keyboard behavior and Samsung Internet are unchecked.
 
-## Email-specific limitations
+## Email — current state and limits
 
-Called out separately since email is both the riskiest part of the plan
-(PLAN.md's own advisor review flagged deliverability, not quota, as the
-real first constraint — section 8/12) and the part furthest from
-production-ready here:
-
-- **Live Resend delivery is not yet verified.** The account and sending
-  subdomain `mail.tarotova.com` exist, with DNS records documented in
-  `INFRA.md`. Mocked provider/route tests now exercise configuration errors,
-  HTTP failures and uncertain acceptance, but they cannot prove production
-  key permissions, domain status or inbox delivery. See `ISSUES.md` for the
-  staged runtime logs and post-deployment verification procedure.
-- **No deliverability warmup has happened** — there's no sending history
-  to warm up, because nothing has ever sent a real email.
-- **Suppression logic is implemented and unit-tested against synthetic
-  webhook payloads only.** It has never processed a real bounce or
-  complaint event from Resend, and (see above) the webhook that would
-  receive those events doesn't verify its sender yet.
-- **Rate-limit numbers (3/hr, 5/day per email; 10/hr per IP; 60s resend
-  cooldown) are PLAN.md's planning defaults, unvalidated against any real
-  traffic** — debug traffic has already hit them. Cooldown-only retries no longer
-  consume send budgets; existing fixed-window counters still expire normally.
-- **The dev-mode code echo is a deliberate, guarded trade-off, not a
-  leftover.** `requestOtp` returns the raw code in its response, and the
-  confirm page displays it, only when `NODE_ENV !== "production"` — this
-  supports local development without sending real email. Production now
-  rejects console-provider configuration entirely; production tests also
-  verify that the raw code is absent from service responses.
+- **Live and verified** on 2026-09-14: the `mail.tarotova.com` domain is
+  verified in Resend and a real code was delivered and confirmed in
+  production (under the v1 flow; the v2 session flow shares the provider
+  path but still needs one real production send). The earlier failures were
+  operational (domain verification never started; an empty API key value)
+  — see `ISSUES.md`.
+- **No deliverability history yet**; sending volume is tiny.
+- **Suppression** has only been exercised with synthetic webhook payloads.
+- **Limits** (3/h, 5/day per address; 10/h per IP; 60 s cooldown) are the
+  plan's defaults, unvalidated against real traffic.
+- **Dev-mode code echo** (`devCode` in the response, shown on the code page)
+  exists only when `NODE_ENV !== "production"`; production tests assert it
+  is absent.
 
 ## Other things worth knowing
 
-- **Concurrency is now enforced with real atomic Postgres operations, not
-  accidental single-connection serialization.** The database migration to
-  Postgres (`postgres.js`/pglite, replacing `better-sqlite3`) was also used
-  to fix three specific races PLAN.md section 6/9 calls out: the rate
-  limiter now increments via one `INSERT ... ON CONFLICT DO UPDATE SET
-  count = count + 1` (`rateLimit.ts`) instead of a read-then-write; a
-  wrong-code attempt increments `attempts` the same way instead of writing
-  a JS-computed `attempts + 1`; and code verification atomically claims
-  `consumed_at` with a conditional `WHERE consumed_at IS NULL`, so two
-  concurrent correct-code submissions genuinely cannot both succeed
-  (`readingService.ts`). These aren't wrapped in explicit multi-statement
-  transactions — each fix is a single atomic statement, which is
-  sufficient for the specific race it addresses. One known residual gap:
-  two concurrent OTP-request calls for the *same* reading (send + resend
-  racing each other) aren't fully serialized — low practical risk given
-  the 60s resend cooldown already prevents this in normal use, but not
-  proven safe under deliberate concurrent abuse.
-- **`npm audit` reports 6 moderate-severity findings, all in dev-only
-  tooling** (a transitive `esbuild` pulled in by `drizzle-kit`'s migration
-  generator — a known dev-server request/response disclosure, irrelevant
-  at runtime). `npm audit --omit=dev` reports zero. Worth revisiting when
-  `drizzle-kit` ships a fix rather than the offered `--force` downgrade.
-- **pglite needs `serverExternalPackages` in `next.config.ts`.** Its WASM
-  loader breaks under Next's production bundler (worked fine in `next dev`,
-  which bundles differently) with `TypeError: h.instantiateWasm is not a
-  function`; `serverExternalPackages: ["@electric-sql/pglite"]` tells Next
-  to load it unmodified from `node_modules` instead of bundling it, which
-  fixes it. Verified with a real `next build && next start` run. Also
-  fixed along the way: the DB connection is created lazily (on first
-  query, via a Proxy in `db/client.ts`), not at module import time —
-  `next build` loads every route module in several parallel workers just
-  to inspect its exports, and those workers were each independently
-  opening the same file-backed pglite directory, crashing on contention
-  even though no query ever ran.
-- **This file and the README will drift.** When scope changes (cards
-  added, an account gets provisioned, a test suite lands), update both —
-  this file is a snapshot, not a live dashboard.
+- **Transactions.** The lock (draft freeze + guest claim + grant) and the
+  lazy grant on result read are real transactions (`db.transaction`), which
+  work through Supabase's transaction pooler because `postgres.js` runs with
+  `prepare: false`. Single-statement atomic operations cover the rest
+  (rate counters, attempt increments, code consumption).
+- **Guest allowance is per browser session, not per person.** Clearing
+  cookies or a private window yields a new session and a new free reading;
+  IP limits are the only backstop. Accepted for Release A; generation
+  budgets are a Release B gate.
+- **`npm audit --omit=dev` reports 0 vulnerabilities**; dev-only findings
+  come via `drizzle-kit`'s bundled esbuild.
+- **pglite** needs `serverExternalPackages` and a lazy connection (see
+  `db/client.ts`); `PGLITE_DATA_DIR` lets the e2e suite use its own database.
+- **Deployments are disabled for `feat/v2`** in `vercel.json`
+  (`git.deploymentEnabled`); other branches would get preview deployments
+  and, if `DATABASE_URL` is scoped to Preview, would migrate production —
+  disable per branch before pushing work in progress.
+- **This file drifts.** Update it with every release; `VERSIONING.md` holds
+  the release checklist.
