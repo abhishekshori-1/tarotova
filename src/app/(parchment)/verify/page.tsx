@@ -69,9 +69,9 @@ function VerifyForm() {
         setError(`Too many attempts right now. Please try again in ${wait}.`);
       } else if (err.body?.error === "address_suppressed") setError("We can't send to this address right now.");
       else if (err.body?.error === "email_not_configured" || err.body?.error === "email_send_failed" || err.body?.error === "bot_check_not_configured") {
-        setError("We couldn't send your email. Please try again later.");
+        setError("Couldn't send the email. Try again in a bit.");
       } else if (err.body?.error === "bot_check_failed") setError("The security check expired. Please complete it again.");
-      else setError("Couldn't send the code. Please check the address and try again.");
+      else setError("Couldn't send the code. Check the address and try again.");
       // Turnstile tokens are single-use; get a fresh one for the retry.
       setTurnstileToken(null);
       turnstileRef.current?.reset();
@@ -84,10 +84,10 @@ function VerifyForm() {
 
   return (
     <div className="mx-auto max-w-md px-6 py-10">
-      <h1 className="title">Keep exploring with Tarotova</h1>
+      <h1 className="title">Back for another?</h1>
       <p className="prose-measure mt-3 text-[var(--fg-soft)]">
-        Your first reading needed no email. To begin another, confirm your email once — we&apos;ll send a one-time code, and this
-        browser stays confirmed for 30 days.
+        The first one was on the house. To pull again, confirm your email once. We send a code, not a password, and this browser
+        is good for 30 days.
       </p>
 
       <form onSubmit={submit} className="mt-6 space-y-3">
@@ -114,10 +114,10 @@ function VerifyForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-xs text-[var(--fg-soft)]">This won&apos;t subscribe you to marketing.</p>
+      <p className="mt-4 text-xs text-[var(--fg-soft)]">No newsletter. No nonsense.</p>
       <p className="mt-6 text-sm">
         <Link href="/" className="underline">
-          Return to my reading
+          Back to my reading
         </Link>
       </p>
     </div>

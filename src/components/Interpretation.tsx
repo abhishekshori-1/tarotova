@@ -3,9 +3,9 @@
 import type { InterpretationView } from "@/lib/api";
 
 const RETRY_REASONS: Record<string, string> = {
-  busy: "The personalized reflection is busy right now. Your cards and their reading above are complete; try again in a little while.",
-  not_configured: "The personalized reflection isn't available right now. Your cards and their reading above are complete.",
-  guest_paused: "Personalized reflections are paused for email-free readings at the moment. Your cards and their reading above are complete.",
+  busy: "I can't get to your question right now, the table's full. The cards and their reading below stand on their own. Come back in a bit.",
+  not_configured: "I can't read against your question right now. The cards and their reading below stand on their own.",
+  guest_paused: "Reading against your question is paused for first readings at the moment. The cards and their reading below stand on their own.",
 };
 
 /**
@@ -43,12 +43,12 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
   return (
     <section className="panel mt-6 p-5 sm:p-6" aria-labelledby="interpretation-heading" aria-live="polite" aria-busy={view.status === "idle" || view.status === "pending"}>
       <p className="eyebrow" id="interpretation-heading">
-        For your question
+        About what you asked
       </p>
       <div className="answer-slot mt-2">
         {(view.status === "idle" || view.status === "pending") && (
           <div role="status" className="space-y-3 pt-1">
-            <p className="text-sm text-[var(--fg-soft)]">Writing a reflection for your question…</p>
+            <p className="text-sm text-[var(--fg-soft)]">Reading your cards against what you asked…</p>
             <div className="skeleton-line w-full" />
             <div className="skeleton-line w-11/12" />
             <div className="skeleton-line w-4/5" />
@@ -63,20 +63,20 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
         {view.status === "unavailable" && <p className="prose-measure text-[var(--fg-soft)]">{RETRY_REASONS[view.reason]}</p>}
         {view.status === "failed" && (
           <div>
-            <p className="prose-measure text-[var(--fg-soft)]">We couldn&apos;t write the personalized reflection this time. Your cards and their reading above are complete.</p>
+            <p className="prose-measure text-[var(--fg-soft)]">Couldn&apos;t get a read on your question this time. The cards and their reading below stand on their own.</p>
             {view.retryable && !retryUsed && (
               <button type="button" onClick={onRetry} className="btn-secondary mt-3 px-4 text-sm">
-                Try once more
+                Ask once more
               </button>
             )}
           </div>
         )}
       </div>
       <details className="mt-4 text-sm text-[var(--fg-soft)]">
-        <summary className="cursor-pointer">How this reflection is made</summary>
+        <summary className="cursor-pointer">Where this comes from</summary>
         <p className="prose-measure mt-2">
-          The card meanings are written by people. This paragraph is written for your question by an AI model (Anthropic Claude) from those
-          meanings and your words only. It offers perspective, not prediction, and stays with this reading for up to 30 days.
+          The card meanings are written by people. This part is written for your question by an AI model (Anthropic Claude), working only from
+          those meanings and your words. It&apos;s a way of seeing, not a forecast. It stays with this reading for 30 days, then it&apos;s gone.
         </p>
       </details>
     </section>

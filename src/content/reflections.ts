@@ -2,24 +2,24 @@ import type { Focus } from "./types";
 
 const REFLECTIONS: Record<Focus, string[]> = {
   general: [
-    "What would it look like to act on this today, even in a small way?",
-    "What's one thing you already know, underneath the noise?",
+    "What's the small version of this you could do today?",
+    "What do you already know here that you keep talking yourself out of?",
     "If this reading is right, what changes first?",
   ],
   relationships: [
-    "What's one thing you haven't said out loud yet?",
-    "What would this look like from their side of it?",
-    "What do you actually need here, separate from what you've been asking for?",
+    "What haven't you said out loud yet?",
+    "What does this look like from their side of the table?",
+    "What do you actually need here, as opposed to what you've been asking for?",
   ],
   work: [
-    "What's the smallest next step you've been avoiding?",
-    "What would you do differently if you trusted your own judgment on this?",
-    "What's actually within your control here, versus what isn't?",
+    "What's the next step you've been avoiding, and how small could it be?",
+    "What would you do if you trusted your own call on this?",
+    "What's actually yours to move here, and what isn't?",
   ],
   growth: [
-    "What pattern are you ready to look at honestly?",
-    "What would it cost you to keep things exactly as they are?",
-    "What's one small, concrete way to practice this over the next week?",
+    "What pattern are you finally ready to look at straight?",
+    "What does it cost you to keep things exactly as they are?",
+    "What's one small, real way to practice this before next week?",
   ],
 };
 

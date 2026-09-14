@@ -48,13 +48,14 @@ describe("validateInterpretation", () => {
   });
 
   it.each([
-    ["This outcome is guaranteed if you act now.", "guaranteed"],
-    ["You are destined for this role.", "destined"],
-    ["I'd diagnose this as burnout.", "diagnose"],
-    ["The Hermit predicts a quiet month ahead.", "predicts"],
-  ])("rejects asserted certainty: %s", (sentence, word) => {
+    ["This outcome is guaranteed if you act now.", "is guaranteed"],
+    ["You are destined for this role.", "are destined"],
+    ["I'd diagnose this as burnout.", "I'd diagnose"],
+    ["This reading predicts a quiet month ahead.", "This reading predicts"],
+    ["Do this and it's guaranteed to work.", "guaranteed"],
+  ])("rejects asserted certainty: %s", (sentence, phrase) => {
     const result = validateInterpretation({ ...good(), reflection: sentence + " Sit with that for a week." }, DRAWN);
-    expect(result).toMatchObject({ ok: false, reason: "asserted_certainty", detail: word });
+    expect(result).toMatchObject({ ok: false, reason: "asserted_certainty", detail: expect.stringContaining(phrase) });
   });
 
   it.each([
@@ -63,6 +64,12 @@ describe("validateInterpretation", () => {
     "This isn't a diagnosis — a clinician can give you that.",
     "The cards can't predict whether they'll say yes.",
     "That is beyond what three cards can predict.",
+    // Sentences from the real eval runs that a blunter check rejected:
+    "These cards can't tell you what your manager is thinking or intends, or hand you a script guaranteed to fix the dynamic.",
+    "You're weighing a real change, and the cards suggest this is less about finding a guaranteed right answer and more about how you approach it.",
+    "The Hanged Man names the trap of trying to urgently fix or diagnose what's happening between you.",
+    "These cards can't tell you what the psychiatrist will think, say, or diagnose, and they don't predict how the appointment will go.",
+    "A three-card reading can't tell you specific dates or predict how your year will unfold.",
   ])("accepts the same words when denied: %s", (sentence) => {
     expect(findAssertedCertainty(sentence)).toBeUndefined();
     const result = validateInterpretation({ ...good(), reflection: sentence + " Sit with that for a week." }, DRAWN);

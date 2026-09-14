@@ -8,6 +8,7 @@ import { createReading, getResult, updateSelection, AccessRequiredError, Ownersh
 import { confirmSessionCode, requestSessionCode } from "@/server/sessionVerification";
 import { requestInterpretation } from "@/server/generation/service";
 import { GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS } from "@/server/generation/config";
+import { INTERPRETATION_PROMPT_VERSION } from "@/server/generation/prompts";
 import { deleteExpired } from "@/server/cleanup";
 
 // Release B's contract (docs/REVIEW-V2.md findings 1, 2, 8 and the adopted
@@ -122,7 +123,7 @@ describe("the happy path", () => {
     if (first.status !== "succeeded") return;
     expect(first.answer.cards.map((c) => c.position)).toEqual(["situation", "challenge", "guidance"]);
     expect(first.answer.beyondSpread).toBeNull();
-    expect(first.promptVersion).toBe("interpretation.v1");
+    expect(first.promptVersion).toBe(INTERPRETATION_PROMPT_VERSION);
 
     const row = await generationRow(reading.id);
     expect(row.status).toBe("succeeded");

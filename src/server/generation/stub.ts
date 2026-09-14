@@ -41,15 +41,15 @@ export class StubProvider implements GenerationProvider {
       model: "stub-answer",
       value: {
         perspective:
-          `Read together for your question, ${names[0]}, ${names[1]} and ${names[2]} describe a situation with real momentum, a tension you can name, and a direction worth weighing rather than a verdict.` +
+          `Here's the short of it for what you asked. ${names[0]} says you're already moving. ${names[1]} is the thing in the way, and you know its name. ${names[2]} is the way through, and it's slower than you'd like.` +
           foreign,
         cards: input.cards.map((c) => ({
           position: c.position,
-          relevance: `${c.name} as ${POSITION_LABEL[c.position]}: ${c.positionText.split(". ")[0]}. Held against what you asked, this is the part of the question that is most in your own hands.`,
+          relevance: `${c.name}, ${POSITION_LABEL[c.position].toLowerCase()}. ${c.positionText.split(". ")[0]}. Against what you asked, this is the part that's yours to move.`,
         })),
-        reflection: "Pick the smallest version of the next step you can take this week, and notice what it tells you.",
+        reflection: "Do the small version of the next step this week. Then notice what it told you.",
         beyondSpread: /\b(will i|when will|does he|does she|dates?)\b/i.test(q)
-          ? "Three cards can't say what will happen or what someone else is thinking; they can only show what's worth weighing on your side of it."
+          ? "Three cards can't tell you what happens or what someone else is thinking. They can only show your side of the table."
           : null,
       },
     };

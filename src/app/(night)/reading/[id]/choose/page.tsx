@@ -41,7 +41,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       setStatus(s);
       setSelected(s.selectedSlots);
     } catch {
-      setError("This reading couldn't be found. It may have expired.");
+      setError("This reading isn't here anymore. It may have expired.");
     }
   }, [id, resultHref, router]);
 
@@ -121,12 +121,12 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         setError("This reading changed in another tab. Your cards are shown as they are now.");
         await load();
       } else if (queue.state === "failed") {
-        setError("Your choices aren't saved yet. Retry saving, then reveal.");
+        setError("Your picks aren't saved yet. Retry saving, then turn them over.");
       } else if ((e as ApiError).body?.error === "bot_check_failed") {
-        setError("The security check expired. Please complete it again, then reveal.");
+        setError("That check expired. Do it once more, then turn them over.");
       } else if ((e as ApiError).body?.error === "bot_check_not_configured") {
-        setError("Readings can't be revealed right now. Please try again later.");
-      } else setError("Couldn't lock your selection. Please try again.");
+        setError("Can't turn cards over right now. Try again in a bit.");
+      } else setError("Couldn't turn them over. Try again.");
       // Turnstile tokens are single-use; a failed lock needs a fresh one.
       setTurnstileToken(null);
       turnstileRef.current?.reset();
@@ -164,12 +164,12 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     <div className="mx-auto max-w-5xl px-6 pb-44 pt-8">
       <ReadingProgress current={1} />
       <p className="eyebrow mt-6">Your question</p>
-      <p className="prose-measure mt-1 text-lg">{status.question ?? "A general reading"}</p>
+      <p className="prose-measure mt-1 text-lg">{status.question ?? "No question. Reading cold."}</p>
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="title">Choose three cards</h1>
-          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap in the order you want: first Situation, then Challenge, then Guidance.</p>
+          <h1 className="title">Pull three cards</h1>
+          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap three, in order. Where you are, what&apos;s in the way, the way through.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={shuffle} disabled={!canShuffle || busy} className="btn-secondary px-4 text-sm">
@@ -199,7 +199,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
       {needsBotCheck && (
         <div className="mt-8">
-          <p className="text-sm text-[var(--fg-soft)]">A quick check before your first reveal — no email needed.</p>
+          <p className="text-sm text-[var(--fg-soft)]">One quick check that you&apos;re a person. No email, just this.</p>
           <div className="mt-2">
             <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
           </div>
@@ -234,7 +234,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
               </button>
             )}
             <button type="button" onClick={reveal} disabled={!canReveal} className="btn-primary px-6 text-sm">
-              {busy ? "Saving your choices…" : "Reveal these cards"}
+              {busy ? "Hold on…" : "Turn them over"}
             </button>
           </div>
         </div>

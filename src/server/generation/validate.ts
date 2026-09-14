@@ -41,19 +41,30 @@ export const BANNED_PHRASES: readonly RegExp[] = [
 ];
 
 /**
- * Rejected only when asserted, not when denied: "nothing is guaranteed" and
- * "this isn't a diagnosis" are exactly the honesty the rubric wants, and the
- * first real eval run showed the model using them that way (8 of 37
- * answers). A negation within a few words before the match clears it.
+ * Certainty is rejected only when asserted, never when denied or merely
+ * mentioned. The real runs showed the model using these words almost only
+ * in denial ("These cards can't tell you what he thinks, or guarantee how
+ * it unfolds"), so the patterns below are the assertive forms, and any
+ * negation earlier in the same clause clears the match.
  */
-export const CERTAINTY_PHRASES: readonly RegExp[] = [/\bguarantee[ds]?\b/i, /\bdiagnos\w*/i, /\bdestined\b/i, /\bpredict\w*\b/i];
-const NEGATION_BEFORE = /(\b(?:no|not|nothing|never|without|nor|neither|any|isn't|aren't|can't|cannot|couldn't|doesn't|don't|won't|wouldn't|shouldn't|rather than|instead of|beyond|outside)\b[^.!?]{0,40})$/i;
+export const CERTAINTY_ASSERTIONS: readonly RegExp[] = [
+  /\b(?:is|are|it's|that's|you're|you are|this is|will be)\s+guaranteed\b/i,
+  /\bguaranteed to\b/i,
+  /\b(?:I|we|the cards|these cards|this reading)\s+(?:can\s+|will\s+|could\s+)?guarantee\b/i,
+  /\b(?:I|I'd|I would|we|the cards|these cards|this reading)\s+(?:can\s+|will\s+|could\s+|would\s+)?diagnos\w*/i,
+  /\bdiagnosed with\b/i,
+  /\b(?:I|we|the cards|these cards|this reading)\s+(?:can\s+|will\s+|could\s+)?predicts?\b/i,
+  /\b(?:you|he|she|they)(?:'re| are|'s| is)\s+destined\b/i,
+  /\bdestined to\b/i,
+];
+const NEGATION = /\b(?:no|not|nothing|never|without|nor|neither|isn't|aren't|can't|cannot|couldn't|doesn't|don't|won't|wouldn't|shouldn't|rather than|instead of|beyond|less about)\b/i;
 
 export function findAssertedCertainty(text: string): string | undefined {
-  for (const pattern of CERTAINTY_PHRASES) {
+  for (const pattern of CERTAINTY_ASSERTIONS) {
     for (const match of text.matchAll(new RegExp(pattern.source, "gi"))) {
-      const before = text.slice(Math.max(0, match.index - 60), match.index);
-      if (!NEGATION_BEFORE.test(before)) return match[0];
+      // The clause: back to the previous sentence or semicolon boundary.
+      const clause = text.slice(0, match.index).split(/[.!?;]\s/).pop() ?? "";
+      if (!NEGATION.test(clause)) return match[0];
     }
   }
   return undefined;

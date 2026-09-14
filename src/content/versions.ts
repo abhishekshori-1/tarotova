@@ -4,7 +4,7 @@
 // version, and content version when the draw is locked").
 export const DECK_VERSION = "major-22.v1";
 export const SPREAD_VERSION = "situation-challenge-guidance.v1";
-export const CONTENT_VERSION = "content.v1-draft";
+export const CONTENT_VERSION = "content.v2-draft";
 
 /**
  * This build ships PLAN.md's section-1 scope contingency: 22 Major Arcana

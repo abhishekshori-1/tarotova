@@ -62,7 +62,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
     } catch (e) {
       // Owned but not yet granted: verification unlocks this same reading.
       if ((e as ApiError).status === 403) return router.replace(verifyHref(`/reading/${id}/result`));
-      setError("This result isn't available. It may have expired.");
+      setError("This reading isn't here anymore. It may have expired.");
     }
   }, [generate, id, router]);
 
@@ -90,7 +90,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   if (!result) {
     return (
       <div className="mx-auto max-w-md px-6 py-16 text-center text-[var(--fg-soft)]" aria-live="polite">
-        Revealing your cards…
+        Turning them over…
       </div>
     );
   }
@@ -98,8 +98,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
   return (
     <article className="mx-auto max-w-5xl px-6 pb-16 pt-8">
       <ReadingProgress current={2} />
-      <p className="eyebrow mt-6">{result.question ? "Your question" : `${FOCUS_META[result.focus].label} reading`}</p>
-      <h1 className="prose-measure title mt-1">{result.question ?? "A general reading"}</h1>
+      <p className="eyebrow mt-6">{result.question ? "You asked" : `${FOCUS_META[result.focus].label} reading`}</p>
+      <h1 className="prose-measure title mt-1">{result.question ?? "No question. Read cold."}</h1>
 
       {interpretation && <InterpretationPanel view={interpretation} onRetry={retry} retryUsed={retryUsed} />}
 
@@ -115,7 +115,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
           ))}
         </ol>
         <div className="panel min-w-0 p-5 sm:p-6">
-          <p className="eyebrow">Your perspective</p>
+          <p className="eyebrow">The short of it</p>
           <p className="prose-measure mt-2 text-lg leading-relaxed">{result.overview}</p>
         </div>
       </section>
@@ -136,7 +136,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
               <p className="prose-measure mt-3 italic text-[var(--fg-soft)]">{c.focusNote}</p>
               {interpretation?.status === "succeeded" && (
                 <div className="mt-4 border-l-2 border-[var(--accent)] pl-4">
-                  <p className="eyebrow">For your question</p>
+                  <p className="eyebrow">About what you asked</p>
                   <p className="prose-measure mt-1 leading-relaxed">{interpretation.answer.cards.find((a) => a.position === c.position)?.relevance}</p>
                 </div>
               )}
@@ -147,21 +147,21 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
 
       {interpretation?.status === "succeeded" && (
         <section className="panel mt-12 p-5 sm:p-6">
-          <p className="eyebrow">One thing to try</p>
+          <p className="eyebrow">Try this</p>
           <p className="prose-measure mt-2 text-lg">{interpretation.answer.reflection}</p>
         </section>
       )}
 
       <section className={`panel p-5 sm:p-6 ${interpretation?.status === "succeeded" ? "mt-6" : "mt-12"}`}>
-        <p className="eyebrow">A question to sit with</p>
+        <p className="eyebrow">One to take with you</p>
         <p className="prose-measure mt-2 text-lg">{result.reflection}</p>
       </section>
 
       <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
         <Link href="/" className="btn-primary inline-flex items-center px-6 py-3 text-sm">
-          Begin another reading
+          Pull again
         </Link>
-        <p className="text-sm text-[var(--fg-soft)]">Your next reading asks you to confirm your email once; this one stays available here for 30 days.</p>
+        <p className="text-sm text-[var(--fg-soft)]">The next one asks for your email, once. This reading stays here for 30 days.</p>
       </div>
     </article>
   );

@@ -6,9 +6,9 @@ const fraunces = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], wei
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Tarotova — Free Three-Card Tarot Reading",
+  title: "Tarotova — A three-card reading, on the house",
   description:
-    "A calm, free three-card tarot reading — Situation, Challenge, Guidance — from the Major Arcana. Bring a question; your first reading needs no email.",
+    "Ask what's on your mind, pull three cards from the Major Arcana, get a straight reading. Where you are, what's in the way, the way through. First one needs no email.",
 };
 
 export const viewport: Viewport = {
