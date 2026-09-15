@@ -1,6 +1,6 @@
 import { and, eq, inArray, isNull, lte, notExists, or, sql } from "drizzle-orm";
 import { db } from "./db/client";
-import { browserSessions, deliveryEvents, rateLimitBuckets, readingAccessGrants, readings, sessionEmailChallenges } from "./db/schema";
+import { browserSessions, deliveryEvents, rateLimitBuckets, readingAccessGrants, readingGenerations, readings, sessionEmailChallenges } from "./db/schema";
 
 const DELIVERY_EVENT_RETENTION_MS = 7 * 24 * 60 * 60 * 1000; // PLAN.md section 7
 
@@ -22,8 +22,11 @@ export async function deleteExpired(now = Date.now()) {
   const readingIds = expiredReadings.map((r) => r.id);
 
   let grants = 0;
+  let generations = 0;
   if (readingIds.length > 0) {
     grants += (await db.delete(readingAccessGrants).where(inArray(readingAccessGrants.readingId, readingIds)).returning({ id: readingAccessGrants.id })).length;
+    // The question's answer leaves with the question (docs/PLAN-EXTENDED.md section 9 retention).
+    generations += (await db.delete(readingGenerations).where(inArray(readingGenerations.readingId, readingIds)).returning({ id: readingGenerations.id })).length;
     await db.delete(readings).where(inArray(readings.id, readingIds));
   }
   const sessionChallengesDeleted = (await db.delete(sessionEmailChallenges).where(lte(sessionEmailChallenges.expiresAt, now)).returning({ id: sessionEmailChallenges.id })).length;
@@ -46,6 +49,7 @@ export async function deleteExpired(now = Date.now()) {
     readings: readingIds.length,
     sessionChallenges: sessionChallengesDeleted,
     grants,
+    generations,
     rateLimitBuckets: buckets,
     deliveryEvents: events,
     sessions: sessionIds.length,

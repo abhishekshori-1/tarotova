@@ -144,6 +144,26 @@ psql "$DATABASE_URL" < tarotova-pre-<release>.sql
    `vercel.json` in both versions).
 4. Note what happened here, and in `ISSUES.md`.
 
+## Release B (contextual answer) — prepared, not released
+
+Branch `feat/release-b`, from `main` after the Release A docs commits.
+What it changes when merged:
+
+- Migration `0003_bored_black_queen`: **additive** — one new table,
+  `reading_generations`. The previous build ignores it, so rollback is
+  `git revert -m 1 <merge>` or Instant Rollback with no schema step.
+- Behaviour with `GENERATION_ENABLED` unset (the default): Release A's
+  behaviour with the rewritten library and the new interface voice; no bot
+  check on the reveal, no generation. `TURNSTILE_SECRET_KEY` is needed once
+  the flag is on, since the guest reveal then fails closed without it.
+- Behaviour with the flag on: see `IMPLEMENTATION.md` "Release B". Turning
+  the flag off again hides the section but keeps stored answers (they are
+  deleted with their readings after 30 days).
+
+Merge order: eval gate → `npm run eval` report scored → tag `v2.0-pre-b` →
+merge `--no-ff` → set/confirm the env vars in `INFRA.md` → redeploy → one
+real reading with a question → enable the flag → redeploy.
+
 ## Checklist for the next release
 
 - [ ] Tag `main` before merging: `git tag v2.0-pre-<next> main && git push origin --tags`.

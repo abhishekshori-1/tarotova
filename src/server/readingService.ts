@@ -11,6 +11,8 @@ import { buildOverview } from "@/content/overview";
 import { pickReflection } from "@/content/reflections";
 import { entitlementFor, getGrant, getSessionRow, isActive, issueGrant, sessionIsVerified, type Entitlement, type Executor } from "./access";
 import { AccessRequiredError, ConflictError, OwnershipError, ValidationError } from "./errors";
+import { getGeneration, viewOf } from "./generation/store";
+import { getGenerationConfig } from "./generation/config";
 
 export { AccessRequiredError, ConflictError, OwnershipError, RateLimitedError, ValidationError } from "./errors";
 
@@ -61,7 +63,7 @@ export interface ResultSnapshot {
   focus: Focus;
   overview: string;
   reflection: string;
-  cards: { position: (typeof POSITIONS)[number]; id: string; name: string; numeral: string; keywords: string[]; interpretation: string; focusNote: string }[];
+  cards: { position: (typeof POSITIONS)[number]; id: string; name: string; numeral: string; keywords: string[]; coreMeaning?: string; interpretation: string; focusNote: string }[];
   deckVersion: string;
   spreadVersion: string;
   contentVersion: string;
@@ -120,6 +122,10 @@ export async function safeStatus(row: ReadingRow, sessionId: string) {
     entitlement,
     accessExpiresAt: isActive(grant, t) ? grant.expiresAt : undefined,
     sessionVerified: sessionIsVerified(session, t),
+    // The email-free reveal carries a bot check only while it can trigger
+    // paid generation (docs/REVIEW-V2.md finding 2); with the feature off
+    // it is exactly the Release A reveal. A verified session never needs it.
+    botCheckOnReveal: getGenerationConfig().enabled && !sessionIsVerified(session, t),
     resultAvailable: entitlement === "granted",
   };
 }
@@ -201,6 +207,9 @@ export async function updateSelection(
   const effectiveFocus = (focus ?? row.focus) as Focus;
   patch.lockedSlots = JSON.stringify(slots);
   patch.resolvedCardIds = JSON.stringify(resolvedCardIds);
+  // Drafts can span a deployment. The text below comes from this release,
+  // so record its version with the snapshot in the same atomic update.
+  patch.contentVersion = CONTENT_VERSION;
   patch.resultSnapshot = JSON.stringify({
     focus: effectiveFocus,
     overview: buildOverview(situation, challenge, guidance, effectiveFocus),
@@ -211,12 +220,13 @@ export async function updateSelection(
       name: card.name,
       numeral: card.numeral,
       keywords: card.keywords,
+      coreMeaning: card.coreMeaning,
       interpretation: card.position[position],
       focusNote: card.focus[effectiveFocus],
     })),
     deckVersion: row.deckVersion,
     spreadVersion: row.spreadVersion,
-    contentVersion: row.contentVersion,
+    contentVersion: CONTENT_VERSION,
   } satisfies ResultSnapshot);
   patch.state = "locked";
 
@@ -231,7 +241,12 @@ export async function updateSelection(
   return safeStatus(locked, sessionId);
 }
 
-export async function getResult(readingId: string, sessionId: string) {
+/**
+ * The locked reading plus the grant that authorizes reading it. Shared by
+ * the result endpoint and the contextual-answer service so both enforce
+ * exactly the same entitlement (docs/ACCESS-FLOW.md section 7).
+ */
+export async function loadGrantedReading(readingId: string, sessionId: string) {
   const row = await getOwnedReading(db, readingId, sessionId);
   if (row.state === "drafting" || !row.resultSnapshot) throw new OwnershipError();
   const t = now();
@@ -245,5 +260,11 @@ export async function getResult(readingId: string, sessionId: string) {
     if (!grant) throw new AccessRequiredError();
   }
 
-  return { question: row.question, ...(JSON.parse(row.resultSnapshot) as ResultSnapshot) };
+  return { row, grant, snapshot: JSON.parse(row.resultSnapshot) as ResultSnapshot };
+}
+
+export async function getResult(readingId: string, sessionId: string) {
+  const { row, grant, snapshot } = await loadGrantedReading(readingId, sessionId);
+  const interpretation = viewOf(await getGeneration(db, readingId), grant.basis, row.question, now());
+  return { question: row.question, ...snapshot, interpretation };
 }

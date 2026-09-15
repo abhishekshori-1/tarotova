@@ -6,12 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { CardBackSlot } from "@/components/CardBackSlot";
 import { ReadingProgress } from "@/components/ReadingProgress";
+import { TurnstileWidget, type TurnstileWidgetHandle } from "@/components/TurnstileWidget";
 import { getStatus, reshuffle, updateSelection, type ApiError, type ReadingStatus } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { createSaveQueue, type SaveState } from "@/lib/saveQueue";
 
 const SLOT_COUNT = 22;
 const POSITIONS = ["Situation", "Challenge", "Guidance"] as const;
+const TURNSTILE_CONFIGURED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function ChoosePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -23,6 +25,8 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const [saveState, setSaveState] = useState<SaveState>("saved");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const revisionRef = useRef(0);
 
   const resultHref = `/reading/${id}/result`;
@@ -37,7 +41,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       setStatus(s);
       setSelected(s.selectedSlots);
     } catch {
-      setError("This reading couldn't be found. It may have expired.");
+      setError("This reading isn't here anymore. It may have expired.");
     }
   }, [id, resultHref, router]);
 
@@ -107,7 +111,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     try {
       // Lock only the acknowledged selection: wait for queued saves first.
       await queue.flush();
-      const s = await updateSelection(id, revisionRef.current, selected, { lock: true });
+      const s = await updateSelection(id, revisionRef.current, selected, { lock: true, turnstileToken });
       setStatus(s);
       // A lost race with another tab locks the draw but grants nothing;
       // verification then unlocks this same reading.
@@ -117,8 +121,17 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         setError("This reading changed in another tab. Your cards are shown as they are now.");
         await load();
       } else if (queue.state === "failed") {
-        setError("Your choices aren't saved yet. Retry saving, then reveal.");
-      } else setError("Couldn't lock your selection. Please try again.");
+        setError("Your picks aren't saved yet. Retry saving, then turn them over.");
+      } else if ((e as ApiError).body?.error === "bot_check_failed") {
+        // No site key in this build means no widget and no token, whatever
+        // the person did; say so instead of blaming a check they never saw.
+        setError(TURNSTILE_CONFIGURED ? "That check expired. Do it once more, then turn them over." : "This deployment is missing its bot-check site key, so cards can't be turned over here yet.");
+      } else if ((e as ApiError).body?.error === "bot_check_not_configured") {
+        setError("Can't turn cards over right now. Try again in a bit.");
+      } else setError("Couldn't turn them over. Try again.");
+      // Turnstile tokens are single-use; a failed lock needs a fresh one.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } finally {
       setBusy(false);
     }
@@ -145,17 +158,21 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
   const canShuffle = selected.length === 0 && saveState !== "failed";
   const saveLabel = saveState === "saving" ? "Saving…" : saveState === "failed" ? "Not saved" : "Saved";
+  // The server decides whether this reveal needs the check (generation on,
+  // session unverified); the widget appears only when it does and a site key exists.
+  const needsBotCheck = TURNSTILE_CONFIGURED && status.botCheckOnReveal;
+  const canReveal = selected.length === 3 && !busy && saveState !== "failed" && (!needsBotCheck || turnstileToken !== null);
 
   return (
     <div className="mx-auto max-w-5xl px-6 pb-44 pt-8">
       <ReadingProgress current={1} />
       <p className="eyebrow mt-6">Your question</p>
-      <p className="prose-measure mt-1 text-lg">{status.question ?? "A general reading"}</p>
+      <p className="prose-measure mt-1 text-lg">{status.question ?? "No question. Reading cold."}</p>
 
       <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="title">Choose three cards</h1>
-          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap in the order you want: first Situation, then Challenge, then Guidance.</p>
+          <h1 className="title">Pull three cards</h1>
+          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap three, in order. Where you are, what&apos;s in the way, the way through.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={shuffle} disabled={!canShuffle || busy} className="btn-secondary px-4 text-sm">
@@ -182,6 +199,15 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
           return <CardBackSlot key={slot} slot={slot} order={order} disabled={disabled || busy} onClick={() => toggleSlot(slot)} />;
         })}
       </div>
+
+      {needsBotCheck && (
+        <div className="mt-8">
+          <p className="text-sm text-[var(--fg-soft)]">One quick check that you&apos;re a person. No email, just this.</p>
+          <div className="mt-2">
+            <TurnstileWidget ref={turnstileRef} onToken={setTurnstileToken} />
+          </div>
+        </div>
+      )}
 
       <div className="sticky-tray fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[rgba(20,17,31,0.92)] px-4 pt-3 backdrop-blur sm:px-6">
         <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4">
@@ -210,8 +236,8 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
                 Retry saving
               </button>
             )}
-            <button type="button" onClick={reveal} disabled={selected.length !== 3 || busy || saveState === "failed"} className="btn-primary px-6 text-sm">
-              {busy ? "Saving your choices…" : "Reveal these cards"}
+            <button type="button" onClick={reveal} disabled={!canReveal} className="btn-primary px-6 text-sm">
+              {busy ? "Hold on…" : "Turn them over"}
             </button>
           </div>
         </div>

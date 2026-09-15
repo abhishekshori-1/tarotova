@@ -18,9 +18,9 @@ const EXAMPLES = [
 ];
 
 const STEPS: [string, string][] = [
-  ["Ask", "Bring a question in your own words, or start with a general reading."],
-  ["Draw", "Choose three face-down cards: Situation, Challenge, Guidance."],
-  ["Reflect", "Read each card in its position, then sit with one question to take away."],
+  ["Ask", "Say what's going on, in your own words. Or don't, and I'll read cold."],
+  ["Pull", "Three cards, face down. Where you are, what's in the way, the way through."],
+  ["Read", "Each card in its place, then one thing to take out the door with you."],
 ];
 
 export default function Home() {
@@ -38,7 +38,7 @@ export default function Home() {
       const choose = `/reading/${reading.id}/choose`;
       router.push(reading.entitlement === "verification_required" ? verifyHref(choose) : choose);
     } catch {
-      setError("Something went wrong starting your reading. Please try again.");
+      setError("Couldn't get the deck out. Try again.");
       setBusy(false);
     }
   }
@@ -47,8 +47,8 @@ export default function Home() {
     <div className="mx-auto max-w-6xl px-6 pb-16 pt-10 sm:pt-16">
       <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
         <section className="settle-in">
-          <h1 className="display">What is asking for your attention?</h1>
-          <p className="prose-measure mt-5 text-lg text-[var(--fg-soft)]">Bring a question. Choose three cards. Find a perspective to sit with.</p>
+          <h1 className="display">What&apos;s on your mind?</h1>
+          <p className="prose-measure mt-5 text-lg text-[var(--fg-soft)]">Ask it plainly. Pull three cards. See what they have to say.</p>
 
           <form
             className="mt-10"
@@ -66,17 +66,17 @@ export default function Home() {
               maxLength={QUESTION_MAX}
               rows={3}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="Write it in your own words…"
+              placeholder="Say it the way you'd say it to a friend…"
               className="field mt-2 resize-y"
             />
             <div className="mt-1 flex justify-between text-xs text-[var(--fg-soft)]">
-              <span>Shown with your reading, in your words.</span>
+              <span>Your words, kept with your reading.</span>
               <span aria-live="polite">
                 {question.length}/{QUESTION_MAX}
               </span>
             </div>
 
-            <p className="mt-5 text-xs font-medium text-[var(--fg-soft)]">Or start from an example — you can edit it</p>
+            <p className="mt-5 text-xs font-medium text-[var(--fg-soft)]">Or borrow one of these and make it yours</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {EXAMPLES.map((example) => (
                 <button
@@ -93,7 +93,7 @@ export default function Home() {
             </div>
 
             <fieldset className="mt-8">
-              <legend className="text-sm font-medium text-[var(--fg-soft)]">What&apos;s this reading about?</legend>
+              <legend className="text-sm font-medium text-[var(--fg-soft)]">What&apos;s this about?</legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {FOCUSES.map((f) => (
                   <button key={f} type="button" onClick={() => setFocus(f)} aria-pressed={focus === f} className="chip">
@@ -105,10 +105,10 @@ export default function Home() {
 
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
               <button type="submit" disabled={busy} className="btn-primary px-6 py-3 text-base">
-                {busy ? "Starting…" : "Choose my cards"}
+                {busy ? "One moment…" : "Pull my cards"}
               </button>
               <button type="button" disabled={busy} onClick={() => start(false)} className="btn-secondary px-6 py-3 text-base">
-                Explore a general reading
+                Just read for me
               </button>
             </div>
             {error && (
@@ -118,7 +118,7 @@ export default function Home() {
             )}
           </form>
 
-          <p className="mt-6 text-sm text-[var(--fg-soft)]">Your first reading needs no email. Confirm your email to continue with more free readings.</p>
+          <p className="mt-6 text-sm text-[var(--fg-soft)]">First reading&apos;s on the house, no email. After that, one code to keep going.</p>
         </section>
 
         <aside className="relative mx-auto hidden aspect-[4/3] w-full max-w-md lg:block" aria-hidden="true">

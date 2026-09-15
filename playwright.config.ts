@@ -29,6 +29,13 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: false,
     timeout: 180_000,
-    env: { EMAIL_PROVIDER: "console", TURNSTILE_SECRET_KEY: "", NEXT_PUBLIC_TURNSTILE_SITE_KEY: "" },
+    env: {
+      EMAIL_PROVIDER: "console",
+      TURNSTILE_SECRET_KEY: "",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+      GENERATION_ENABLED: "true",
+      GENERATION_PROVIDER: "stub",
+      ANTHROPIC_API_KEY: "",
+    },
   },
 });

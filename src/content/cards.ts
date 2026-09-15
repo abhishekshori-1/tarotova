@@ -1,11 +1,22 @@
 import type { CardContent } from "./types";
 
 /**
- * Draft-quality RWS Major Arcana content (see versions.ts — not yet
- * reviewed by an RWS practitioner). Upright only, per PLAN.md section 1/4:
- * a Challenge-position text names the upright card's difficulty or tension
- * in that context rather than switching to a reversed meaning. Symbolism
- * follows Waite's own numbering (Strength VIII, Justice XI).
+ * The 22 Major Arcana, RWS meanings, upright only (see versions.ts: still
+ * not reviewed by a practitioner). Symbolism follows Waite's numbering
+ * (Strength VIII, Justice XI). A Challenge text names the upright card's
+ * difficulty in that position, never a reversed meaning.
+ *
+ * Stance (docs/RELEASE-B-QUALITY-REVIEW.md): every sentence is about the
+ * card's theme, never a finding about the person reading. The library does
+ * not say what they have, what they feel, why something happened, whether a
+ * fear is founded, or whether a constraint is real. The model that writes
+ * the personalized answer grounds itself on this text, so a verdict here
+ * becomes a verdict in someone's reading.
+ *
+ * Texture (content.v6): short declarative sentences carry each text. At
+ * most one question per text. No permission language ("if it fits", "yours
+ * to weigh", "one option is"); the stance is held by keeping the subject on
+ * the theme, not by hedging every line.
  */
 export const CARDS: CardContent[] = [
   {
@@ -13,21 +24,21 @@ export const CARDS: CardContent[] = [
     number: 0,
     name: "The Fool",
     numeral: "0",
-    keywords: ["beginnings", "trust", "an open road"],
-    coreMeaning: "A step into the unknown, taken with curiosity rather than a fixed plan.",
+    keywords: ["beginnings", "openness", "a first step"],
+    coreMeaning: "A first step into something new, taken with curiosity rather than a finished plan.",
     position: {
       situation:
-        "You're standing at the edge of something new, with more openness than certainty about where it leads. The details aren't fixed yet, and that's part of what makes this moment feel light and a little exposed at once.",
+        "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
       challenge:
-        "The pull here is to move before you've looked, or to mistake momentum for direction. Enthusiasm can outrun preparation, leaving loose ends that a little more looking-before-leaping would have caught.",
+        "The Fool's trouble is moving before looking. Enthusiasm runs ahead of the checks a step deserves. What would you want to know before the next move, and what can wait?",
       guidance:
-        "Let curiosity lead, but pair it with one or two grounding checks rather than none at all. You don't need the whole path mapped — just enough footing to take the next real step.",
+        "Let curiosity lead, with a check or two rather than none. The whole path does not need a map. Enough footing for the next real step is enough.",
     },
     focus: {
-      general: "A fresh start is available if you're willing to walk toward it without every answer in hand.",
-      relationships: "An early, undefined stage — worth entering with openness, not with the outcome already decided.",
-      work: "A new direction or role is on the table; treat it as an experiment, not a verdict on your worth.",
-      growth: "Practice starting before you feel fully ready — readiness often arrives during the walk, not before it.",
+      general: "A fresh start is on the table. How big a step feels right is a matter for you, not the card.",
+      relationships: "Early, undefined stages belong to this card. They ask for openness, with the outcome left open too.",
+      work: "A new direction or role can be treated as an experiment rather than a verdict on your worth.",
+      growth: "Starting before you feel ready is one of this card's themes. Readiness sometimes arrives during the walk.",
     },
   },
   {
@@ -36,20 +47,20 @@ export const CARDS: CardContent[] = [
     name: "The Magician",
     numeral: "I",
     keywords: ["resourcefulness", "focus", "making it real"],
-    coreMeaning: "The tools you already have are enough to begin turning an idea into something real.",
+    coreMeaning: "Turning an idea into something real by choosing what to work with and where to point it.",
     position: {
       situation:
-        "You have more resources at hand than you may be crediting — skill, timing, or people willing to help. The question is less what's available and more what you choose to do with it.",
+        "Resources and focus. Skill, timing, tools, people, and the act of choosing which to use. The card does not know what is within your reach. Taking stock of that, including what is missing, is where it begins.",
       challenge:
-        "It's easy to scatter effort across too many directions, or to talk about a plan more than act on it. Focus, not more inputs, is what this moment is actually short on.",
+        "The Magician's trouble is scattering: effort spread across too many directions, or planning that stands in for doing. The card favours a single deliberate effort over several half ones.",
       guidance:
-        "Pick one concrete action and follow it through before reaching for the next tool. A single well-used resource outperforms a pile of unused ones.",
+        "Pick one concrete action and see it through before reaching for the next tool. Name what it needs in time, money or help, and whether that is available. The card's preference is a step the means can support over a plan they cannot.",
     },
     focus: {
-      general: "You have what you need to act; the missing piece is a decision to start, not another resource.",
-      relationships: "Say plainly what you want rather than hinting — clarity here does more work than charm.",
-      work: "A skill or project you've been circling is ready for deliberate, focused effort.",
-      growth: "Translate one intention into one visible action this week, and let that be the whole goal.",
+      general: "Resourcefulness is the theme. What could be made with the resources you can actually name?",
+      relationships: "Saying plainly what you want, rather than hinting, is this card's suggestion. It favours clarity over charm.",
+      work: "A skill or project may be ready for focused effort. Which one, and with what means, is the practical question.",
+      growth: "One intention, one visible action. The card favours small and real over large and imagined.",
     },
   },
   {
@@ -57,21 +68,21 @@ export const CARDS: CardContent[] = [
     number: 2,
     name: "The High Priestess",
     numeral: "II",
-    keywords: ["intuition", "quiet knowing", "what's not yet said"],
-    coreMeaning: "Something is known beneath the surface before it's ready to be explained out loud.",
+    keywords: ["intuition", "quiet knowing", "what is not yet said"],
+    coreMeaning: "Something sensed before it can be explained, and the patience to let it surface.",
     position: {
       situation:
-        "There's more going on than what's been said outright — a sense, a hunch, information that hasn't fully surfaced yet. Patience with the not-knowing is part of what this moment asks of you.",
+        "The unsaid. A hunch, a sense of something not fully on the table yet. Part of your question may be felt before it can be put into words, and that is a normal place for a question to be.",
       challenge:
-        "The temptation is to force an answer before it's ready, or to talk yourself out of a hunch because it isn't provable yet. Rushing past intuition here tends to cost you the very thing it was pointing at.",
+        "The High Priestess's trouble is forcing an answer before it is ready, or dismissing a sense because it cannot be proved. A hunch says where to look. It is not evidence about another person, and it does not replace the facts.",
       guidance:
-        "Give it a little more time before deciding. Notice what you already sense, write it down, and let the fuller picture arrive rather than manufacturing one early.",
+        "Give it a little more time. Write down what you sense and keep gathering what you know. This card treats the fuller picture as something that arrives on its own schedule, not on demand.",
     },
     focus: {
-      general: "Trust a quiet instinct enough to sit with it before acting on or dismissing it.",
-      relationships: "Something unspoken matters here; a direct, gentle question may surface it faster than guessing.",
-      work: "A hunch about timing or people is worth weighing alongside the visible facts, not instead of them.",
-      growth: "Build in quiet, unscheduled time — insight here tends to arrive in the gaps, not the agenda.",
+      general: "A quiet instinct deserves a hearing alongside the facts. The card does not say which of them is right.",
+      relationships: "Something unspoken may matter here. The card favours a direct, gentle question over guessing.",
+      work: "A sense about timing or people can sit next to the visible facts. Not instead of them.",
+      growth: "Quiet, unscheduled time is this card's suggestion. Some understanding arrives in the gaps.",
     },
   },
   {
@@ -79,21 +90,21 @@ export const CARDS: CardContent[] = [
     number: 3,
     name: "The Empress",
     numeral: "III",
-    keywords: ["abundance", "nurturing", "letting things grow"],
-    coreMeaning: "Something is ready to be tended and given room to grow, rather than forced or hurried.",
+    keywords: ["nurture", "growth", "giving things room"],
+    coreMeaning: "Care and time given to something so it can grow, rather than pressure to make it hurry.",
     position: {
       situation:
-        "There's a sense of things ripening — a relationship, a project, an idea — that responds better to steady care than to pressure. Growth is happening, even if it's not dramatic yet.",
+        "Growth that answers to tending rather than force. A relationship, a project, an idea. Something in your question may be growing quietly, and quiet growth is easy to miss.",
       challenge:
-        "Overgiving or overextending is the risk: pouring so much into something (or someone) that your own reserves run thin. Generosity without limits stops being sustainable.",
+        "The Empress's trouble is giving past your own reserves: care that runs out because nothing refills it. Where the limit of your giving sits right now is worth knowing.",
       guidance:
-        "Keep tending what matters, but set a boundary on how much you give before refilling your own cup. Care that includes yourself lasts longer than care that doesn't.",
+        "Keep tending what matters, and decide how much you can give before you need refilling yourself. This card counts your own reserves as part of the care.",
     },
     focus: {
-      general: "Nurture what's already growing rather than starting something new right now.",
-      relationships: "Warmth and attentiveness go a long way here — and so does not losing yourself in giving it.",
-      work: "A slower, cultivating approach — mentoring, refining, building relationships — suits this moment better than a hard push.",
-      growth: "Practice receiving care as readily as you give it; it's a skill, not an indulgence.",
+      general: "Nurturing what already exists, rather than starting something new, is the theme.",
+      relationships: "Warmth and attention are the themes here. So is not losing yourself in giving them.",
+      work: "A slower, cultivating approach suits this card: mentoring, refining, building relationships.",
+      growth: "Receiving care as readily as you give it is a skill, not an indulgence. How that goes for you is a fair thing to notice.",
     },
   },
   {
@@ -102,20 +113,20 @@ export const CARDS: CardContent[] = [
     name: "The Emperor",
     numeral: "IV",
     keywords: ["structure", "stability", "clear boundaries"],
-    coreMeaning: "Structure and a clear boundary are what turn a good intention into something dependable.",
+    coreMeaning: "Structure and a clear boundary, the things that turn a good intention into something dependable.",
     position: {
       situation:
-        "Things need a firmer shape — a plan, a boundary, a decision that holds — rather than staying open-ended indefinitely. Structure is what's being called for, not more flexibility.",
+        "Structure. A plan, a boundary, a decision that holds. This card raises the question of whether some part of what you brought has stayed open-ended longer than it serves you, or whether a firmer shape would only feel safer.",
       challenge:
-        "The risk is rigidity: holding a boundary so tightly it stops serving anyone, including you, or leading with control where trust would work better.",
+        "The Emperor's trouble is rigidity: a boundary held so tightly it stops serving anyone, or control reached for where trust might work. Both can look like strength from the inside.",
       guidance:
-        "Set the structure you actually need, then check it periodically instead of treating it as permanent. A boundary should serve the goal, not replace it.",
+        "Set the structure you need, then check it now and then instead of treating it as permanent. A boundary is there to serve the goal, not to replace it.",
     },
     focus: {
-      general: "Bring a plan or a boundary into a situation that's been left too open-ended.",
-      relationships: "Clear expectations, stated plainly, will serve this better than hoping things settle on their own.",
-      work: "Structure — a schedule, a scope, a decision-maker — is what's missing more than additional effort.",
-      growth: "Build one dependable routine rather than several ambitious ones you won't keep.",
+      general: "Bringing a plan or a boundary to something left open is this card's theme.",
+      relationships: "Clear expectations, said plainly, belong to this card. Whether they are wanted, and by whom, is a conversation.",
+      work: "Structure, such as a schedule, a scope or a decision-maker, may be what is missing rather than more effort. Telling the two apart is the work.",
+      growth: "One dependable routine over several ambitious ones. Which routine, and what it costs in your week, is the practical part.",
     },
   },
   {
@@ -124,20 +135,20 @@ export const CARDS: CardContent[] = [
     name: "The Hierophant",
     numeral: "V",
     keywords: ["tradition", "shared method", "learning from others"],
-    coreMeaning: "An established method, mentor, or shared understanding is more useful here than reinventing things alone.",
+    coreMeaning: "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
     position: {
       situation:
-        "There's value in a known approach or a more experienced perspective, rather than working this out entirely from scratch. Some part of this has been figured out before.",
+        "The tried path. An established approach, a mentor, a community that has faced this before. The card points to what others have worked out about questions like this one. Finding that is different from copying it.",
       challenge:
-        "Following convention without checking whether it fits can leave you attached to a method that no longer serves the actual situation.",
+        "The Hierophant's trouble is following a convention without checking whether it fits. A method that served others may not serve this. Which parts to keep is the question.",
       guidance:
-        "Borrow what's genuinely useful from established practice or a mentor's advice, and adapt the rest rather than accepting or rejecting it wholesale.",
+        "Borrow what is genuinely useful from established practice or from someone experienced, and adapt the rest. Wholesale acceptance and wholesale rejection are both shortcuts.",
     },
     focus: {
-      general: "A teacher, mentor, or established framework has something worth learning right now.",
-      relationships: "Shared values or a shared community may matter more here than either of you has said aloud.",
-      work: "Process and precedent are useful guides here — check what's worked before you improvise.",
-      growth: "Find someone who has already walked this path and ask them a specific question.",
+      general: "A teacher, a mentor or an established framework is where this card points. Whether they fit your situation is a separate question.",
+      relationships: "Shared values or a shared community may matter more here than has been said aloud.",
+      work: "Process and precedent are a guide. Checking what worked before improvising is a reasonable first step.",
+      growth: "Find someone who has walked this path and ask them one specific question. Small and concrete.",
     },
   },
   {
@@ -146,20 +157,20 @@ export const CARDS: CardContent[] = [
     name: "The Lovers",
     numeral: "VI",
     keywords: ["connection", "values", "a real choice"],
-    coreMeaning: "A meaningful choice is in front of you, one that asks what you actually value, not just what's easiest.",
+    coreMeaning: "A choice that asks what you value, not only what is easiest or keeps the peace.",
     position: {
       situation:
-        "A connection or a decision is asking you to be honest about what you want, rather than what looks good or keeps the peace. The stakes feel personal, not abstract.",
+        "A meaningful choice, often about connection, and the values underneath it. The card cannot tell you what anyone else feels. It can ask what matters most to you in the decision your question holds.",
       challenge:
-        "Avoiding the choice, or making it to please someone else, tends to cost more later than making it clearly now.",
+        "The Lovers' trouble is choosing to please someone else, or not choosing at all. Whose wishes are shaping the decision, and are yours among them?",
       guidance:
-        "Name what you actually value before deciding, and let that — not obligation or fear of disappointing someone — lead the choice.",
+        "Name what you value before deciding, alongside the responsibilities and limits involved, and let that lead rather than obligation or the fear of disappointing someone. The choice stays yours.",
     },
     focus: {
-      general: "A choice in front of you is really about values; get clear on those first.",
-      relationships: "Alignment matters more here than compromise for its own sake — check that your values actually match.",
-      work: "A decision between two paths is really a decision about what you want your work to stand for.",
-      growth: "Practice choosing based on what you value, and naming that reason to yourself out loud.",
+      general: "A choice in front of you may really be a choice about values. Getting clear on those comes first.",
+      relationships: "Alignment of values is the theme, more than compromise for its own sake. Whether they match is something to find out, not assume.",
+      work: "A decision between paths can be a decision about what you want your work to stand for.",
+      growth: "Choose on the basis of what you value, and say that reason to yourself plainly. It is a practice.",
     },
   },
   {
@@ -168,20 +179,20 @@ export const CARDS: CardContent[] = [
     name: "The Chariot",
     numeral: "VII",
     keywords: ["drive", "focused will", "holding two things together"],
-    coreMeaning: "Forward motion, held together by focus and will even when the pull is coming from two directions.",
+    coreMeaning: "Forward motion held together by will, even when the pull comes from two directions.",
     position: {
       situation:
-        "You're moving, and moving with intent — but it's taking real effort to keep opposing pressures pointed the same way. Progress here is earned, not coasted into.",
+        "Momentum under tension. Moving with intent while different pressures pull in different ways. Where in your question there is drive, and what it is being asked to hold together, is the shape this card offers.",
       challenge:
-        "Pushing through on will alone can tip into forcing things, or ignoring signs that the direction itself needs adjusting, not just more effort.",
+        "The Chariot's trouble is will used alone: pushing through when the direction, not the effort, is what needs a look. A change of course costs something. So does staying on a wrong one.",
       guidance:
-        "Keep steering deliberately rather than gritting through — check the direction as often as you check your effort.",
+        "Steer deliberately rather than grit through. Check the direction as often as the effort. Earned progress can still be pointed the wrong way, which is a reason to look, not a verdict.",
     },
     focus: {
-      general: "Determined, focused effort will move this forward — as long as it stays steered, not just forceful.",
-      relationships: "Two different needs are pulling here; hold them both in view rather than letting one win by default.",
-      work: "A push toward a goal is working, but confirm you're still driving toward the right one.",
-      growth: "Build the discipline to keep going after the initial motivation fades.",
+      general: "Focused effort is the theme. It works best steered, not only forceful.",
+      relationships: "Two different needs may be pulling here. Giving each a hearing is this card's suggestion. Agreement does not have to mean wanting the same thing.",
+      work: "A push toward a goal is the theme. Whether it is the right goal is the question the card leaves with you.",
+      growth: "Discipline after the first motivation fades. That is the part this card is about.",
     },
   },
   {
@@ -189,21 +200,21 @@ export const CARDS: CardContent[] = [
     number: 8,
     name: "Strength",
     numeral: "VIII",
-    keywords: ["quiet courage", "patience", "gentleness that holds"],
-    coreMeaning: "A steady, patient kind of courage — the strength that persuades rather than forces.",
+    keywords: ["quiet courage", "patience", "steadiness"],
+    coreMeaning: "A patient kind of courage, the sort that holds steady rather than forces.",
     position: {
       situation:
-        "Something here responds better to patience and steadiness than to force. It may look like a hard, urgent problem, but it's actually asking for calm persistence.",
+        "Steadiness. Courage that is quiet, patience under pressure, resolve kept up over time. Somewhere in what you brought, that kind of strength may already be in use, unnoticed because it is quiet.",
       challenge:
-        "Reaching for control or confrontation when patience would work better tends to make this harder, not easier.",
+        "Strength's trouble is confusing force with courage, or being harder on yourself than the situation warrants. A gentler firmness looks different from both.",
       guidance:
-        "Meet the difficulty gently and consistently rather than forcefully. Quiet resolve, kept up over time, is the more effective move here.",
+        "Meet the difficulty consistently rather than forcefully, and extend the same patience to yourself. This is about your own footing. It does not make you responsible for how anyone else behaves.",
     },
     focus: {
-      general: "Patience and a steady hand will do more here than pushing harder.",
-      relationships: "Meet friction with calm rather than control — it tends to soften rather than escalate.",
-      work: "A difficult colleague or situation responds better to consistency than confrontation.",
-      growth: "Practice staying calm with your own setbacks rather than being harsh with yourself about them.",
+      general: "Patience and a steady hand are the themes. Whether they are what this calls for is a judgement only you can make.",
+      relationships: "Steadiness in yourself is the theme. It is not a promise that calm changes another person, and never a reason to stay in something unsafe.",
+      work: "Consistency is one way to meet a hard situation. Whether it is enough here is a question worth keeping open.",
+      growth: "Being steady with your own setbacks, rather than harsh about them, is the practice this card offers.",
     },
   },
   {
@@ -212,20 +223,20 @@ export const CARDS: CardContent[] = [
     name: "The Hermit",
     numeral: "IX",
     keywords: ["solitude", "reflection", "an inward light"],
-    coreMeaning: "Stepping back from the noise to think clearly, before stepping back in.",
+    coreMeaning: "Stepping back from the noise to think clearly, and then stepping back in.",
     position: {
       situation:
-        "This calls for some distance — from advice, from noise, from other people's opinions — so you can hear your own read on things clearly.",
+        "Distance. From advice, from noise, from other people's opinions, so that your own read on things can be heard. Your question may not have had that kind of quiet yet.",
       challenge:
-        "Too much withdrawal can tip into isolation, where useful outside perspective stops reaching you at all.",
+        "The Hermit's trouble is the line between useful solitude and isolation. Time alone can sharpen the view or narrow it. Someone you trust may notice which is happening before you do.",
       guidance:
-        "Take the quiet time you need, but set a point where you'll re-engage rather than staying withdrawn indefinitely.",
+        "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
     },
     focus: {
-      general: "Some solitude will clarify this faster than more conversation about it would.",
-      relationships: "A little space, used well, may help more right now than another conversation would.",
-      work: "Step back from the group chat and think this through on your own first.",
-      growth: "Schedule real, protected time alone with the question, not just around it.",
+      general: "The Hermit favours quiet reflection before further conversation.",
+      relationships: "A little space before the next conversation is this card's suggestion.",
+      work: "Think it through alone before returning to the group. That is the order this card proposes.",
+      growth: "Protected time alone with the question, not just around it. When that is possible, this card recommends it.",
     },
   },
   {
@@ -234,20 +245,20 @@ export const CARDS: CardContent[] = [
     name: "Wheel of Fortune",
     numeral: "X",
     keywords: ["change", "cycles", "a turning point"],
-    coreMeaning: "Circumstances are shifting on their own timeline — a turning point rather than a fixed state.",
+    coreMeaning: "Circumstances turning on their own timeline, a turning point rather than a fixed state.",
     position: {
       situation:
-        "Things are moving, and not entirely on your terms — a cycle turning, an outside factor changing the shape of things. What felt fixed a while ago may not be fixed now.",
+        "Change that is not entirely on your terms. A cycle turning, an outside factor shifting the shape of things. Some of what is moving in your question is yours to steer and some is not, and telling them apart matters.",
       challenge:
-        "Fighting the turn, or assuming the current state (good or bad) is permanent, works against you here.",
+        "The Wheel's trouble is treating the current state, good or bad, as permanent, or spending effort fighting a turn that is happening anyway. Not every effort against change is wasted. Some are.",
       guidance:
-        "Adapt to the shift rather than resisting it, and look for the opening this particular turn creates.",
+        "Take stock of what has changed before choosing a response. There may be an opening, a loss to attend to, or something that needs protecting. Change does not owe you an opportunity.",
     },
     focus: {
-      general: "Circumstances are turning; work with the change rather than trying to hold the old shape in place.",
-      relationships: "A relationship may be entering a different phase — notice it rather than expecting things to stay as they were.",
-      work: "Timing and circumstance are shifting in your favor or against it; read the moment rather than assuming last month's rules still apply.",
-      growth: "Notice a pattern that's cycled before, and ask what you'd do differently this time round.",
+      general: "Circumstances are the theme. Working with change, rather than holding the old shape, is the card's suggestion.",
+      relationships: "A relationship entering a different phase is one of this card's readings. Noticing it comes before deciding anything about it.",
+      work: "Timing and circumstance are the themes. Last month's rules may not apply. Reading the moment is the work.",
+      growth: "A pattern that has cycled before is worth noticing. What you would do differently this time is the useful question.",
     },
   },
   {
@@ -255,21 +266,21 @@ export const CARDS: CardContent[] = [
     number: 11,
     name: "Justice",
     numeral: "XI",
-    keywords: ["fairness", "clear-eyed truth", "consequence"],
-    coreMeaning: "An honest, even-handed look at cause and effect, without spin in either direction.",
+    keywords: ["fairness", "clear sight", "consequence"],
+    coreMeaning: "An even-handed look at cause and effect, and at what would be fair to do next.",
     position: {
       situation:
-        "Something here needs a clear-eyed, fair accounting — of facts, of responsibility, of what actually led to what — more than it needs a favorable story.",
+        "Fairness and consequence. What led to what, who is responsible for which part, what a fair next step would be. Something in your question may be waiting for that kind of accounting.",
       challenge:
-        "Bending the facts to protect your own side of it, or avoiding a decision because fairness feels uncomfortable, tends to backfire later.",
+        "Justice's trouble is that fairness is uncomfortable. It may ask for a decision, or for a look at your own share. It presumes no dishonesty on anyone's side, including yours.",
       guidance:
-        "Look at the situation as evenly as you can, including your own part in it, before deciding what's fair to do next.",
+        "Look at the situation as evenly as you can, your own part included, before deciding what is fair to do. Fair does not always mean equal, and the weighing is yours.",
     },
     focus: {
-      general: "An honest accounting of the facts — including your own role — will serve you better than a comfortable story.",
-      relationships: "Be as fair to their side of it as you want them to be to yours.",
-      work: "A decision or agreement needs to be evaluated on its actual merits, not on who's more persuasive.",
-      growth: "Take stock honestly of a pattern of your own before asking anyone else to change theirs.",
+      general: "An honest accounting of the facts, your own role included, is what this card invites.",
+      relationships: "Being as fair to their side as you would want them to be to yours. That does not mean carrying more than your share.",
+      work: "A decision or an agreement judged on its merits rather than on who is most persuasive. That is this card's standard.",
+      growth: "Taking stock of a pattern of your own, without harshness attached. The card asks for the look, not the punishment.",
     },
   },
   {
@@ -278,20 +289,20 @@ export const CARDS: CardContent[] = [
     name: "The Hanged Man",
     numeral: "XII",
     keywords: ["pause", "a different angle", "letting go of urgency"],
-    coreMeaning: "A deliberate pause that changes how the whole situation looks from a new angle.",
+    coreMeaning: "A deliberate pause that lets the whole situation be seen from a different angle.",
     position: {
       situation:
-        "Progress, in the usual sense, isn't the point right now — a pause is. Something looks different once you stop pushing at it the same way.",
+        "The pause. Progress in the usual sense set aside so that something can be seen differently. Your question may look different from a stiller place than the one it was asked from.",
       challenge:
-        "Treating the pause as failure, or forcing action just to feel like you're doing something, defeats the point of it.",
+        "The Hanged Man's trouble is treating a pause as failure, or acting just to feel like something is being done. A pause chosen is different from one imposed. Being made to wait is frustrating, and it does not have to become a lesson.",
       guidance:
-        "Let the pause do its work. Use the stillness to see the situation from an angle you couldn't reach while moving.",
+        "Let the pause do its work. Sort what can wait from what needs attention now, and use the stillness to look from an angle that movement did not allow.",
     },
     focus: {
-      general: "A pause here isn't wasted time — it's what lets you see this differently.",
-      relationships: "Stepping back from trying to fix it may reveal what actually needs fixing.",
-      work: "Delay isn't always the enemy; some decisions genuinely improve with a deliberate wait.",
-      growth: "Practice sitting with an unresolved question instead of rushing to close it.",
+      general: "A pause is the theme, offered as a way of seeing, not as wasted time.",
+      relationships: "Stepping back from trying to fix something. What needs fixing may look different from there.",
+      work: "Some decisions improve with a deliberate wait. Whether this is one of them is the question.",
+      growth: "Leaving a question unresolved for a while, on purpose. That is the practice this card suggests.",
     },
   },
   {
@@ -299,22 +310,21 @@ export const CARDS: CardContent[] = [
     number: 13,
     name: "Death",
     numeral: "XIII",
-    keywords: ["ending", "transformation", "making room for what's next"],
-    coreMeaning:
-      "In the RWS tradition this card is read as symbolic transformation and ending, not a literal or predictive event — a phase concluding so another can begin.",
+    keywords: ["ending", "transformation", "making room"],
+    coreMeaning: "An ending that makes room for what comes after it. A symbol of change, not a prediction of harm.",
     position: {
       situation:
-        "Something here has run its course, whether or not that's been acknowledged yet. This reads as an ending that clears space, not a warning of harm.",
+        "Something running its course. A phase, a role, a way of doing things. This is a symbolic ending, not a forecast. Something in your question may be closing, whether or not that has been said out loud.",
       challenge:
-        "Holding onto a phase, a role, or a way of doing things after it's finished tends to cost more than letting it close.",
+        "Death's trouble is holding on past the point of usefulness. The card cannot tell you where that point is. It asks whether something is being kept out of habit rather than choice.",
       guidance:
-        "Let the ending be an ending. Naming what's finished, even briefly, tends to make room for what comes after it faster.",
+        "If something has ended, give it a name before deciding what comes next. There may be practical loose ends, feelings, or both to attend to. Nobody has to find a new beginning in it today.",
     },
     focus: {
-      general: "Something is ending; treating it plainly, instead of avoiding it, opens the next stage sooner.",
-      relationships: "A dynamic or a chapter may have run its course — worth naming rather than prolonging out of habit.",
-      work: "A role, project, or way of working may be finished; that's a transition to plan for, not a setback to fear.",
-      growth: "Let go of a version of yourself you've outgrown, deliberately rather than by accident.",
+      general: "An ending is the theme. Acknowledging one, and tending what still needs care, is the card's suggestion.",
+      relationships: "A dynamic or a chapter that has run its course is one of this card's readings. A possibility to sit with, not a conclusion the card can draw for you.",
+      work: "A role, a project or a way of working that is finishing. Planning the transition can sit alongside grief, worry or relief about it.",
+      growth: "An old expectation of yourself you no longer want to carry. Setting it down, deliberately, is what this card is about.",
     },
   },
   {
@@ -323,20 +333,20 @@ export const CARDS: CardContent[] = [
     name: "Temperance",
     numeral: "XIV",
     keywords: ["balance", "patience", "blending, not choosing"],
-    coreMeaning: "Slow, deliberate blending — finding the measure between two things rather than picking one extreme.",
+    coreMeaning: "Slow, deliberate blending, finding the measure between two things rather than picking an extreme.",
     position: {
       situation:
-        "Two competing needs or approaches are both present, and the resolution is a careful blend, not an either/or choice made in a hurry.",
+        "Two things present at once and the careful blend between them, rather than an either-or made in a hurry. Which two things your question is holding is the first thing this card asks.",
       challenge:
-        "Impatience is the main risk — reaching for an extreme or a quick fix when a slower, more balanced approach would actually hold.",
+        "Temperance's trouble is pace: gradual adjustment can be wisdom or it can be avoidance. Sometimes a decisive change is right. A measured approach includes noticing when the middle ground will not do.",
       guidance:
-        "Take this one measured step at a time, mixing rather than choosing, and let the balance settle gradually.",
+        "One measured step at a time, mixing rather than choosing, and let the balance settle. Moderation is a method here, not a moral.",
     },
     focus: {
-      general: "A patient, balanced approach will serve this better than picking a side quickly.",
-      relationships: "Look for the middle ground between two real needs, rather than one person simply yielding.",
-      work: "Moderate, steady adjustments will outperform a dramatic overhaul right now.",
-      growth: "Practice a middle-path habit — neither the extreme you're used to nor its opposite.",
+      general: "A patient, balanced approach is the theme, against picking a side quickly.",
+      relationships: "Middle ground between two real needs, as opposed to one person simply yielding. That is the distinction this card draws.",
+      work: "Steady adjustments over a dramatic overhaul. That is where this card leans.",
+      growth: "A sustainable version of a habit, sized to the time and energy your actual week has. That is the practice.",
     },
   },
   {
@@ -344,22 +354,21 @@ export const CARDS: CardContent[] = [
     number: 15,
     name: "The Devil",
     numeral: "XV",
-    keywords: ["attachment", "old patterns", "a chain you can see"],
-    coreMeaning:
-      "In this tradition, a symbol of attachment and restriction to an old pattern — one that's usually more loosely bound than it feels.",
+    keywords: ["attachment", "restriction", "old patterns"],
+    coreMeaning: "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
     position: {
       situation:
-        "A familiar pattern — a habit, a dynamic, a way of thinking — has more grip than it probably deserves. It's worth naming plainly rather than around.",
+        "Being held. By a habit, a dynamic, a way of thinking, or a circumstance. The card does not know whether what holds you is inside you or outside you, or how tight it is. Naming it plainly, whatever it is, is where this card begins.",
       challenge:
-        "The real difficulty is believing the pattern is fixed and unchangeable, which is usually the part that isn't true.",
+        "The Devil's trouble is seeing the hold clearly at all. Some restrictions are chosen, some are imposed, some are real limits of money, health or duty. Which is which is for you to say, not the card.",
       guidance:
-        "Name the pattern specifically, and look for the one place it's actually loosely tied, not iron-bound. That's usually where change becomes possible.",
+        "Name the attachment or restriction specifically, then look for any part of it that has some give. If there is none, knowing that clearly is also worth something.",
     },
     focus: {
-      general: "A familiar pattern has more hold over this than it needs to; naming it is the first real move.",
-      relationships: "Check for a dynamic you've both fallen into out of habit rather than choice.",
-      work: "A limiting belief about what's possible here may be doing more damage than the actual constraint.",
-      growth: "Identify one habit you've assumed is permanent, and test that assumption directly.",
+      general: "A pattern with a hold on things is the theme. Naming it is the first move. What it is, and what can change, is yours to judge.",
+      relationships: "A dynamic fallen into by habit rather than choice. That is the thing this card suggests checking for.",
+      work: "This card can point to a belief about what is possible, or to a real constraint. Telling those apart is the work it invites.",
+      growth: "A habit worth examining: what keeps it in place, and what support changing it would need.",
     },
   },
   {
@@ -367,22 +376,21 @@ export const CARDS: CardContent[] = [
     number: 16,
     name: "The Tower",
     numeral: "XVI",
-    keywords: ["sudden change", "a hard truth surfacing", "rebuilding"],
-    coreMeaning:
-      "A sudden, clarifying disruption — read here as an overdue truth breaking through, not a forecast of disaster.",
+    keywords: ["sudden change", "disruption", "what comes after"],
+    coreMeaning: "A sudden disruption and what it leaves standing. A symbol of upheaval, not a forecast of disaster.",
     position: {
       situation:
-        "Something built on shaky ground is being tested, possibly suddenly. It's uncomfortable, and it's also honest — what wasn't solid is being shown for what it is.",
+        "Sudden change. Something shaken, possibly without warning. The card does not say why it happened or what it means about what stood before. How you are doing with it counts for as much as what fell.",
       challenge:
-        "Trying to hold up a structure — a plan, a belief, a relationship — that's already cracked tends to cost more than letting it fall and rebuilding deliberately.",
+        "The Tower's trouble is the pull to rebuild immediately, before taking stock of what was affected. There is no lesson you have to find in it. What needs steadying first comes before any rebuilding.",
       guidance:
-        "Let the disruption reveal what it's revealing, and use the clearer ground afterward to rebuild something sturdier.",
+        "Look at the disruption before anything is rebuilt, and rebuild on ground you have checked. Help, where it is available, comes before deciding what to rebuild.",
     },
     focus: {
-      general: "A sudden shift is clarifying, not catastrophic — use what it reveals to rebuild on firmer ground.",
-      relationships: "An uncomfortable truth may be surfacing; better addressed directly than patched over again.",
-      work: "A plan that wasn't as solid as it looked may need an honest rebuild, not a quick patch.",
-      growth: "Let a disruptive realization actually change something, instead of smoothing it over.",
+      general: "A sudden shift is the theme. What needs steadying, and what is worth rebuilding, are the questions that follow.",
+      relationships: "Something coming to the surface suddenly. Addressing it directly, at a pace you choose, is this card's suggestion.",
+      work: "A plan under sudden strain. An honest look before patching it is the approach this card offers.",
+      growth: "A disruptive realization allowed to change something, rather than smoothed over. That is what this card is about.",
     },
   },
   {
@@ -390,21 +398,21 @@ export const CARDS: CardContent[] = [
     number: 17,
     name: "The Star",
     numeral: "XVII",
-    keywords: ["hope", "quiet renewal", "restored faith"],
-    coreMeaning: "A calm return of hope after something difficult — renewal that doesn't need to be dramatic to be real.",
+    keywords: ["hope", "quiet renewal", "a longer view"],
+    coreMeaning: "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
     position: {
       situation:
-        "After a harder stretch, there's room to breathe and reconnect with what you actually hope for, without needing every answer resolved yet.",
+        "Renewal after difficulty. Room to breathe, and a reconnection with what is hoped for. There may or may not be such room in your question yet, and the card does not require everything to be resolved first.",
       challenge:
-        "Cynicism or impatience for immediate results can crowd out the quieter renewal that's actually available right now.",
+        "The Star's trouble is making room for hope without turning it into a demand to feel better. Hope after a hard stretch can feel unearned. It is not owed, and it is all right if none comes to mind today.",
       guidance:
-        "Let hope be modest and steady rather than dramatic. Small, consistent acts of care for the goal are enough for now.",
+        "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
     },
     focus: {
-      general: "A quieter, steadier kind of hope is available here — no need to force it into something bigger.",
-      relationships: "Trust is rebuilding gradually; let it, rather than demanding proof all at once.",
-      work: "A project or goal that felt stalled has renewed room to move, gently and steadily.",
-      growth: "Reconnect with something you hope for, without needing it to be resolved today.",
+      general: "A quieter kind of hope is the theme. It does not need forcing into something bigger.",
+      relationships: "Trust rebuilding is one of this card's readings. Whether it is, and how fast, only the people involved can know.",
+      work: "A stalled project or goal finding room to move. Gently and steadily is the pace this card suggests.",
+      growth: "Reconnecting with something you hope for, without needing it resolved today. That is the practice here.",
     },
   },
   {
@@ -412,21 +420,21 @@ export const CARDS: CardContent[] = [
     number: 18,
     name: "The Moon",
     numeral: "XVIII",
-    keywords: ["uncertainty", "imagination", "what's not fully visible yet"],
-    coreMeaning: "Things aren't fully clear yet, and imagination or anxiety can fill the gaps faster than facts can.",
+    keywords: ["uncertainty", "the unclear", "what is not visible yet"],
+    coreMeaning: "A stretch where things are not clear yet, and the work of telling what is known from what is not.",
     position: {
       situation:
-        "Some part of this is genuinely unclear right now, and it's easy for worry or assumption to fill in the missing pieces before you actually have them.",
+        "Uncertainty. Part of the picture is not visible, and it may not be for a while. The card does not say whether your concern is founded. It asks what in your question is confirmed, what is not, and what you need to find out.",
       challenge:
-        "Treating an imagined worst case as settled fact, instead of as one possibility among several, is the trap here.",
+        "The Moon's trouble is deciding under low light: settling on one story, hopeful or fearful, before there is enough to go on. Caution in the dark is sensible. More light, where it can be had, is the alternative.",
       guidance:
-        "Notice what's assumption versus what's confirmed, and give it time to become clearer before reacting to the story you've built.",
+        "Sort what is known from what is assumed, and give the unclear parts time or a direct question. This is a method for seeing. It is not a claim that there is nothing to see.",
     },
     focus: {
-      general: "Some of this is still unclear; be careful not to treat your worry as settled fact.",
-      relationships: "A misunderstanding may be more assumption than truth — ask before you conclude.",
-      work: "Ambiguity here is real, but it's temporary; more information is likely still coming.",
-      growth: "Notice a recurring anxious story you tell yourself, and check it against what's actually known.",
+      general: "What is known, what is assumed, and what is still unanswered. Separating those is where this card points. There may already be enough for the next step.",
+      relationships: "A misunderstanding is one possibility among several. The card favours asking directly over guessing.",
+      work: "What is confirmed, and what still needs a direct question. That is the sorting this card asks for.",
+      growth: "A story you tell about yourself, checked against the facts. Look for what supports it as well as what challenges it.",
     },
   },
   {
@@ -434,21 +442,21 @@ export const CARDS: CardContent[] = [
     number: 19,
     name: "The Sun",
     numeral: "XIX",
-    keywords: ["clarity", "vitality", "uncomplicated joy"],
-    coreMeaning: "A clear, warm, uncomplicated kind of good — clarity and energy without needing a catch.",
+    keywords: ["clarity", "warmth", "plain good"],
+    coreMeaning: "Clarity and warmth, a plain kind of good worth noticing when it is there.",
     position: {
       situation:
-        "Something here is more straightforwardly good than it might feel comfortable admitting — clear, warm, and worth simply enjoying.",
+        "What is clear and good. Warmth, energy, something straightforward. Something in the situation you asked about may be going well, and good things often get less attention than trouble.",
       challenge:
-        "Second-guessing a good thing, or waiting for a catch that isn't actually there, can get in the way of appreciating it.",
+        "The Sun's trouble is that good things can be hard to trust and easy to talk down. The card does not say there is nothing to watch for. It asks whether the good part is being allowed to count.",
       guidance:
-        "Let this be as good as it looks. Bring your energy to it openly rather than bracing for a downside.",
+        "Bring your energy to what is going well, openly. Enjoying something does not require ignoring the rest. Both can be true at once.",
     },
     focus: {
-      general: "Let something good be simply good, without immediately looking for the catch.",
-      relationships: "Warmth and openness are well placed here — this is a moment to enjoy, not overanalyze.",
-      work: "Momentum and recognition are available; use the energy while it's here.",
-      growth: "Notice what's actually going well, and let yourself feel good about it plainly.",
+      general: "Letting something good be good, while it is here. That is what this card invites.",
+      relationships: "Warmth and openness are the themes. A moment to enjoy rather than analyse, if that is what it is.",
+      work: "Something at work that deserves recognition, and what would help sustain it. That is where this card looks.",
+      growth: "Noticing what is going well, and letting yourself feel good about it plainly. A practice, and a rarer one than it sounds.",
     },
   },
   {
@@ -456,21 +464,21 @@ export const CARDS: CardContent[] = [
     number: 20,
     name: "Judgement",
     numeral: "XX",
-    keywords: ["reckoning", "a call to act", "waking up to it"],
-    coreMeaning: "A clear-eyed reckoning with where things actually stand, and a call to respond to it.",
+    keywords: ["reckoning", "a call to respond", "seeing it whole"],
+    coreMeaning: "A clear look at where things stand, and the call to respond to what is seen.",
     position: {
       situation:
-        "Something you've half-known is asking to be fully acknowledged now — a pattern, a result, a truth you've been circling.",
+        "Seeing something whole. A pattern, a result, a truth that has been circled. Something in your question may be ready to be looked at directly, and looking is the first response.",
       challenge:
-        "Staying in denial, or judging yourself harshly for what the reckoning reveals, both get in the way of actually responding to it.",
+        "Judgement's trouble is either not looking, or looking with too much harshness once you do. A reckoning without self-punishment is the balance this card is about.",
       guidance:
-        "Acknowledge what the honest look shows you, without over-punishing yourself for it, and let it inform your next real decision.",
+        "Acknowledge what an honest look shows, without adding blame, and let it inform the next real decision. What that decision is stays with you.",
     },
     focus: {
-      general: "A clear look at where things stand is calling for a response, not more avoidance.",
-      relationships: "A pattern you've both half-noticed may be ready to be named plainly.",
-      work: "The results so far are worth an honest review before deciding what's next.",
-      growth: "Take stock of where you actually are, without the harsh self-judgment layered on top.",
+      general: "A clear look at where things stand, offered without harshness. That is the theme.",
+      relationships: "A pattern that may be worth naming between two people. Start with what you have seen, and leave room for how the other person sees it.",
+      work: "An honest review of results so far, before deciding what is next. That is the step this card suggests.",
+      growth: "Taking stock of where you are, minus the self-judgement. That is the practice.",
     },
   },
   {
@@ -479,20 +487,20 @@ export const CARDS: CardContent[] = [
     name: "The World",
     numeral: "XXI",
     keywords: ["completion", "wholeness", "arrival"],
-    coreMeaning: "A cycle reaching genuine completion — arrival, not just an ending.",
+    coreMeaning: "A cycle reaching completion. An arrival, not only an ending.",
     position: {
       situation:
-        "Something is coming together into a whole — a project finishing, a phase completing, pieces that have been separate finally fitting.",
+        "Completion. Pieces coming together, a phase finishing, something arriving at its whole shape. Something in your question may be close to complete, and completions are easy to walk past.",
       challenge:
-        "Rushing straight into the next thing without acknowledging the completion can leave it feeling unfinished even once it's done.",
+        "The World's trouble is rushing past a completion without marking it, which can leave a finished thing feeling unfinished. Not every ending gets its due. This card asks whether one should.",
       guidance:
-        "Take a real moment to recognize what's been completed before starting the next cycle. Closure deserves its own attention.",
+        "Take a real moment to recognise what has been completed before starting the next cycle. What form that takes is yours to choose.",
     },
     focus: {
-      general: "Something is reaching real completion; let yourself acknowledge it before moving straight to the next thing.",
-      relationships: "A shared effort or chapter is coming full circle — worth marking together.",
-      work: "A project nearing completion deserves a proper close, not an immediate pivot to the next one.",
-      growth: "Recognize a cycle you've completed, and let that recognition be part of what comes next.",
+      general: "Completion is the theme. Acknowledging it before moving on is the card's suggestion.",
+      relationships: "A shared effort or chapter coming full circle, worth marking together.",
+      work: "A project near completion deserves a proper close rather than an immediate pivot.",
+      growth: "A cycle you have completed, recognised and allowed to count. That is the small practice this card offers.",
     },
   },
 ];

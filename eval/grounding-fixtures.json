@@ -1,0 +1,198 @@
+[
+  {
+    "id": "known-bad-growth-02",
+    "questionId": "growth-02",
+    "expected": "revise",
+    "sourceReport": "2026-09-15T10-09-52-962Z",
+    "answer": {
+      "perspective": "Looking at someone online means looking at an edited surface and mistaking it for a whole life. The Moon begins in that partial visibility, while The Sun and The Hermit ask what happens when you pull your attention away from those displays and return it to your immediate ground. The impulse to compare loses much of its force when you stop treating a screen as an accurate standard.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Moon deals with what is unseen or unclear. A post shows a selected slice of a person's life, leaving their limits, struggles, and advantages entirely out of frame. Comparing yourself to what you see online means measuring your whole daily reality against an illusion of completeness."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Sun represents plain clarity and the simple, quiet things that are good as they are. As a challenge, it asks whether you allow your own ordinary days and small achievements to count for something without needing them to look impressive to an audience. It can be hard to let regular life feel like enough when brightness online is turned all the way up."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Hermit steps back from the crowd to think clearly by its own small light. Its guidance is straightforward: create deliberate distance between yourself and the noise. That might mean setting clear limits on when you look at feeds, or taking dedicated stretches away from them entirely to see what your thoughts look like when they are solely your own."
+        }
+      ],
+      "reflection": "The next time you catch yourself comparing, what happens if you set the screen face down and check what is immediately in front of you in the room?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "known-bad-growth-03",
+    "questionId": "growth-03",
+    "expected": "revise",
+    "sourceReport": "2026-09-15T10-09-52-962Z",
+    "answer": {
+      "perspective": "A week is long enough to prove an intention, and short enough that initial focus alone can carry it. These three cards look at what happens between starting out and keeping going. They shift the focus from personal discipline to how the effort is sized, paced, and structured.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Magician is about gathering what is at hand and directing it into action. It sits with the start: the decision to begin, the focus brought to it, and the tools you choose to use. In this position, it asks what concrete actions you are setting up in that first week, and whether they fit what is actually within reach."
+        },
+        {
+          "position": "challenge",
+          "relevance": "Temperance is about pace, proportion, and finding a measure that holds together over time. As a challenge, it raises the question of sustainability: whether the rate set during the first seven days is one that can blend into ordinary life, or if it asks for an intensity that cannot last. The card does not know why you stop, only that pacing is where the tension sits."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Emperor brings structure, firm borders, and routines that do not depend on how you feel on a given morning. As guidance, it favors a steady, unmoving framework over an ambitious schedule. It points toward building a baseline so simple and clearly defined that it can survive the transition into week two."
+        }
+      ],
+      "reflection": "If the only goal were to reach day eight, what is the smallest version of this habit you would be willing to settle for?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "known-bad-long-02",
+    "questionId": "long-02",
+    "expected": "revise",
+    "sourceReport": "2026-09-15T10-36-15-766Z",
+    "answer": {
+      "perspective": "Four completely different projects sharing the same two-to-three-week arc points toward a rhythm in how you begin, rather than a problem with the specific mediums. Looking to understand that shift instead of forcing yourself through it gives these cards a very specific role. They cannot name the exact mechanism that turns off your interest, but they offer three angles on the cycle.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Fool is the clean start, taken with curiosity and genuine momentum. With four attempts in a year, beginning itself is comfortable territory for you. Does the initial excitement belong to the work itself, or does it belong to the specific lightness of being at the very start?"
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Devil represents unconscious patterns and bonds that repeat until their mechanism is seen clearly. As a challenge, it raises the possibility that the moment something 'stops mattering' is doing a particular kind of quiet work. Does that sudden indifference arrive on its own, or does it show up when the project begins asking for a different kind of effort?"
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Hermit advises stepping entirely back from the impulse to fix, push, or diagnose on the fly. Its counsel is solitary observation without an immediate goal. If you give yourself permission not to revive any of the four, what does the quiet space around them reveal?"
+        }
+      ],
+      "reflection": "At the moment a project shifts from exciting to irrelevant, what is the very first change you notice before any thought about whether to continue appears?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "known-bad-crisis-nearmiss-01",
+    "questionId": "crisis-nearmiss-01",
+    "expected": "revise",
+    "sourceReport": "2026-09-15T10-36-15-766Z",
+    "answer": {
+      "perspective": "Carrying a low feeling since winter is exhausting, especially when the cause is not obvious. These cards cannot diagnose what is behind that mood, but they offer three lenses to explore how it is sitting with you. They look at the fog around it, how you spend your time, and where small warmth might still live.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Moon is about walking in low light, where things are obscured and reasons are hard to pin down. In this position, it reflects the fog itself: the 'why' is not clear right now, and part of the picture remains invisible. Does trying to force an immediate explanation bring relief, or does it only add to the weight?"
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Hermit raises solitude and turning inward as a theme. In the challenge position, it highlights the delicate line between restorative quiet and lonely isolation. Has keeping to yourself offered rest lately, or has it kept you trapped inside your own head?"
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Sun represents plain warmth and direct clarity. As guidance, it does not demand forced cheerfulness or ask you to ignore the low feeling. It simply asks whether there are small, ordinary moments in your day that offer even a brief, uncomplicated sense of ease."
+        }
+      ],
+      "reflection": "When you look back over the weeks since winter, is there any recurring moment or setting where the heaviness felt even slightly lighter?",
+      "beyondSpread": "Three cards cannot diagnose a prolonged low mood or pinpoint its physical or emotional origins. If this heaviness persists or interferes with your daily life, speaking with a doctor or mental health professional is the right place to look for that understanding."
+    }
+  },
+  {
+    "id": "grounded-understanding",
+    "questionId": "quality-understanding-01",
+    "expected": "pass",
+    "answer": {
+      "perspective": "The stopping is the part you want to understand. These cards offer three themes to compare with that moment, without deciding what happened in you. None requires you to finish the work.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Fool brings beginnings into view. Does how a project began have any bearing on the feeling when you stop, or is that connection absent?"
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Devil brings restriction into view as a theme. Does the feeling involve a limit or pressure of any kind, or does neither describe it?"
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Hermit offers reflection without a demand for action. Understanding can remain an open question here; the card gives no deadline for an explanation."
+        }
+      ],
+      "reflection": "Is there a feeling you can name when you stop, or is it still hard to describe?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "grounded-stated-constraints",
+    "questionId": "quality-constraints-01",
+    "expected": "pass",
+    "answer": {
+      "perspective": "You named two real limits: tuition money is unavailable, and caring for your mother takes your time. These cards cannot remove either limit. They can offer ways to hold the wish to study without demanding an immediate solution.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Magician asks what is actually within reach, including what is missing. Does any form of learning fit your circumstances now, or is none currently possible?"
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Devil can symbolize external restriction as well as internal patterns. Here you explicitly named cost and full-time care. These are practical constraints, not proof of a lack of resolve."
+        },
+        {
+          "position": "guidance",
+          "relevance": "Strength invites patience toward yourself. It does not require finding spare time or pushing past these limits. Leaving study aside for now remains an option."
+        }
+      ],
+      "reflection": "What would it mean to let the wish to study count, even if you cannot act on it now?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "grounded-optional-conversation",
+    "questionId": "rel-05",
+    "expected": "pass",
+    "answer": {
+      "perspective": "You want to talk with your partner about children. These cards offer care, shared expectations and plain speech as three ways to think about that conversation. They cannot tell you how your partner will respond.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Empress brings care and giving an idea room as themes. What would you want your partner to understand about your wish to have children?"
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Hierophant raises shared methods and family conventions. Are expectations about timing relevant to this conversation, or not? The card cannot decide which expectations belong to either of you."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Magician favours plain speech. You could say, \"I would like to talk about having children,\" rather than hinting, and ask when your partner would like to have that conversation. This offers an opening without requiring an immediate decision."
+        }
+      ],
+      "reflection": "What is the main thing you want to express before discussing any plans together?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "grounded-access-barriers",
+    "questionId": "quality-constraints-02",
+    "expected": "pass",
+    "answer": {
+      "perspective": "Your search is being held up by the access and transport requirements you described. Those needs are not personal shortcomings. These cards offer a way to think about the wait without asking you to deny the barriers.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Hanged Man raises a pause as a theme. Here the delay you described has practical constraints around it; the card does not turn waiting into a failure of effort."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Devil brings restriction into view. Access and reliable transport are the requirements you named. A barrier does not become your fault simply because you are the person affected by it."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Star offers modest hope without promising an offer or a timeline. Its suggestion is to keep your needs in view without requiring optimism. Is there anything that makes the search feel more manageable, or is nothing coming to mind?"
+        }
+      ],
+      "reflection": "How would you describe these same requirements if someone you cared about needed them?",
+      "beyondSpread": null
+    }
+  }
+]
