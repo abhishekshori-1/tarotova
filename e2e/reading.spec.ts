@@ -48,8 +48,9 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   await expect(page.getByText("The short of it", { exact: true })).toHaveCount(0);
   await expect(page.locator("details")).toHaveCount(3);
   await expect(page.locator("details[open]")).toHaveCount(0);
+  await expect(page.getByText("About this card", { exact: true })).toHaveCount(3);
   await page.locator("summary").first().click();
-  await expect(page.getByText("This library text is the same", { exact: false }).first()).toBeVisible();
+  await expect(page.locator("details[open]")).toHaveCount(1);
   await expectNoHorizontalOverflow(page);
 
   // Refresh shows the same stored answer without another request cycle.

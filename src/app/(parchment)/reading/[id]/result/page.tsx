@@ -143,8 +143,7 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
                     <>
                       <p className="prose-measure mt-4 leading-relaxed">{answer.cards.find((a) => a.position === c.position)?.relevance}</p>
                       <details className="mt-4 text-sm text-[var(--fg-soft)]">
-                        <summary className="cursor-pointer">From the card library · general meaning</summary>
-                        <p className="mt-2">This library text is the same for any question with this card, position and focus.</p>
+                        <summary className="cursor-pointer">About this card</summary>
                         <p className="prose-measure mt-3 leading-relaxed">{c.interpretation}</p>
                         <p className="prose-measure mt-3 italic">{c.focusNote}</p>
                       </details>
