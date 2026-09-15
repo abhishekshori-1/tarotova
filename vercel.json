@@ -11,7 +11,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "feat/v2": false
+      "feat/v2": false,
+      "feat/release-c": false
     }
   }
 }
