@@ -33,6 +33,7 @@ function put(id: string, body: unknown) {
 
 beforeEach(async () => {
   await db.delete(rateLimitBuckets);
+  vi.stubEnv("GENERATION_ENABLED", "true");
 });
 
 afterEach(() => {
@@ -81,6 +82,18 @@ describe("PUT /api/readings/[id]/selection — bot check on the email-free revea
     const draft = await createReading(session);
     const response = await put(draft.id, { revision: draft.revision, slots: [1, 2, 3], lock: true });
     expect(response.status).toBe(200);
+    expect(verifyTurnstile).not.toHaveBeenCalled();
+  });
+
+  it("asks for no check at all while generation is off, the Release A reveal", async () => {
+    vi.stubEnv("GENERATION_ENABLED", "false");
+    const session = await createSession();
+    vi.mocked(resolveSession).mockResolvedValue({ id: session, isNew: false });
+    const draft = await createReading(session);
+    expect((await (await put(draft.id, { revision: draft.revision, slots: [1] })).json()).botCheckOnReveal).toBe(false);
+    const response = await put(draft.id, { revision: draft.revision + 1, slots: [1, 2, 3], lock: true });
+    expect(response.status).toBe(200);
+    expect((await response.json()).entitlement).toBe("granted");
     expect(verifyTurnstile).not.toHaveBeenCalled();
   });
 

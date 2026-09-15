@@ -14,11 +14,13 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = selectionSchema.parse(await req.json());
     if (body.lock) {
       // A guest lock issues the free grant that unlocks paid generation, so
-      // it carries the same bot check as requesting a code; a verified
-      // session already passed it (docs/REVIEW-V2.md finding 2). Fails
-      // closed in production when unconfigured.
+      // while generation is enabled it carries the same bot check as
+      // requesting a code; a verified session already passed it
+      // (docs/REVIEW-V2.md finding 2). With generation off there is nothing
+      // to protect and the reveal is Release A's. Fails closed in production
+      // when the check is required but unconfigured.
       const status = await getStatus(id, session.id);
-      if (!status.sessionVerified && !(await verifyTurnstile(body.turnstileToken, getClientIp(req)))) {
+      if (status.botCheckOnReveal && !(await verifyTurnstile(body.turnstileToken, getClientIp(req)))) {
         return privateJson({ error: "bot_check_failed" }, { status: 400 });
       }
     }

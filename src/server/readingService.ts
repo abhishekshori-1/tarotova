@@ -12,6 +12,7 @@ import { pickReflection } from "@/content/reflections";
 import { entitlementFor, getGrant, getSessionRow, isActive, issueGrant, sessionIsVerified, type Entitlement, type Executor } from "./access";
 import { AccessRequiredError, ConflictError, OwnershipError, ValidationError } from "./errors";
 import { getGeneration, viewOf } from "./generation/store";
+import { getGenerationConfig } from "./generation/config";
 
 export { AccessRequiredError, ConflictError, OwnershipError, RateLimitedError, ValidationError } from "./errors";
 
@@ -121,6 +122,10 @@ export async function safeStatus(row: ReadingRow, sessionId: string) {
     entitlement,
     accessExpiresAt: isActive(grant, t) ? grant.expiresAt : undefined,
     sessionVerified: sessionIsVerified(session, t),
+    // The email-free reveal carries a bot check only while it can trigger
+    // paid generation (docs/REVIEW-V2.md finding 2); with the feature off
+    // it is exactly the Release A reveal. A verified session never needs it.
+    botCheckOnReveal: getGenerationConfig().enabled && !sessionIsVerified(session, t),
     resultAvailable: entitlement === "granted",
   };
 }

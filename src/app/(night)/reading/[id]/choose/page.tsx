@@ -158,8 +158,9 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
 
   const canShuffle = selected.length === 0 && saveState !== "failed";
   const saveLabel = saveState === "saving" ? "Saving…" : saveState === "failed" ? "Not saved" : "Saved";
-  // The email-free reveal carries the bot check a verified session already passed (docs/REVIEW-V2.md finding 2).
-  const needsBotCheck = TURNSTILE_CONFIGURED && !status.sessionVerified;
+  // The server decides whether this reveal needs the check (generation on,
+  // session unverified); the widget appears only when it does and a site key exists.
+  const needsBotCheck = TURNSTILE_CONFIGURED && status.botCheckOnReveal;
   const canReveal = selected.length === 3 && !busy && saveState !== "failed" && (!needsBotCheck || turnstileToken !== null);
 
   return (

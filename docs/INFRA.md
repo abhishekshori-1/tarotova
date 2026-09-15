@@ -70,11 +70,11 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 - Site key → `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (Vercel type **Config** — it
   must be inlined into the browser bundle at build time; changing it needs a
   rebuild). Secret key → `TURNSTILE_SECRET_KEY` (type Secret).
-- Used on the session-verification form (`/verify`) and, since Release B,
-  on the card-selection page for an unverified session's reveal (the
-  email-free reading). Client: `src/components/TurnstileWidget.tsx`;
+- Used on the session-verification form (`/verify`) and, while
+  `GENERATION_ENABLED` is on, on the card-selection page for an unverified
+  session's reveal (the email-free reading). Client: `src/components/TurnstileWidget.tsx`;
   server: `src/server/turnstile.ts`, which **fails closed in production**
-  if the secret is missing — with Release B deployed, a missing secret also
+  if the secret is missing — with generation enabled, a missing secret also
   blocks every guest reveal (503 `bot_check_not_configured`).
 
 ## Hosting (Vercel)

@@ -152,10 +152,10 @@ What it changes when merged:
 - Migration `0003_bored_black_queen`: **additive** — one new table,
   `reading_generations`. The previous build ignores it, so rollback is
   `git revert -m 1 <merge>` or Instant Rollback with no schema step.
-- Behaviour with `GENERATION_ENABLED` unset (the default): identical to
-  Release A except that an **unverified session's reveal now needs a
-  Turnstile token** — `TURNSTILE_SECRET_KEY` must be present or every guest
-  reveal is a 503. Check it before merging.
+- Behaviour with `GENERATION_ENABLED` unset (the default): Release A's
+  behaviour with the rewritten library and the new interface voice; no bot
+  check on the reveal, no generation. `TURNSTILE_SECRET_KEY` is needed once
+  the flag is on, since the guest reveal then fails closed without it.
 - Behaviour with the flag on: see `IMPLEMENTATION.md` "Release B". Turning
   the flag off again hides the section but keeps stored answers (they are
   deleted with their readings after 30 days).

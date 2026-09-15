@@ -25,6 +25,8 @@ export interface ReadingStatus {
   entitlement: Entitlement;
   accessExpiresAt?: number;
   sessionVerified: boolean;
+  /** Whether "Turn them over" must carry a Turnstile token: generation is on and the session is not verified. */
+  botCheckOnReveal: boolean;
   resultAvailable: boolean;
 }
 

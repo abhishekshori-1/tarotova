@@ -35,9 +35,11 @@ Readings without a question retain the editorial reading. The generation
 flag is off by default; turning it off retains previously recorded support
 responses so they cannot be replaced with ordinary card advice.
 
-One thing did change for readings without a question too: the email-free
-first reading now carries a bot check before the cards turn over (the same
-check the email form already had). A verified browser never sees it.
+While the feature is on, the email-free first reading carries a bot check
+before the cards turn over (the same check the email form already had),
+because that reveal is what unlocks paid generation. With the feature off
+there is nothing to protect and the reveal is exactly Release A's. A
+verified browser never sees the check either way.
 
 ## What the model does, exactly
 
@@ -160,7 +162,7 @@ Protections, all server-side:
   seconds under the route's 60-second limit for persistence and response.
   Each provider call gets the smaller of its configured timeout and the
   remaining request time. Triage, writing, review, repair, fallback and retries share it.
-- The bot check on the email-free reading.
+- The bot check on the email-free reading, applied only while generation is on.
 - Daily caps: 10 readings per browser, 30 per IP address, 400 overall
   (defaults; environment-adjustable). When a cap is hit the reader sees a
   quiet unavailable note.
