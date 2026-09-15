@@ -5,7 +5,8 @@ get in Release A, what the language model does and does not do, what it
 costs, what protects it, and what has to be true before it goes live.
 Engineering detail is in `IMPLEMENTATION.md`; environment and accounts in
 `INFRA.md`; the release gate in `../eval/RUBRIC.md`. Written 14 September
-2026 on `feat/release-b`, before merge.
+2026 on `feat/release-b`; merged to `main` on 16 September 2026 with
+generation off. Enabling remains a separate decision.
 
 ## What a reading was in Release A
 

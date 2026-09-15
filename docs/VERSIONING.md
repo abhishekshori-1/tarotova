@@ -12,6 +12,9 @@ database schema or the access model.
 | Branch `backup/main-v1` | `d4d4ad1` | Same commit as the tag, as a branch so it can be pushed over `main` in one command |
 | Merge commit | `ae92a67` | v2 (Release A) landing on `main` from `feat/v2`, 8 commits, 106 files |
 | Branch `feat/v2` | `7e0cec1` | The v2 work as it was merged; safe to delete once v2 has settled |
+| Tag `v2.0-pre-b` | `6feafb7` | The last Release A `main`, before Release B |
+| Merge commit | `a7c8ba5` | Release B landing on `main` from `feat/release-b`, 27 commits, 2026-09-16; generation off (`GENERATION_ENABLED` absent) |
+| Branch `feat/release-b` | `788f29d` | The Release B work as merged; `preview.tarotova.com` is assigned to it |
 
 `git log v1.0-pre-v2..main` lists everything v2 added.
 
@@ -144,7 +147,17 @@ psql "$DATABASE_URL" < tarotova-pre-<release>.sql
    `vercel.json` in both versions).
 4. Note what happened here, and in `ISSUES.md`.
 
-## Release B (contextual answer) — prepared, not released
+## Release B (contextual answer) — merged 2026-09-16, generation off
+
+Merged as `a7c8ba5` with generation off; production verified afterwards
+(new build live, a guest reading with a question locks without a bot check,
+the result reports `interpretation: disabled`, library `content.v8-draft`).
+Enabling is a separate step (`INFRA.md`, "Enabling generation"). Rollback of
+the code is `git revert -m 1 a7c8ba5` or Instant Rollback; migration 0003 is
+additive so there is no schema step. The section below was written before
+the merge and describes what it changed.
+
+### As prepared
 
 Branch `feat/release-b`, from `main` after the Release A docs commits.
 What it changes when merged:

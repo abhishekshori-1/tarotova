@@ -2,8 +2,8 @@
 
 What actually exists in this repo, measured against `PLAN.md` (v1) and
 `PLAN-EXTENDED.md` / `ACCESS-FLOW.md` (v2). Updated 2026-09-14 with v2
-Release B built on `feat/release-b` (not yet merged; `VERSIONING.md` has
-the transition, rollback and the release checklist).
+Release B merged to `main` on 2026-09-16 (`a7c8ba5`) with generation off;
+`VERSIONING.md` has the markers, rollback and the release checklist.
 
 ## Scope this build targets
 
