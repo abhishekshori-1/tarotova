@@ -36,7 +36,7 @@ export interface InterpretationInput {
 }
 
 export type ProviderOutcome<T> =
-  | { ok: true; value: T; model: string; usage?: TokenUsage }
+  | { ok: true; value: T; model: string; usage?: { inputTokens: number; outputTokens: number } }
   | {
       ok: false;
       reason: string;
@@ -47,14 +47,6 @@ export type ProviderOutcome<T> =
       /** The provider may have done the work (timeout after send) — counts as spent. */
       uncertain: boolean;
     };
-
-export interface TokenUsage {
-  inputTokens: number;
-  outputTokens: number;
-  /** Prompt-cache accounting where the vendor reports it (Anthropic): billed at 1.25x/2x and 0.1x respectively. */
-  cacheWriteTokens?: number;
-  cacheReadTokens?: number;
-}
 
 export interface GenerationProvider {
   readonly name: string;

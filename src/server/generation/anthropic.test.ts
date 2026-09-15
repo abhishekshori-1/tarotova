@@ -49,20 +49,6 @@ describe("AnthropicProvider", () => {
     expect(body.system).toBe(INTERPRETATION_SYSTEM);
   });
 
-  it("caches the system prompt only when asked, and reports cache accounting", async () => {
-    const reply = { content: [{ type: "tool_use", name: "classify_intent", input: { category: "none" } }], usage: { input_tokens: 120, output_tokens: 5, cache_creation_input_tokens: 1100, cache_read_input_tokens: 0 } };
-    const fetchMock = vi.fn().mockResolvedValue(response(200, reply));
-    vi.stubGlobal("fetch", fetchMock);
-    const cached = new AnthropicProvider("sk-test", { answer: "claude-sonnet-5", classifier: "claude-haiku-4-5-20251001" }, 5_000, undefined, undefined, "1h");
-    const outcome = await cached.classify("hello");
-    expect(outcome).toMatchObject({ ok: true, usage: { inputTokens: 120, outputTokens: 5, cacheWriteTokens: 1100 } });
-    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
-    expect(body.system).toEqual([{ type: "text", text: expect.any(String), cache_control: { type: "ephemeral", ttl: "1h" } }]);
-
-    await provider().classify("hello");
-    expect(typeof JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string).system).toBe("string");
-  });
-
   it("names the workspace when the key is organization-level", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response(200, { content: [{ type: "tool_use", name: "classify_intent", input: { category: "none" } }] }));
     vi.stubGlobal("fetch", fetchMock);

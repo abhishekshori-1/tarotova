@@ -27,7 +27,7 @@ function buildProvider(spec: ProviderSpec, timeoutMs: number): GenerationProvide
     case "gemini":
       return new GeminiProvider(spec.apiKey!, spec.models, timeoutMs);
     case "anthropic":
-      return new AnthropicProvider(spec.apiKey!, spec.models, timeoutMs, spec.workspaceId, undefined, spec.promptCache);
+      return new AnthropicProvider(spec.apiKey!, spec.models, timeoutMs, spec.workspaceId);
     case "deepseek":
       return new DeepSeekProvider(spec.apiKey!, spec.models, timeoutMs);
     case "stub":
@@ -41,10 +41,9 @@ export function getGenerationProvider(config: GenerationConfig): GenerationProvi
   const chain = config.providers.map((spec) => buildProvider(spec, config.timeoutMs));
   const writer = chain.length === 1 ? chain[0] : new FallbackProvider(chain, (from, to, reason, detail) => log("fallback", { from, to, reason, detail }));
   const reviewer = config.reviewProvider ? buildProvider(config.reviewProvider, config.timeoutMs) : undefined;
-  const classifier = config.classifierProvider ? buildProvider(config.classifierProvider, config.timeoutMs) : writer;
   return {
     name: writer.name,
-    classify: (question, options) => classifier.classify(question, options),
+    classify: (question, options) => writer.classify(question, options),
     interpret: (input, options) => writer.interpret(input, options),
     repair: (input, answer, issues, options) => writer.repair(input, answer, issues, options),
     review: (input, answer, options) => reviewer ? reviewer.review(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),

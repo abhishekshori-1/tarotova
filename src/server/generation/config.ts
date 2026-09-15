@@ -13,10 +13,6 @@
  *   whose key is missing is skipped and named in `configurationProblem`;
  *   production never falls back to the stub — with no usable provider the
  *   answer is reported "unavailable" and logged, never silently faked.
- * - GENERATION_CLASSIFIER_PROVIDER: triage by a vendor other than the writer
- *   chain's first (its <VENDOR>_CLASSIFIER_MODEL applies). Unset keeps the
- *   chain's first provider. No fallback: an explicit classifier that fails
- *   fails the attempt, like the reviewer.
  * - GENERATION_REVIEW_PROVIDER / GENERATION_REVIEW_MODEL: the grounding
  *   reviewer, configured independently of the writer chain. No vendor is
  *   assumed; unset means every generated answer is withheld after triage
@@ -43,8 +39,6 @@ export interface ProviderSpec {
   apiKey?: string;
   /** Anthropic only: required by the API when the key is organization-level rather than workspace-scoped. */
   workspaceId?: string;
-  /** Anthropic only: opt-in prompt caching of the system prompt, ANTHROPIC_PROMPT_CACHE=5m|1h. */
-  promptCache?: "5m" | "1h";
   models: { answer: string; classifier: string };
 }
 
@@ -61,8 +55,6 @@ export interface GenerationConfig {
   providers: ProviderSpec[];
   /** Dedicated reviewer: no fallback to a weaker model after a review failure. */
   reviewProvider?: ProviderSpec;
-  /** Dedicated classifier; unset means the writer chain's first provider triages. */
-  classifierProvider?: ProviderSpec;
   /** What was skipped or wrong, for the log line. */
   configurationProblem?: string;
   timeoutMs: number;
@@ -105,7 +97,6 @@ function specFor(kind: string, production: boolean): Resolved {
         kind,
         apiKey,
         workspaceId: env("ANTHROPIC_WORKSPACE_ID"),
-        promptCache: (["5m", "1h"] as const).find((v) => v === env("ANTHROPIC_PROMPT_CACHE")),
         models: { answer: env("ANTHROPIC_MODEL", "GENERATION_MODEL") ?? "claude-sonnet-5", classifier: env("ANTHROPIC_CLASSIFIER_MODEL", "CLASSIFIER_MODEL") ?? "claude-haiku-4-5-20251001" },
       },
     };
@@ -152,22 +143,11 @@ export function getGenerationConfig(): GenerationConfig {
     else problems.push(`reviewer unavailable (${resolved.problem}); generated answers will be withheld after triage.`);
   }
 
-  // The classifier can be split from the writer chain (Gemini triaging a
-  // DeepSeek writer, say). Unset keeps the writer chain's first provider.
-  let classifierProvider: ProviderSpec | undefined;
-  const classifierKind = env("GENERATION_CLASSIFIER_PROVIDER")?.toLowerCase();
-  if (classifierKind) {
-    const resolved = specFor(classifierKind, production);
-    if (resolved.spec) classifierProvider = resolved.spec;
-    else problems.push(`classifier unavailable (${resolved.problem}); the writer chain will triage instead.`);
-  }
-
   return {
     enabled: flag("GENERATION_ENABLED", false),
     guestEnabled: flag("GUEST_GENERATION_ENABLED", true),
     providers,
     reviewProvider,
-    classifierProvider,
     configurationProblem: problems.length ? problems.join(" ") : undefined,
     timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 30_000),
     limits: {
