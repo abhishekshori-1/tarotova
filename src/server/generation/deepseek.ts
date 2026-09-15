@@ -4,7 +4,7 @@ import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, grounding
 import { callTimeout, deadlineExceeded } from "./deadline";
 import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 
-const ENDPOINT = "https://api.deepseek.com/chat/completions";
+const DEFAULT_ENDPOINT = "https://api.deepseek.com/chat/completions";
 
 interface ToolCall {
   name: string;
@@ -25,6 +25,8 @@ export class DeepSeekProvider implements GenerationProvider {
     private readonly apiKey: string,
     private readonly models: { answer: string; classifier: string },
     private readonly timeoutMs: number,
+    /** Tests only: a local server that stalls, to prove the timeout ends the call. */
+    private readonly endpoint: string = DEFAULT_ENDPOINT,
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
@@ -55,7 +57,7 @@ export class DeepSeekProvider implements GenerationProvider {
     const signal = AbortSignal.timeout(timeoutMs);
     let res: Response;
     try {
-      res = await fetch(ENDPOINT, {
+      res = await fetch(this.endpoint, {
         method: "POST",
         headers: { Authorization: `Bearer ${this.apiKey}`, "content-type": "application/json", "user-agent": "Tarotova/0.2" },
         signal,

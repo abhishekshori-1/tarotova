@@ -105,7 +105,7 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Config | Public Turnstile site key (build time) |
 | `TURNSTILE_SECRET_KEY` | Secret | Turnstile server verification |
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
-| `GENERATION_ENABLED` | Config | Release B master flag; false hides the personalized section entirely. Enabled on 2026-09-15 by product-owner decision with the human scoring pass still outstanding (`RELEASE-B.md`) |
+| `GENERATION_ENABLED` | Config | Release B master flag, **off in production**. False hides the personalized section entirely, including answers already stored. A change takes effect on the next deployment, not immediately |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
 | `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |
@@ -190,6 +190,17 @@ the metric to watch after launch.
    reading is gated, `x-vercel-id` shows `hnd1`).
 5. Rollback: `git revert -m 1 <merge>` or Vercel Instant Rollback — after
    the schema step in `VERSIONING.md` if a migration was destructive.
+
+### Enabling generation (Release B)
+
+With the flag off nothing generates, so a production deploy cannot prove
+the feature works. Prove it on a Preview deployment first: a branch with
+deployments enabled (`vercel.json` `git.deploymentEnabled`) and the
+generation variables plus `GENERATION_ENABLED=true` set in the **Preview**
+environment; run one reading with a question there and check the
+`[generation]` log for `succeeded`. Then set the Production variables,
+`GENERATION_ENABLED=true` last, and redeploy. Turning it off is the same
+in reverse and also needs a redeploy.
 
 ## Resolved production issues
 

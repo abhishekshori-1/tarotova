@@ -34,7 +34,12 @@ const QUESTIONS = questionSet.questions as Question[];
 const GROUNDING_FIXTURES = groundingFixtures as { id: string; questionId: string; expected: "pass" | "revise"; answer: InterpretationOutput }[];
 const calibration = new Map<string, { decision: string; model?: string; ms: number; review?: unknown; usage?: { inputTokens: number; outputTokens: number } }>();
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
-const apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim();
+process.env.GENERATION_PROVIDER ||= "gemini,anthropic";
+// Skip only when the configured chain has no usable provider; a DeepSeek-only
+// or reviewer-only configuration must run, not silently skip.
+const startupConfig = getGenerationConfig();
+const apiKey = startupConfig.providers.length > 0 && startupConfig.reviewProvider ? "configured" : undefined;
+if (!apiKey) console.warn(`eval skipped — ${startupConfig.configurationProblem ?? "no usable provider"}`);
 // Use with -t "rejects known grounding" for a small reviewer-only calibration.
 const reviewOnly = process.env.EVAL_REVIEW_ONLY === "1";
 
@@ -141,8 +146,8 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
 });
 
 if (!apiKey) {
-  it("skipped: set GEMINI_API_KEY or ANTHROPIC_API_KEY to run the release gate", () => {
-    console.warn("eval skipped — neither GEMINI_API_KEY nor ANTHROPIC_API_KEY is set");
+  it("skipped: the configured GENERATION_PROVIDER chain and GENERATION_REVIEW_PROVIDER need usable keys", () => {
+    console.warn(`eval skipped — ${startupConfig.configurationProblem ?? "no usable provider"}`);
   });
 }
 

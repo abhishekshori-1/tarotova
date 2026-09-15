@@ -5,7 +5,7 @@ import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, grounding
 
 import { callTimeout, deadlineExceeded } from "./deadline";
 
-const ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
+const DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
 /**
  * Gemini's `responseSchema` is an OpenAPI subset: no `additionalProperties`,
@@ -40,6 +40,8 @@ export class GeminiProvider implements GenerationProvider {
     private readonly apiKey: string,
     private readonly models: { answer: string; classifier: string },
     private readonly timeoutMs: number,
+    /** Tests only: a local server that stalls, to prove the timeout ends the call. */
+    private readonly endpoint: string = DEFAULT_ENDPOINT,
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
@@ -70,7 +72,7 @@ export class GeminiProvider implements GenerationProvider {
     const signal = AbortSignal.timeout(timeoutMs);
     let res: Response;
     try {
-      res = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+      res = await fetch(`${this.endpoint}/${encodeURIComponent(model)}:generateContent`, {
         method: "POST",
         headers: { "x-goog-api-key": this.apiKey, "content-type": "application/json", "user-agent": "Tarotova/0.2" },
         signal,

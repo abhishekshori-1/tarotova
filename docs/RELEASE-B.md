@@ -210,10 +210,14 @@ approved afterward), all eight reviewer calibration cases correct, and
 13.5 seconds, maximum 30.5 seconds, excluding triage and app overhead.
 The implementation also passed 247 tests, TypeScript and lint.
 
-**Enabled in production on 2026-09-15 by product-owner decision**, with the
-human scoring pass still outstanding and the two known reviewer misses
-above unresolved. The flag can be turned off again at any time without a
-deploy (`GENERATION_ENABLED=false`); stored answers stay readable.
+**Not enabled in production.** The flag stays off pending the human scoring
+pass and the reviewer misses above. When it is enabled, note two facts about
+the switch: changing `GENERATION_ENABLED` in Vercel takes effect only on the
+next deployment, so it is not an instant off switch; and while it is off the
+code hides stored generated answers as well as new ones (`store.ts` checks
+the master flag before anything else), so disabling removes the section from
+readings that already had it. Authored support responses are the exception
+and stay visible.
 
 This is implementation evidence, not release clearance. An AI-assisted
 read of the final output still found unsupported premises in approved

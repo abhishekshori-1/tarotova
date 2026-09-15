@@ -5,7 +5,7 @@ import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, grounding
 
 import { callTimeout, deadlineExceeded } from "./deadline";
 
-const ENDPOINT = "https://api.anthropic.com/v1/messages";
+const DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
 
 interface ToolCall {
@@ -28,6 +28,8 @@ export class AnthropicProvider implements GenerationProvider {
     private readonly models: { answer: string; classifier: string },
     private readonly timeoutMs: number,
     private readonly workspaceId?: string,
+    /** Tests only: a local server that stalls, to prove the timeout ends the call. */
+    private readonly endpoint: string = DEFAULT_ENDPOINT,
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
@@ -58,7 +60,7 @@ export class AnthropicProvider implements GenerationProvider {
     const signal = AbortSignal.timeout(timeoutMs);
     let res: Response;
     try {
-      res = await fetch(ENDPOINT, {
+      res = await fetch(this.endpoint, {
         method: "POST",
         headers: {
           "x-api-key": this.apiKey,
