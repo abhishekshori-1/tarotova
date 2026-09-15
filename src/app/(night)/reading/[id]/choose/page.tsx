@@ -123,7 +123,9 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       } else if (queue.state === "failed") {
         setError("Your picks aren't saved yet. Retry saving, then turn them over.");
       } else if ((e as ApiError).body?.error === "bot_check_failed") {
-        setError("That check expired. Do it once more, then turn them over.");
+        // No site key in this build means no widget and no token, whatever
+        // the person did; say so instead of blaming a check they never saw.
+        setError(TURNSTILE_CONFIGURED ? "That check expired. Do it once more, then turn them over." : "This deployment is missing its bot-check site key, so cards can't be turned over here yet.");
       } else if ((e as ApiError).body?.error === "bot_check_not_configured") {
         setError("Can't turn cards over right now. Try again in a bit.");
       } else setError("Couldn't turn them over. Try again.");
