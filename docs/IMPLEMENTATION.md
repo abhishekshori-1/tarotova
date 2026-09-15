@@ -143,7 +143,7 @@ long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
   come via `drizzle-kit`'s bundled esbuild.
 - **pglite** needs `serverExternalPackages` and a lazy connection (see
   `db/client.ts`); `PGLITE_DATA_DIR` lets the e2e suite use its own database.
-- **Deployments are disabled for `feat/v2` and `feat/release-b`** in `vercel.json`
+- **Deployments are disabled for `feat/v2`** in `vercel.json`; `feat/release-b` was re-enabled on 2026-09-16 so `preview.tarotova.com` builds from it
   (`git.deploymentEnabled`); other branches would get preview deployments
   and, if `DATABASE_URL` is scoped to Preview, would migrate production —
   disable per branch before pushing work in progress.

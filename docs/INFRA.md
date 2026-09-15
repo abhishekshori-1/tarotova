@@ -84,7 +84,7 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | Team | Mosho (Hobby plan) |
 | Project | `tarotova` |
 | Source | GitHub `abhishekshori-1/tarotova`, branch `main` — every push builds and deploys to Production |
-| Branch deployments | Disabled for `feat/v2` and `feat/release-b` via `vercel.json` `git.deploymentEnabled`; other branches get Preview deployments by default |
+| Branch deployments | Disabled for `feat/v2` via `vercel.json` `git.deploymentEnabled`; `feat/release-b` builds as Preview and is served at `preview.tarotova.com` (domain assigned to the branch); other branches get Preview deployments by default |
 | Domains | `tarotova.vercel.app`, `tarotova.com` (redirects to www), `www.tarotova.com` (canonical) |
 | Framework / runtime | Next.js 16 App Router, Node.js serverless functions |
 | Function region | `hnd1` (Tokyo) via `vercel.json` `regions` — confirmed live (`x-vercel-id: bom1::hnd1::…`); warm API calls ~0.3–0.4 s from India |
