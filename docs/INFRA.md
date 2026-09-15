@@ -105,7 +105,7 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Config | Public Turnstile site key (build time) |
 | `TURNSTILE_SECRET_KEY` | Secret | Turnstile server verification |
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
-| `GENERATION_ENABLED` | Config | Release B master flag, **off in production**. False hides the personalized section entirely, including answers already stored. A change takes effect on the next deployment, not immediately |
+| `GENERATION_ENABLED` | Config | Release B master flag, **on in production since 2026-09-16**. False hides the personalized section entirely, including answers already stored. A change takes effect on the next deployment, not immediately |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
 | `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |

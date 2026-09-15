@@ -213,9 +213,10 @@ approved afterward), all eight reviewer calibration cases correct, and
 13.5 seconds, maximum 30.5 seconds, excluding triage and app overhead.
 The implementation also passed 247 tests, TypeScript and lint.
 
-**Not enabled in production.** The flag stays off pending the human scoring
-pass and the reviewer misses above. When it is enabled, note two facts about
-the switch: changing `GENERATION_ENABLED` in Vercel takes effect only on the
+**Enabled in production on 2026-09-16** by product-owner decision, with the
+human scoring pass still outstanding and the reviewer misses above on
+record; production confirmed the flag active (`botCheckOnReveal: true` on
+a new draft). Two facts about the switch: changing `GENERATION_ENABLED` in Vercel takes effect only on the
 next deployment, so it is not an instant off switch; and while it is off the
 code hides stored generated answers as well as new ones (`store.ts` checks
 the master flag before anything else), so disabling removes the section from
