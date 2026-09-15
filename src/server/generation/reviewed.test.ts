@@ -29,6 +29,9 @@ function fake() {
     interpret: vi.fn().mockResolvedValue(ok(draft, "writer")),
     review: vi.fn().mockResolvedValue(ok(pass, "reviewer")),
     repair: vi.fn().mockResolvedValue(ok({ edits: [{ field: "challenge", replacement }] }, "repairer")),
+    followup: vi.fn(),
+    reviewFollowup: vi.fn(),
+    repairFollowup: vi.fn(),
   } satisfies GenerationProvider;
 }
 afterEach(() => vi.restoreAllMocks());

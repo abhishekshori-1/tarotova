@@ -54,9 +54,14 @@ export interface GenerationLimits {
   globalPerDay: number;
 }
 
+/** Follow-up turns per reading (docs/RELEASE-C.md section 2); a support response or a failed turn spends one. */
+export const FOLLOWUP_ALLOWANCE = 3;
+
 export interface GenerationConfig {
   enabled: boolean;
   guestEnabled: boolean;
+  /** Release C follow-ups; requires `enabled` too. */
+  followupsEnabled: boolean;
   /** Usable providers, in preference order; empty means nothing can generate. */
   providers: ProviderSpec[];
   /** Dedicated reviewer: no fallback to a weaker model after a review failure. */
@@ -165,6 +170,7 @@ export function getGenerationConfig(): GenerationConfig {
   return {
     enabled: flag("GENERATION_ENABLED", false),
     guestEnabled: flag("GUEST_GENERATION_ENABLED", true),
+    followupsEnabled: flag("FOLLOWUPS_ENABLED", false),
     providers,
     reviewProvider,
     classifierProvider,

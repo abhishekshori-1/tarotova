@@ -1,5 +1,5 @@
 import type { SafetyCategory } from "@/content/safety";
-import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
+import type { ConversationContext, FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 import { callTimeout, deadlineExceeded } from "./deadline";
 import { isProviderRefusal } from "./refusal";
 
@@ -21,8 +21,20 @@ export class FallbackProvider implements GenerationProvider {
     this.name = chain.map((p) => p.name).join(">");
   }
 
-  classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
-    return this.run((p) => p.classify(question, options), options);
+  classify(question: string, options?: ProviderCallOptions, context?: ConversationContext): Promise<ProviderOutcome<SafetyCategory>> {
+    return this.run((p) => p.classify(question, options, context), options);
+  }
+
+  followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.followup(input, options), options);
+  }
+
+  reviewFollowup(input: FollowupInput, answer: FollowupOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.reviewFollowup(input, answer, options), options);
+  }
+
+  repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.repairFollowup(input, answer, issues, options), options);
   }
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {

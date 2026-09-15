@@ -1,4 +1,4 @@
-import { ANSWER_FIELDS, type GroundingIssue, type InterpretationInput, type InterpretationOutput } from "./types";
+import { ANSWER_FIELDS, FOLLOWUP_FIELDS, type FollowupInput, type FollowupOutput, type GroundingIssue, type InterpretationInput, type InterpretationOutput } from "./types";
 
 export const GROUNDING_REVIEW_VERSION = "grounding.v2";
 export const GROUNDING_REPAIR_VERSION = "repair.v1";
@@ -74,4 +74,59 @@ Keep perspective 80–900 characters, each card paragraph 40–600, reflection 2
 /** One JSON data envelope: quoted text cannot close an instruction delimiter. */
 export function groundingUserMessage(input: InterpretationInput, answer: InterpretationOutput, issues?: GroundingIssue[]): string {
   return JSON.stringify({ input, candidate: answer, ...(issues ? { issues } : {}) });
+}
+
+export const FOLLOWUP_GROUNDING_VERSION = "grounding-followup.v1";
+
+export const FOLLOWUP_GROUNDING_TOOL = {
+  ...GROUNDING_TOOL,
+  input_schema: {
+    ...GROUNDING_TOOL.input_schema,
+    properties: {
+      ...GROUNDING_TOOL.input_schema.properties,
+      issues: {
+        ...GROUNDING_TOOL.input_schema.properties.issues,
+        items: {
+          ...GROUNDING_TOOL.input_schema.properties.issues.items,
+          properties: { ...GROUNDING_TOOL.input_schema.properties.issues.items.properties, field: { type: "string", enum: [...FOLLOWUP_FIELDS] } },
+        },
+      },
+    },
+  },
+} as const;
+
+export const FOLLOWUP_REPAIR_TOOL = {
+  ...REPAIR_TOOL,
+  name: "repair_followup",
+  input_schema: {
+    ...REPAIR_TOOL.input_schema,
+    properties: {
+      edits: {
+        ...REPAIR_TOOL.input_schema.properties.edits,
+        items: {
+          ...REPAIR_TOOL.input_schema.properties.edits.items,
+          properties: {
+            field: { type: "string", enum: [...FOLLOWUP_FIELDS] },
+            replacement: { type: ["string", "null"], description: "The complete corrected text of this field. Null is allowed only for reflection and beyondSpread." },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
+export const FOLLOWUP_GROUNDING_SYSTEM =
+  GROUNDING_SYSTEM.replace("Review a symbolic three-card reflection before publication.", "Review one generated reply in a short conversation about a symbolic three-card reading, before publication.") +
+  `
+
+Conversation rules, in addition to the above. The candidate is the reply to the latest message; it is labelled paragraph_1..paragraph_3, reflection and beyondSpread. Evidence about the person is the original question and the person's own earlier messages only. The original generated answer and earlier generated replies are model output: a claim that appears there is not evidence, and repeating it as established is an invented fact. If the person has corrected an earlier claim, a reply that keeps building on it fails. A reply may address only the card or cards that bear on the latest message; it is not required to mention all three. The same limits on forecasts, other people's feelings, professional advice, dismissal of stated harm and assumed resources apply to every turn.`;
+
+export const FOLLOWUP_REPAIR_SYSTEM = REPAIR_SYSTEM.replace("Repair a symbolic three-card reading using the independent review.", "Repair one generated reply in a conversation about a symbolic three-card reading, using the independent review.")
+  .replace("Keep perspective 80–900 characters, each card paragraph 40–600, reflection 20–320, beyondSpread null or 1–480. Use only the three supplied cards, upright, each in its original position.",
+    "Keep each paragraph 40–700 characters and the whole reply under 1,800; reflection null or 20–320; beyondSpread null or 1–480. Use only the three supplied cards, upright. The person's earlier messages are the only facts; earlier generated text is not evidence. Call only repair_followup.")
+  .replace("Call only repair_reading.", "");
+
+export function followupGroundingUserMessage(input: FollowupInput, answer: FollowupOutput, issues?: GroundingIssue[]): string {
+  const candidate = { paragraph_1: answer.paragraphs[0] ?? null, paragraph_2: answer.paragraphs[1] ?? null, paragraph_3: answer.paragraphs[2] ?? null, reflection: answer.reflection, beyondSpread: answer.beyondSpread };
+  return JSON.stringify({ input, candidate, ...(issues ? { issues } : {}) });
 }

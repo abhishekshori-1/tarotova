@@ -44,10 +44,13 @@ export function getGenerationProvider(config: GenerationConfig): GenerationProvi
   const classifier = config.classifierProvider ? buildProvider(config.classifierProvider, config.timeoutMs) : writer;
   return {
     name: writer.name,
-    classify: (question, options) => classifier.classify(question, options),
+    classify: (question, options, context) => classifier.classify(question, options, context),
     interpret: (input, options) => writer.interpret(input, options),
     repair: (input, answer, issues, options) => writer.repair(input, answer, issues, options),
     review: (input, answer, options) => reviewer ? reviewer.review(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),
+    followup: (input, options) => writer.followup(input, options),
+    repairFollowup: (input, answer, issues, options) => writer.repairFollowup(input, answer, issues, options),
+    reviewFollowup: (input, answer, options) => reviewer ? reviewer.reviewFollowup(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),
   };
 }
 
@@ -218,7 +221,7 @@ async function claim(existing: GenerationRow | undefined, readingId: string, con
   return reclaimed;
 }
 
-async function reserveBudget(sessionId: string, ip: string, config: GenerationConfig) {
+export async function reserveBudget(sessionId: string, ip: string, config: GenerationConfig) {
   const scopes = [
     { scope: "session", identifier: `session:${sessionId}`, limit: config.limits.sessionPerDay },
     { scope: "ip", identifier: `ip:${ip}`, limit: config.limits.ipPerDay },

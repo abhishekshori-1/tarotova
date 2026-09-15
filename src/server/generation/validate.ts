@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { CARDS } from "@/content/cards";
 import { POSITIONS } from "@/content/types";
-import type { InterpretationOutput } from "./types";
+import type { FollowupOutput, InterpretationOutput } from "./types";
 
 /**
  * The automated gates from eval/RUBRIC.md. Anything that fails here is
@@ -98,19 +98,46 @@ export function findForeignCardName(text: string, drawnCardIds: string[]): strin
   return undefined;
 }
 
+/** The text gates shared by every generated shape: banned phrasing, asserted certainty, cards not drawn. */
+export function checkAnswerText(text: string, drawnCardIds: string[]): { reason: string; detail?: string } | undefined {
+  const banned = BANNED_PHRASES.find((p) => p.test(text));
+  if (banned) return { reason: "banned_phrase", detail: banned.source };
+  const asserted = findAssertedCertainty(text);
+  if (asserted) return { reason: "asserted_certainty", detail: asserted };
+  const foreign = findForeignCardName(text, drawnCardIds);
+  if (foreign) return { reason: "foreign_card", detail: foreign };
+  return undefined;
+}
+
 export function validateInterpretation(raw: unknown, drawnCardIds: string[]): ValidationResult {
   const parsed = outputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, reason: "output_shape", detail: parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; ") };
   const output: InterpretationOutput = parsed.data;
-  const text = allText(output);
+  const failed = checkAnswerText(allText(output), drawnCardIds);
+  if (failed) return { ok: false, ...failed };
+  return { ok: true, output };
+}
 
-  const banned = BANNED_PHRASES.find((p) => p.test(text));
-  if (banned) return { ok: false, reason: "banned_phrase", detail: banned.source };
-  const asserted = findAssertedCertainty(text);
-  if (asserted) return { ok: false, reason: "asserted_certainty", detail: asserted };
+/** Follow-up turns: one to three short paragraphs, an optional question, an optional limit line (docs/RELEASE-C.md section 3). */
+export const FOLLOWUP_LIMITS = { paragraph: 700, total: 1800, reflection: 320, beyondSpread: 480 } as const;
+const FOLLOWUP_MINIMUMS = { paragraph: 40, reflection: 20 } as const;
 
-  const foreign = findForeignCardName(text, drawnCardIds);
-  if (foreign) return { ok: false, reason: "foreign_card", detail: foreign };
+const followupSchema = z.strictObject({
+  paragraphs: z.array(z.string().trim().min(FOLLOWUP_MINIMUMS.paragraph).max(FOLLOWUP_LIMITS.paragraph)).min(1).max(3),
+  reflection: z.string().trim().max(FOLLOWUP_LIMITS.reflection).nullable().transform((v) => (v ? v : null)),
+  beyondSpread: z.string().trim().max(FOLLOWUP_LIMITS.beyondSpread).nullable().transform((v) => (v ? v : null)),
+});
 
+export type FollowupValidationResult = { ok: true; output: FollowupOutput } | { ok: false; reason: string; detail?: string };
+
+export function validateFollowup(raw: unknown, drawnCardIds: string[]): FollowupValidationResult {
+  const parsed = followupSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, reason: "output_shape", detail: parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; ") };
+  const output: FollowupOutput = parsed.data;
+  if (output.reflection !== null && output.reflection.length < FOLLOWUP_MINIMUMS.reflection) return { ok: false, reason: "output_shape", detail: "reflection too short" };
+  const total = output.paragraphs.join("\n").length + (output.reflection?.length ?? 0) + (output.beyondSpread?.length ?? 0);
+  if (total > FOLLOWUP_LIMITS.total) return { ok: false, reason: "output_shape", detail: `total ${total} > ${FOLLOWUP_LIMITS.total}` };
+  const failed = checkAnswerText([...output.paragraphs, output.reflection ?? "", output.beyondSpread ?? ""].join("\n"), drawnCardIds);
+  if (failed) return { ok: false, ...failed };
   return { ok: true, output };
 }

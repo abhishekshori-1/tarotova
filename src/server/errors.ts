@@ -20,3 +20,13 @@ export class RateLimitedError extends Error {
     super("rate_limited");
   }
 }
+
+/** A follow-up cannot be accepted in the reading's current state (docs/RELEASE-C.md section 4); 409 with the code. */
+export class FollowupStateError extends Error {
+  constructor(
+    public code: string,
+    public retryAfterSeconds?: number,
+  ) {
+    super(code);
+  }
+}

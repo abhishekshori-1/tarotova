@@ -170,3 +170,34 @@ export const readingGenerations = pgTable(
   },
   (t) => [uniqueIndex("reading_generations_reading_kind_idx").on(t.readingId, t.kind)],
 );
+
+// One row per follow-up turn (docs/RELEASE-C.md section 4). The client's
+// submission id makes a retry idempotent; the sequence is the slot. The row
+// is the lease, as in reading_generations: provider_called and attempts are
+// recorded before any paid call, at most two pipelines per turn, ever.
+export const readingFollowups = pgTable(
+  "reading_followups",
+  {
+    id: text("id").primaryKey(),
+    readingId: text("reading_id")
+      .notNull()
+      .references(() => readings.id),
+    submissionId: text("submission_id").notNull(),
+    sequence: integer("sequence").notNull(), // 1..3
+    text: text("text").notNull(), // immutable once accepted
+    status: text("status").notNull().default("pending"), // pending | provider_called | succeeded | refused | failed
+    safetyCategory: text("safety_category"),
+    output: text("output"), // JSON FollowupOutput, validated before it is stored
+    errorReason: text("error_reason"),
+    attempts: integer("attempts").notNull().default(0),
+    leaseExpiresAt: epochMs("lease_expires_at").notNull(),
+    promptVersion: text("prompt_version").notNull(),
+    reviewVersion: text("review_version").notNull(),
+    contentVersion: text("content_version").notNull(),
+    model: text("model"),
+    createdAt: epochMs("created_at").notNull(),
+    updatedAt: epochMs("updated_at").notNull(),
+    completedAt: epochMs("completed_at"),
+  },
+  (t) => [uniqueIndex("reading_followups_submission_idx").on(t.readingId, t.submissionId), uniqueIndex("reading_followups_sequence_idx").on(t.readingId, t.sequence)],
+);
