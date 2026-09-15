@@ -24,7 +24,7 @@ export type InterpretationView =
   | { status: "failed"; reason: string; retryable: boolean; classifiedCategory?: "none" | "stressful" };
 
 export interface ProviderCallOptions {
-  /** Absolute request deadline, shared by triage, answer, fallback and retries. */
+  /** Absolute request deadline, shared by triage, writing, review, repair and fallback. */
   deadlineAt: number;
 }
 
@@ -52,4 +52,18 @@ export interface GenerationProvider {
   readonly name: string;
   classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>>;
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>>;
+  review(input: InterpretationInput, answer: InterpretationOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>>;
+  repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>>;
+}
+
+export const ANSWER_FIELDS = ["perspective", "situation", "challenge", "guidance", "reflection", "beyondSpread"] as const;
+export type AnswerField = (typeof ANSWER_FIELDS)[number];
+export interface GroundingIssue {
+  field: AnswerField;
+  quote: string;
+  reason: string;
+}
+export interface GroundingReview {
+  decision: "pass" | "revise";
+  issues: GroundingIssue[];
 }

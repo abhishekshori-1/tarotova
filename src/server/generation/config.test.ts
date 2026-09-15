@@ -27,6 +27,20 @@ describe("getGenerationConfig", () => {
     expect(kinds()).toEqual(["gemini", "anthropic"]);
     expect(config.providers[0].models).toEqual({ answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" });
     expect(config.providers[1]).toMatchObject({ workspaceId: "wrkspc_1", models: { answer: "claude-sonnet-5" } });
+    expect(config.reviewProvider).toBeUndefined();
+    expect(config.configurationProblem).toContain("GENERATION_REVIEW_PROVIDER is not set");
+  });
+
+  it("configures the reviewer on its own, outside the writer chain if need be", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("GENERATION_PROVIDER", "gemini");
+    vi.stubEnv("GEMINI_API_KEY", "g-test");
+    vi.stubEnv("ANTHROPIC_API_KEY", "sk-test");
+    vi.stubEnv("ANTHROPIC_WORKSPACE_ID", "wrkspc_1");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "anthropic");
+    const config = getGenerationConfig();
+    expect(kinds()).toEqual(["gemini"]);
+    expect(config.reviewProvider).toMatchObject({ kind: "anthropic", workspaceId: "wrkspc_1", models: { answer: "claude-sonnet-5" } });
     expect(config.configurationProblem).toBeUndefined();
   });
 
@@ -59,6 +73,38 @@ describe("getGenerationConfig", () => {
     expect(getGenerationConfig().providers[0].models.answer).toBe("claude-opus-5");
   });
 
+  it("assumes no reviewer vendor, and names a reviewer whose key is missing", () => {
+    vi.stubEnv("GENERATION_PROVIDER", "gemini");
+    vi.stubEnv("GEMINI_API_KEY", "test");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", undefined);
+    expect(getGenerationConfig().reviewProvider).toBeUndefined();
+    expect(getGenerationConfig().configurationProblem).toContain("GENERATION_REVIEW_PROVIDER is not set");
+
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "anthropic");
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const config = getGenerationConfig();
+    expect(config.reviewProvider).toBeUndefined();
+    expect(config.configurationProblem).toContain("reviewer unavailable (anthropic skipped: ANTHROPIC_API_KEY is not set.)");
+  });
+
+  it("implies the stub reviewer only for an all-stub writer chain outside production", () => {
+    vi.stubEnv("GENERATION_PROVIDER", "stub");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", undefined);
+    expect(getGenerationConfig().reviewProvider?.kind).toBe("stub");
+    vi.stubEnv("NODE_ENV", "production");
+    expect(getGenerationConfig().reviewProvider).toBeUndefined();
+  });
+
+  it("supports an explicit calibrated review model without changing the writer", () => {
+    vi.stubEnv("GENERATION_PROVIDER", "gemini");
+    vi.stubEnv("GEMINI_API_KEY", "test");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "gemini");
+    vi.stubEnv("GENERATION_REVIEW_MODEL", "review-model");
+    const config = getGenerationConfig();
+    expect(config.reviewProvider?.models.answer).toBe("review-model");
+    expect(config.providers[0].models.answer).toBe("gemini-3.8-flash");
+  });
+
   it("reads flags leniently and falls back on bad numbers", () => {
     vi.stubEnv("GENERATION_ENABLED", "TRUE");
     vi.stubEnv("GUEST_GENERATION_ENABLED", "0");
@@ -69,5 +115,21 @@ describe("getGenerationConfig", () => {
     expect(config.guestEnabled).toBe(false);
     expect(config.limits.globalPerDay).toBe(400);
     expect(config.limits.sessionPerDay).toBe(3);
+  });
+});
+
+describe("deepseek", () => {
+  it("joins the chain or serves as reviewer with its own key and models", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("GENERATION_PROVIDER", "deepseek,gemini");
+    vi.stubEnv("DEEPSEEK_API_KEY", "sk-d");
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "deepseek");
+    vi.stubEnv("DEEPSEEK_MODEL", "deepseek-v4-pro");
+    const config = getGenerationConfig();
+    expect(config.providers.map((p) => p.kind)).toEqual(["deepseek", "gemini"]);
+    expect(config.providers[0].models).toEqual({ answer: "deepseek-v4-pro", classifier: "deepseek-flash" });
+    expect(config.reviewProvider).toMatchObject({ kind: "deepseek", models: { answer: "deepseek-v4-pro" } });
+    expect(config.configurationProblem).toBeUndefined();
   });
 });

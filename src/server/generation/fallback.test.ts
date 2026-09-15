@@ -5,7 +5,7 @@ import type { GenerationProvider, InterpretationInput, ProviderOutcome } from ".
 const INPUT = { question: "q", safetyCategory: "none", focusLabel: "General", cards: [] } as InterpretationInput;
 
 function fake(name: string, outcome: ProviderOutcome<unknown>): GenerationProvider & { interpret: ReturnType<typeof vi.fn>; classify: ReturnType<typeof vi.fn> } {
-  return { name, interpret: vi.fn().mockResolvedValue(outcome), classify: vi.fn().mockResolvedValue(outcome) };
+  return { name, interpret: vi.fn().mockResolvedValue(outcome), classify: vi.fn().mockResolvedValue(outcome), review: vi.fn().mockResolvedValue(outcome), repair: vi.fn().mockResolvedValue(outcome) };
 }
 
 const ok = (model: string): ProviderOutcome<unknown> => ({ ok: true, value: { model }, model });

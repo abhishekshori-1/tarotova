@@ -1,6 +1,7 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, InterpretationInput, ProviderCallOptions, ProviderOutcome } from "./types";
+import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
+import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, groundingUserMessage } from "./grounding-prompts";
 
 import { callTimeout, deadlineExceeded } from "./deadline";
 
@@ -53,6 +54,14 @@ export class GeminiProvider implements GenerationProvider {
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     return this.callJson(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL.input_schema, 8192, options);
+  }
+
+  review(input: InterpretationInput, answer: InterpretationOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, GROUNDING_SYSTEM, groundingUserMessage(input, answer), GROUNDING_TOOL.input_schema, 4096, options);
+  }
+
+  repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), REPAIR_TOOL.input_schema, 8192, options);
   }
 
   private async callJson(model: string, system: string, user: string, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {

@@ -10,6 +10,7 @@ import { requestInterpretation } from "@/server/generation/service";
 import { GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS } from "@/server/generation/config";
 import { INTERPRETATION_PROMPT_VERSION } from "@/server/generation/prompts";
 import { StubProvider } from "@/server/generation/stub";
+import { AnthropicProvider } from "@/server/generation/anthropic";
 import { CARDS } from "@/content/cards";
 import { deleteExpired } from "@/server/cleanup";
 
@@ -157,6 +158,58 @@ describe("the happy path", () => {
 });
 
 describe("reading quality and safety handoffs", () => {
+  it("uses the dedicated reviewer and withholds on failure without falling back to the writer's review", async () => {
+    vi.stubEnv("GENERATION_PROVIDER", "stub,anthropic");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "anthropic");
+    vi.stubEnv("ANTHROPIC_API_KEY", "test");
+    const primaryReview = vi.spyOn(StubProvider.prototype, "review");
+    const dedicatedReview = vi.spyOn(AnthropicProvider.prototype, "review").mockResolvedValue({ ok: false, reason: "provider_http_503", retryable: true, uncertain: false });
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toMatchObject({ status: "failed", reason: "grounding_review:provider_http_503", classifiedCategory: "none" });
+    expect(dedicatedReview).toHaveBeenCalledOnce();
+    expect(primaryReview).not.toHaveBeenCalled();
+    expect((await generationRow(reading.id)).output).toBeNull();
+  });
+
+  it("retains the library after triage when the configured reviewer is missing", async () => {
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "anthropic");
+    const writer = vi.spyOn(StubProvider.prototype, "interpret");
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toMatchObject({ status: "failed", reason: "grounding_review:reviewer_not_configured", classifiedCategory: "none" });
+    expect((await generationRow(reading.id)).output).toBeNull();
+    expect(writer).not.toHaveBeenCalled();
+  });
+
+  it("keeps the draft private while review runs, and retains triage/library access when review fails", async () => {
+    let finish!: (value: { ok: false; reason: string; retryable: boolean; uncertain: boolean }) => void;
+    const review = vi.spyOn(StubProvider.prototype, "review").mockImplementation(() => new Promise((resolve) => { finish = resolve; }));
+    const writer = vi.spyOn(StubProvider.prototype, "interpret");
+    const session = await createSession();
+    const reading = await lockedReading(session, "I was laid off. What now?");
+    const request = requestInterpretation(reading.id, session, "1.1.1.1");
+    await vi.waitFor(() => expect(review).toHaveBeenCalledOnce());
+    expect((await generationRow(reading.id)).output).toBeNull();
+    expect((await getResult(reading.id, session)).interpretation).toEqual({ status: "pending", classifiedCategory: "stressful" });
+    finish({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    expect(await request).toMatchObject({ status: "failed", reason: "grounding_review:provider_timeout", classifiedCategory: "stressful", retryable: true });
+    expect((await generationRow(reading.id)).output).toBeNull();
+    expect((await generationRow(reading.id)).attempts).toBe(1);
+    expect(writer).toHaveBeenCalledOnce(); // no automatic second pipeline after review failure
+  });
+
+  it("persists the approved repair rather than the rejected draft", async () => {
+    vi.spyOn(StubProvider.prototype, "review")
+      .mockResolvedValueOnce({ ok: true, model: "test-review", value: { decision: "revise", issues: [{ field: "reflection", quote: "Do the small version of the next step this week.", reason: "Unrequested task." }] } })
+      .mockResolvedValueOnce({ ok: true, model: "test-review", value: { decision: "pass", issues: [] } });
+    vi.spyOn(StubProvider.prototype, "repair").mockResolvedValue({ ok: true, model: "test-repair", value: { edits: [{ field: "reflection", replacement: "Which of these themes seems relevant to your question?" }] } });
+    const session = await createSession();
+    const reading = await lockedReading(session);
+    expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toMatchObject({ status: "succeeded", model: "test-repair", answer: { reflection: "Which of these themes seems relevant to your question?" } });
+    expect((await generationRow(reading.id)).output).not.toContain("Do the small version");
+  });
+
   it("passes the classified emotional context to the writer", async () => {
     const spy = vi.spyOn(StubProvider.prototype, "interpret");
     const session = await createSession();

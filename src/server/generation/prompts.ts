@@ -11,7 +11,12 @@ import type { InterpretationInput } from "./types";
 // (four Grounding scores of 2, three Honesty, all supplied causes or experiences): a complete
 // worked example of a grounded understanding-only answer, on cards outside
 // the fixture, with the three failure shapes named against it.
-export const INTERPRETATION_PROMPT_VERSION = "interpretation.v7";
+// v8: possibilities must remain optional inside questions too; examples
+// separate a card's theme from an established cause or experience.
+// v9 added review/repair; v10 uses a dedicated reviewer after the Gemini
+// reviewer missed a known grounding failure in calibration. The writer stays v8.
+// v11 calibrates grounding.v2 to accept stated constraints and genuinely open questions.
+export const INTERPRETATION_PROMPT_VERSION = "interpretation.v11";
 export const CLASSIFIER_PROMPT_VERSION = "intent.v1";
 
 export const POSITION_LABEL: Record<(typeof POSITIONS)[number], string> = {
@@ -89,6 +94,12 @@ A complete illustrative example of the second case. Follow its approach using th
 - reflection: "The next time you stop, what is the first thing you notice, before any explanation arrives?"
 - beyondSpread: null.
 Notice what the example never does: it does not say the start was exciting, that novelty wore off, that maintenance became a burden, that a hunch is present, or that the issue is really about pacing. Every card offers a possibility and hands it back. That is the standard for every answer, not only this case: a sentence that assigns a cause ("the issue is rarely X but Y"), reports an experience ("the early openness goes out of it"), or promises an effect ("a habit lasts longer when") is an invention unless they wrote it.
+
+A possibility must leave room for "no, that is not happening". A question mark or a disclaimer does not remove an assumption: "what instinct is asking for notice?" assumes an instinct, and "the card cannot explain why, only that pacing is the problem" still establishes a problem. Offer the theme without deciding it applies:
+- "Temperance offers pace as one thing to examine. Does the amount you take on have any bearing on when you stop?"
+- "The High Priestess offers a place for what is not yet in words. Is there anything you have noticed but not named?"
+- "The Hermit raises time alone as a theme. Does solitude play any part in this, and if so, how?"
+Keep that openness through the whole paragraph, including after a question or an "if". Two proposed explanations may both be wrong; do not make the reader choose between them. When they ask what to do, offer an approach they can consider without promising it will help or supplying a cause to justify it.
 
 How you sound:
 - Open on what is particular about this question. Do not restate the question; they can see it above the answer. Never open with "You asked", "You are asking", "You wrote", "Together, these cards", "These cards suggest", or any line that would fit every question with the same first card. Begin with the first thing the cards have to say about what they brought.

@@ -105,9 +105,11 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Config | Public Turnstile site key (build time) |
 | `TURNSTILE_SECRET_KEY` | Secret | Turnstile server verification |
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
-| `GENERATION_ENABLED` | Config | Release B master flag. **Unset/false until the eval gate passes** (`IMPLEMENTATION.md`); false hides the personalized section entirely |
+| `GENERATION_ENABLED` | Config | Release B master flag; false hides the personalized section entirely. Enabled on 2026-09-15 by product-owner decision with the human scoring pass still outstanding (`RELEASE-B.md`) |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
+| `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |
+| `GENERATION_REVIEW_MODEL` | Config | Optional override for the review model, otherwise the selected provider's answer model. Changing reviewer requires re-running calibration and the full quality gate |
 | `GEMINI_API_KEY` | Secret | Google AI Studio key (Gemini Developer API). Set a budget/quota on the Google Cloud project it belongs to |
 | `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; default `gemini-3.8-flash` for both |
 | `ANTHROPIC_API_KEY` | Secret | Anthropic API key. Prepaid credits with auto-reload off are the spend cap |
@@ -169,6 +171,12 @@ and `[generation]` logs a `fallback` event with the reason.
 
 The app never names either vendor; the privacy page says "third-party
 service providers on our behalf".
+
+**Critical path.** Whichever vendor reviews is on the path of every question
+reading: if its balance, quota or key fails, every generated answer is
+withheld (the library reading still shows). Its budget and alert are part
+of enabling the feature, and the `withheld` count in `[generation]` logs is
+the metric to watch after launch.
 
 ## Deployment flow
 

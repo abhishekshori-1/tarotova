@@ -9,12 +9,14 @@ import { AnthropicProvider } from "./anthropic";
 import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig, type GenerationConfig, type ProviderSpec } from "./config";
 import { FallbackProvider } from "./fallback";
 import { GeminiProvider } from "./gemini";
+import { DeepSeekProvider } from "./deepseek";
 import { INTERPRETATION_PROMPT_VERSION } from "./prompts";
 import { StubProvider } from "./stub";
 import { BUDGET_REASON, getGeneration, viewOf, type GenerationRow } from "./store";
 import type { GenerationProvider, InterpretationView, ProviderCallOptions } from "./types";
 import { buildInterpretationInput } from "./input";
 import { validateInterpretation } from "./validate";
+import { generateReviewed } from "./reviewed";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -26,6 +28,8 @@ function buildProvider(spec: ProviderSpec, timeoutMs: number): GenerationProvide
       return new GeminiProvider(spec.apiKey!, spec.models, timeoutMs);
     case "anthropic":
       return new AnthropicProvider(spec.apiKey!, spec.models, timeoutMs, spec.workspaceId);
+    case "deepseek":
+      return new DeepSeekProvider(spec.apiKey!, spec.models, timeoutMs);
     case "stub":
       return (stub ??= new StubProvider());
   }
@@ -35,8 +39,15 @@ function buildProvider(spec: ProviderSpec, timeoutMs: number): GenerationProvide
 export function getGenerationProvider(config: GenerationConfig): GenerationProvider | undefined {
   if (config.providers.length === 0) return undefined;
   const chain = config.providers.map((spec) => buildProvider(spec, config.timeoutMs));
-  if (chain.length === 1) return chain[0];
-  return new FallbackProvider(chain, (from, to, reason, detail) => log("fallback", { from, to, reason, detail }));
+  const writer = chain.length === 1 ? chain[0] : new FallbackProvider(chain, (from, to, reason, detail) => log("fallback", { from, to, reason, detail }));
+  const reviewer = config.reviewProvider ? buildProvider(config.reviewProvider, config.timeoutMs) : undefined;
+  return {
+    name: writer.name,
+    classify: (question, options) => writer.classify(question, options),
+    interpret: (input, options) => writer.interpret(input, options),
+    repair: (input, answer, issues, options) => writer.repair(input, answer, issues, options),
+    review: (input, answer, options) => reviewer ? reviewer.review(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),
+  };
 }
 
 function log(event: string, fields: Record<string, unknown>) {
@@ -128,11 +139,16 @@ export async function requestInterpretation(readingId: string, sessionId: string
       log("refused", { readingId, generationId: claimed.id, category: safetyCategory, attempts, durationMs: t - startedAt });
       return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
     }
+    // Preserve triage/library access, but do not pay for an unpublishable draft.
+    if (!config.reviewProvider) {
+      lastReason = "grounding_review:reviewer_not_configured";
+      break;
+    }
     const input = buildInterpretationInput(question, snapshot, safetyCategory === "stressful" ? "stressful" : "none");
-    const outcome = await provider.interpret(input, options);
+    const outcome = await generateReviewed(provider, input, drawnCardIds, options);
     if (!outcome.ok) {
       lastReason = outcome.reason;
-      log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, detail: outcome.detail, uncertain: outcome.uncertain, durationMs: Date.now() - startedAt });
+      log("provider_failed", { readingId, generationId: claimed.id, attempts, reason: outcome.reason, detail: outcome.detail, uncertain: outcome.uncertain, qualityCalls: outcome.quality.calls, repaired: outcome.quality.repairAttempted, durationMs: Date.now() - startedAt });
       if (outcome.retryable) continue;
       break;
     }
@@ -147,7 +163,7 @@ export async function requestInterpretation(readingId: string, sessionId: string
       .update(readingGenerations)
       .set({ status: "succeeded", output: JSON.stringify(validated.output), model: outcome.model, completedAt: t, updatedAt: t, leaseExpiresAt: t })
       .where(eq(readingGenerations.id, claimed.id));
-    log("succeeded", { readingId, generationId: claimed.id, attempts, provider: provider.name, model: outcome.model, usage: outcome.usage, durationMs: t - startedAt });
+    log("succeeded", { readingId, generationId: claimed.id, attempts, provider: provider.name, model: outcome.model, usage: outcome.usage, qualityCalls: outcome.quality.calls, repaired: outcome.quality.repairAttempted, durationMs: t - startedAt });
     return viewOf(await getGeneration(db, readingId), grant.basis, question, t);
   }
 

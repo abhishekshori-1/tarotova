@@ -10,6 +10,16 @@ agreed on 14 September 2026.
 Markdown report to `eval/report/` for the human pass. Nothing in the report
 is committed.
 
+From `interpretation.v9`, the same publication pipeline runs in production
+and eval: write, grounding review, at most one repair of flagged fields, and
+a fresh review of the whole repaired answer. Only approved answers appear
+as readings. Collapsed audit traces retain the original draft and review
+findings, including withheld candidates. Score the final displayed answer;
+a withheld candidate counts against answer availability, not as a good
+answer. Model approval does not replace any human gate below. Answer-phase
+timing now includes review and repair; successful-call token totals include
+these stages even for withheld answers, but not failed/fallback charges.
+
 ## What the answer is
 
 A four-field structured reflection for one locked reading:

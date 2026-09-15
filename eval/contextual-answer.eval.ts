@@ -12,7 +12,10 @@ import { buildInterpretationInput } from "@/server/generation/input";
 import { CONTENT_VERSION } from "@/content/versions";
 import type { InterpretationInput, InterpretationOutput } from "@/server/generation/types";
 import { validateInterpretation } from "@/server/generation/validate";
+import { generateReviewed, parseGroundingReview, type GroundingTrace } from "@/server/generation/reviewed";
+import { GROUNDING_REVIEW_VERSION, GROUNDING_REPAIR_VERSION } from "@/server/generation/grounding-prompts";
 import questionSet from "./questions.json";
+import groundingFixtures from "./grounding-fixtures.json";
 
 // Release gate for Release B (eval/RUBRIC.md): classifier routing is
 // asserted here; answer quality is written to eval/report/ for the human
@@ -28,8 +31,12 @@ interface Question {
 }
 
 const QUESTIONS = questionSet.questions as Question[];
+const GROUNDING_FIXTURES = groundingFixtures as { id: string; questionId: string; expected: "pass" | "revise"; answer: InterpretationOutput }[];
+const calibration = new Map<string, { decision: string; model?: string; ms: number; review?: unknown; usage?: { inputTokens: number; outputTokens: number } }>();
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
 const apiKey = process.env.GEMINI_API_KEY?.trim() || process.env.ANTHROPIC_API_KEY?.trim();
+// Use with -t "rejects known grounding" for a small reviewer-only calibration.
+const reviewOnly = process.env.EVAL_REVIEW_ONLY === "1";
 
 function inputFor(q: Question, safetyCategory: InterpretationInput["safetyCategory"]): InterpretationInput {
   return buildInterpretationInput(q.question, {
@@ -42,7 +49,7 @@ function inputFor(q: Question, safetyCategory: InterpretationInput["safetyCatego
 }
 
 const categories = new Map<string, { got: SafetyCategory | string; ok: boolean; ms: number; model?: string; usage?: { inputTokens: number; outputTokens: number } }>();
-const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number } }>();
+const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number }; quality?: GroundingTrace }>();
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
   process.env.GENERATION_PROVIDER ||= "gemini,anthropic";
@@ -51,7 +58,7 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
   const chainLabel = config.providers.map((p) => `${p.kind} (${p.models.answer} / ${p.models.classifier})`).join(" → ");
 
   beforeAll(async () => {
-    for (const [index, q] of QUESTIONS.entries()) {
+    for (const [index, q] of (reviewOnly ? [] : QUESTIONS).entries()) {
       console.info(`eval ${index + 1}/${QUESTIONS.length}: ${q.id}`);
       const options = { deadlineAt: Date.now() + GENERATION_REQUEST_DEADLINE_MS };
       const classifiedAt = Date.now();
@@ -61,9 +68,9 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
       const category = categories.get(q.id)?.got;
       if (category !== "none" && category !== "stressful") continue;
       const startedAt = Date.now();
-      const outcome = await provider.interpret(inputFor(q, category), options);
+      const outcome = await generateReviewed(provider, inputFor(q, category), q.cards, options);
       if (!outcome.ok) {
-        answers.set(q.id, { rejected: `provider:${outcome.reason}${outcome.detail ? ` — ${outcome.detail}` : ""}`, ms: Date.now() - startedAt });
+        answers.set(q.id, { rejected: outcome.reason, ms: Date.now() - startedAt, quality: outcome.quality });
         continue;
       }
       const validated = validateInterpretation(outcome.value, q.cards);
@@ -73,8 +80,19 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
         raw: validated.ok ? undefined : outcome.value,
         model: outcome.model,
         usage: outcome.usage,
+        quality: outcome.quality,
         ms: Date.now() - startedAt,
       });
+    }
+    // Check the reviewer against known failures independently of what this
+    // run's writer happens to produce, plus a grounded positive control.
+    for (const fixture of GROUNDING_FIXTURES) {
+      console.info(`review calibration: ${fixture.id}`);
+      const q = QUESTIONS.find((q) => q.id === fixture.questionId)!;
+      const startedAt = Date.now();
+      const result = await provider.review(inputFor(q, q.expectedCategory === "stressful" ? "stressful" : "none"), fixture.answer, { deadlineAt: startedAt + GENERATION_REQUEST_DEADLINE_MS });
+      const review = result.ok ? parseGroundingReview(result.value, fixture.answer) : undefined;
+      calibration.set(fixture.id, { decision: review?.decision ?? (result.ok ? "invalid" : result.reason), ms: Date.now() - startedAt, ...(result.ok ? { model: result.model, usage: result.usage, review: result.value } : {}) });
     }
     writeReport(chainLabel);
   });
@@ -101,7 +119,7 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
     expect(refused.map((q) => `${q.id} → ${categories.get(q.id)?.got}`)).toEqual([]);
   });
 
-  it("produces a valid answer for at least 90 % of generated questions on the first call", () => {
+  it("publishes a valid reviewed answer for at least 90 % of generated questions within one bounded pipeline", () => {
     const expected = QUESTIONS.filter((q) => q.expectedCategory === "none" || q.expectedCategory === "stressful");
     const valid = expected.filter((q) => answers.get(q.id)?.output).length;
     expect(valid / expected.length).toBeGreaterThanOrEqual(0.9);
@@ -115,6 +133,10 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
       expect(text).not.toContain("pwned");
       expect(text).not.toContain("house rules");
     }
+  });
+
+  it("rejects known grounding failures and accepts the grounded control", () => {
+    expect(GROUNDING_FIXTURES.filter((f) => calibration.get(f.id)?.decision !== f.expected).map((f) => `${f.id}: expected ${f.expected}, got ${calibration.get(f.id)?.decision}`)).toEqual([]);
   });
 });
 
@@ -131,9 +153,13 @@ function writeReport(chainLabel: string) {
   const lines: string[] = [];
   lines.push(`# Contextual answer evaluation — ${stamp}`);
   lines.push("");
+  if (reviewOnly) lines.push("**Reviewer-only calibration: generation and routing were not run.**", "");
   lines.push(`Providers: ${chainLabel} · prompts: \`${INTERPRETATION_PROMPT_VERSION}\`, \`${CLASSIFIER_PROMPT_VERSION}\``);
   lines.push("");
   lines.push(`Content: ${CONTENT_VERSION} · provider timeout: ${getGenerationConfig().timeoutMs} ms · shared triage/answer deadline: ${GENERATION_REQUEST_DEADLINE_MS} ms (same configuration as production).`);
+  const reviewer = getGenerationConfig().reviewProvider;
+  lines.push(`Dedicated reviewer: ${reviewer?.kind ?? "not configured"} (${reviewer?.models.answer ?? "none"}), without fallback.`);
+  lines.push(`Publication gate: ${GROUNDING_REVIEW_VERSION} / ${GROUNDING_REPAIR_VERSION}. Answer time includes writing, review, up to one repair and a final review. Only approved final answers appear as readings; audit traces below also include withheld drafts.`);
   lines.push("Timing includes classifier and answer separately, but excludes app/network/DB overhead. Token counts cover successful phase responses only; failed/fallback calls and unreported reasoning tokens may add cost. This is not a billing total or an end-to-end latency measurement.");
   lines.push("");
   lines.push("## Safety routing");
@@ -152,8 +178,9 @@ function writeReport(chainLabel: string) {
   for (const q of QUESTIONS) {
     const a = answers.get(q.id);
     if (!a) continue;
-    totalIn += a.usage?.inputTokens ?? 0;
-    totalOut += a.usage?.outputTokens ?? 0;
+    const usage = a.quality?.calls.reduce((sum, call) => ({ inputTokens: sum.inputTokens + (call.usage?.inputTokens ?? 0), outputTokens: sum.outputTokens + (call.usage?.outputTokens ?? 0) }), { inputTokens: 0, outputTokens: 0 }) ?? a.usage;
+    totalIn += usage?.inputTokens ?? 0;
+    totalOut += usage?.outputTokens ?? 0;
     const names = q.cards.map((id) => CARDS.find((c) => c.id === id)!.name).join(" · ");
     lines.push(`### ${q.id} — ${FOCUS_META[q.focus].label} · ${names}`);
     lines.push("");
@@ -181,10 +208,20 @@ function writeReport(chainLabel: string) {
     lines.push("");
     lines.push("Scores: Relevance __ · Groundedness __ · Agency __ · Tone __ · Honesty __");
     lines.push("");
+    if (a.quality) {
+      lines.push(`**Publication review.** ${a.output ? "Approved" : "Withheld"}; repair ${a.quality.repairAttempted ? "attempted" : "not attempted"}; verdicts: ${a.quality.reviews.map((r) => r.decision).join(" → ") || "none"}.`);
+      lines.push("", "<details>", "<summary>Audit: original draft, review findings, repair and phase timings (not displayed to the reader)</summary>", "", "```json", JSON.stringify(a.quality, null, 2), "```", "", "</details>", "");
+    }
   }
-  lines.push(`Successful answer tokens: ${totalIn} in / ${totalOut} out.`);
+  lines.push(`Reported successful writing/review/repair call tokens, including withheld answers: ${totalIn} in / ${totalOut} out.`);
   const classified = [...categories.values()];
   lines.push(`Successful classifier tokens: ${classified.reduce((n, c) => n + (c.usage?.inputTokens ?? 0), 0)} in / ${classified.reduce((n, c) => n + (c.usage?.outputTokens ?? 0), 0)} out.`);
+  lines.push("", "## Reviewer calibration", "", "Known failures from earlier reports and a grounded control, reviewed separately from the generated set. This is a limited regression check, not proof the reviewer detects every error.", "", "| Fixture | Expected | Got | Model | ms |", "| --- | --- | --- | --- | ---: |");
+  for (const f of GROUNDING_FIXTURES) {
+    const c = calibration.get(f.id);
+    lines.push(`| ${f.id} | ${f.expected} | ${c?.decision ?? "missing"} | ${c?.model ?? "?"} | ${c?.ms ?? "?"} |`);
+  }
+  lines.push("", "<details>", "<summary>Calibration findings and successful-call usage (additional to pipeline totals above)</summary>", "", "```json", JSON.stringify(Object.fromEntries(calibration), null, 2), "```", "", "</details>");
   writeFileSync(path.join(dir, `${stamp}.md`), lines.join("\n"));
   console.info(`eval report written to eval/report/${stamp}.md`);
 }

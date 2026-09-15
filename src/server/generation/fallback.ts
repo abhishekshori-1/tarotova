@@ -1,5 +1,5 @@
 import type { SafetyCategory } from "@/content/safety";
-import type { GenerationProvider, InterpretationInput, ProviderCallOptions, ProviderOutcome } from "./types";
+import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 import { callTimeout, deadlineExceeded } from "./deadline";
 import { isProviderRefusal } from "./refusal";
 
@@ -27,6 +27,15 @@ export class FallbackProvider implements GenerationProvider {
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     return this.run((p) => p.interpret(input, options), options);
+  }
+
+  review(input: InterpretationInput, answer: InterpretationOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    // A valid "revise" verdict is a success, never a reason to shop for approval.
+    return this.run((p) => p.review(input, answer, options), options);
+  }
+
+  repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.repair(input, answer, issues, options), options);
   }
 
   private async run<T>(call: (p: GenerationProvider) => Promise<ProviderOutcome<T>>, options?: ProviderCallOptions): Promise<ProviderOutcome<T>> {

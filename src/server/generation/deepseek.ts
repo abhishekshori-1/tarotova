@@ -1,12 +1,10 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, groundingUserMessage } from "./grounding-prompts";
-
 import { callTimeout, deadlineExceeded } from "./deadline";
+import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 
-const ENDPOINT = "https://api.anthropic.com/v1/messages";
-const API_VERSION = "2023-06-01";
+const ENDPOINT = "https://api.deepseek.com/chat/completions";
 
 interface ToolCall {
   name: string;
@@ -15,25 +13,24 @@ interface ToolCall {
 }
 
 /**
- * Anthropic Messages API over plain fetch (no SDK), the same shape as the
- * Resend provider: bounded by a timeout, structured through forced tool
- * use, and honest about what a failure means. The API offers no
- * idempotency key, so the attempt cap in the service is the only guard
- * against a double paid call (docs/REVIEW-V2.md, adopted adjustments).
+ * DeepSeek over its OpenAI-compatible chat API, plain fetch. Structured
+ * through a forced function call with thinking disabled: the V4 models
+ * think by default and refuse a forced tool_choice in that mode (verified
+ * live on 2026-09-15). Same contract as the other adapters: bounded by the
+ * shared deadline, honest about what a failure means, never logs the prompt.
  */
-export class AnthropicProvider implements GenerationProvider {
-  readonly name = "anthropic";
+export class DeepSeekProvider implements GenerationProvider {
+  readonly name = "deepseek";
   constructor(
     private readonly apiKey: string,
     private readonly models: { answer: string; classifier: string },
     private readonly timeoutMs: number,
-    private readonly workspaceId?: string,
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
     const outcome = await this.callTool(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL, 64, options);
     if (!outcome.ok) return outcome;
-    const category = (outcome.value as { category?: unknown }).category;
+    const category = (outcome.value as { category?: unknown })?.category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
       return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
@@ -60,62 +57,64 @@ export class AnthropicProvider implements GenerationProvider {
     try {
       res = await fetch(ENDPOINT, {
         method: "POST",
-        headers: {
-          "x-api-key": this.apiKey,
-          "anthropic-version": API_VERSION,
-          "content-type": "application/json",
-          "user-agent": "Tarotova/0.2",
-          // An organization-level key must name the workspace to bill; a
-          // workspace-scoped key ignores the header.
-          ...(this.workspaceId ? { "anthropic-workspace-id": this.workspaceId } : {}),
-        },
+        headers: { Authorization: `Bearer ${this.apiKey}`, "content-type": "application/json", "user-agent": "Tarotova/0.2" },
         signal,
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system,
-          messages: [{ role: "user", content: user }],
-          tools: [tool],
-          tool_choice: { type: "tool", name: tool.name },
+          thinking: { type: "disabled" },
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: user },
+          ],
+          tools: [{ type: "function", function: { name: tool.name, description: tool.description, parameters: tool.input_schema } }],
+          tool_choice: { type: "function", function: { name: tool.name } },
         }),
       });
     } catch (err) {
-      // The request may have been received and billed before the timeout —
-      // the caller treats this as a spent attempt.
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
       return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
-      const retryable = res.status === 429 || res.status === 529 || res.status >= 500;
-      // Anthropic error bodies are {type:"error", error:{type, message}}; the
-      // message names the cause (billing, bad model id, schema) and never
-      // echoes the key or the prompt, so it is safe to keep for diagnostics.
+      const retryable = res.status === 429 || res.status >= 500;
       let detail: string | undefined;
       try {
-        const body = (await res.json()) as { error?: { type?: string; message?: string } };
-        if (body.error) detail = [body.error.type, body.error.message].filter(Boolean).join(": ").slice(0, 300);
+        const body = (await res.json()) as { error?: { type?: string; code?: string; message?: string } };
+        if (body.error) detail = [body.error.type ?? body.error.code, body.error.message].filter(Boolean).join(": ").slice(0, 300);
       } catch {
         // No JSON body; the status alone will have to do.
       }
       return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
-    let body: { stop_reason?: string; content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };
+    let body: {
+      model?: string;
+      choices?: { finish_reason?: string; message?: { content?: string | null; tool_calls?: { function?: { name?: string; arguments?: string } }[] } }[];
+      usage?: { prompt_tokens?: number; completion_tokens?: number };
+    };
     try {
       body = await res.json();
     } catch {
       if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
       return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
-    if (body.stop_reason === "refusal") return { ok: false, reason: "provider_refused", retryable: false, uncertain: false };
-    const call = body.content?.find((block) => block.type === "tool_use" && block.name === tool.name);
-    if (!call || call.input === undefined) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
+    const choice = body.choices?.[0];
+    if (choice?.finish_reason === "content_filter") return { ok: false, reason: "provider_blocked", detail: "content_filter", retryable: false, uncertain: false };
+    if (choice?.finish_reason === "length") return { ok: false, reason: "provider_finish_max_tokens", retryable: true, uncertain: false };
+    const call = choice?.message?.tool_calls?.find((c) => c.function?.name === tool.name);
+    if (!call?.function?.arguments) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
+    let value: unknown;
+    try {
+      value = JSON.parse(call.function.arguments);
+    } catch {
+      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+    }
     return {
       ok: true,
-      value: call.input,
+      value,
       model: body.model ?? model,
-      usage: body.usage ? { inputTokens: body.usage.input_tokens ?? 0, outputTokens: body.usage.output_tokens ?? 0 } : undefined,
+      usage: body.usage ? { inputTokens: body.usage.prompt_tokens ?? 0, outputTokens: body.usage.completion_tokens ?? 0 } : undefined,
     };
   }
 }

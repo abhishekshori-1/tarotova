@@ -18,6 +18,15 @@ import type { GenerationProvider, InterpretationInput, ProviderOutcome } from ".
 export class StubProvider implements GenerationProvider {
   readonly name = "stub";
 
+  // Offline wiring only; this stub never establishes semantic review quality.
+  async review(): Promise<ProviderOutcome<unknown>> {
+    return { ok: true, model: "stub-reviewer", value: { decision: "pass", issues: [] } };
+  }
+
+  async repair(): Promise<ProviderOutcome<unknown>> {
+    return { ok: false, reason: "stub_repair_unconfigured", retryable: false, uncertain: false };
+  }
+
   async classify(question: string): Promise<ProviderOutcome<SafetyCategory>> {
     const q = question.toLowerCase();
     let category: SafetyCategory = "none";
