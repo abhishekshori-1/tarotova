@@ -98,7 +98,7 @@ export const CARDS: CardContent[] = [
       challenge:
         "The Empress's trouble is giving past your own reserves: care that runs out because nothing refills it. Where the limit of your giving sits right now is worth knowing.",
       guidance:
-        "Keep tending what matters, and decide how much you can give before you need refilling yourself. The card's view is that care which includes you outlasts care that leaves you out.",
+        "Keep tending what matters, and decide how much you can give before you need refilling yourself. This card counts your own reserves as part of the care.",
     },
     focus: {
       general: "Nurturing what already exists, rather than starting something new, is the theme.",
@@ -138,7 +138,7 @@ export const CARDS: CardContent[] = [
     coreMeaning: "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
     position: {
       situation:
-        "The tried path. An established approach, a mentor, a community that has faced this before. This card suggests that part of your question has been worked out by someone before. Finding that is different from copying it.",
+        "The tried path. An established approach, a mentor, a community that has faced this before. The card points to what others have worked out about questions like this one. Finding that is different from copying it.",
       challenge:
         "The Hierophant's trouble is following a convention without checking whether it fits. A method that served others may not serve this. Which parts to keep is the question.",
       guidance:

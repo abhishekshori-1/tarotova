@@ -72,6 +72,8 @@ describe("CARDS deck composition", () => {
       /ambiguity here is real|some of this is still unclear|the extreme you are used to|rather than a setback to fear/i,
       // Promises of effect and presumed facts removed in content.v7:
       /half-noticed|clarifies this faster|finds out (faster|which)|tends to pay|gets easier|usually counts for more|does work that .* cannot|lasts longer than/i,
+      // Attributing a verdict to the card does not make it a theme (content.v8):
+      /outlasts|has (likely )?been worked out by someone|the card's view is that/i,
     ];
     for (const card of CARDS) {
       const texts = [card.coreMeaning, ...Object.values(card.position), ...Object.values(card.focus)];
