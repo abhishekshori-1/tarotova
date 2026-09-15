@@ -24,7 +24,7 @@ readings retain their frozen text and version.
 Of the v2 plan, **Release A** (guest-first access, question capture, fast
 selection, visual foundation, retention, CI and browser tests) is live, and
 **Release B** — the contextual answer — is built behind a server flag that
-is **off by default** (`GENERATION_ENABLED`). Its release gate is the
+is **on in production since 2026-09-16** (`GENERATION_ENABLED=true`; off by default in code). Its documented release gate was
 evaluation run in `eval/` (see "Release B" below). Release C (follow-ups,
 guided journeys) is not started.
 
@@ -55,7 +55,7 @@ verification once per browser per 30 days → further readings.
 | Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
 | Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
 | Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
-| Tests | 172 Vitest tests in 21 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
+| Tests | 265 Vitest tests in 29 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
 | CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
 
 ## Release B — what is built and what gates it
@@ -70,18 +70,18 @@ reader's voice in the prompt (`interpretation.v3`, see `RELEASE-B.md`) and
 the interface, the `eval/` set (49 questions across the four focuses, ambiguous,
 long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
 
-**Not yet done, and required before the flag goes on in production:**
+**Gate status at enabling (2026-09-16):**
 
-1. Run `npm run eval` with a real key; the automated gates (100 % on crisis
-   and abuse routing, ≥ 90 % medical/legal, no ordinary question refused,
-   ≥ 90 % valid answers, injection ignored) must pass and a person must
-   score the report per the rubric (mean ≥ 4, no Agency/Honesty below 3).
-2. Set `GEMINI_API_KEY` (with a budget on its Google Cloud project) and
-   `ANTHROPIC_API_KEY` (prepaid credits, auto-reload off); the production
-   default chain is `gemini,anthropic`. Confirm `TURNSTILE_SECRET_KEY` is
-   set (the guest lock now fails closed without it).
-3. Turn on `GENERATION_ENABLED` and redeploy; watch `[generation]` logs for
-   `durationMs`, `usage` and `output_rejected` reasons for the first day.
+1. Automated gates: passed on every run since v3; the last full run with
+   the launch configuration is `eval/report/2026-09-15T12-26-42-137Z.md`
+   (42/43 approved, 12/12 sensitive routing, 8/8 reviewer calibration).
+2. Human scoring per the rubric: **not done**. Enabled by product-owner
+   decision with that pass outstanding; `RELEASE-B.md` records it.
+3. Production variables set (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`,
+   `ANTHROPIC_WORKSPACE_ID`, `GENERATION_REVIEW_PROVIDER=anthropic`,
+   `GENERATION_ENABLED=true`), verified first on `preview.tarotova.com`.
+   The `[generation]` logs (`withheld`, `repaired`, `durationMs`, `usage`)
+   are the live substitute for the scoring pass until it happens.
 
 ## Incomplete / not built yet
 

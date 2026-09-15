@@ -30,7 +30,7 @@ Cloudflare DNS (tarotova.com — "DNS only", not proxied)
 Vercel (Next.js 16, Node serverless, region hnd1 Tokyo)  ◀── Vercel Cron, daily → /api/internal/cleanup
   │                          │                         │                          │
   ▼                          ▼                         ▼                          ▼
-Supabase Postgres (Tokyo)   Resend (mail.tarotova.com) Cloudflare Turnstile       Anthropic API (Release B, flag off)
+Supabase Postgres (Tokyo)   Resend (mail.tarotova.com) Cloudflare Turnstile       Gemini + Anthropic APIs (Release B, live)
   all app state              one-time codes            code request + guest reveal  intent classifier + reflection
 ```
 

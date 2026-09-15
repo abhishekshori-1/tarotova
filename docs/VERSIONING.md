@@ -170,12 +170,14 @@ What it changes when merged:
   check on the reveal, no generation. `TURNSTILE_SECRET_KEY` is needed once
   the flag is on, since the guest reveal then fails closed without it.
 - Behaviour with the flag on: see `IMPLEMENTATION.md` "Release B". Turning
-  the flag off again hides the section but keeps stored answers (they are
-  deleted with their readings after 30 days).
+  the flag off again (a redeploy is needed) hides the section for new and
+  already-stored answers alike; the rows stay until their readings expire.
 
-Merge order: eval gate → `npm run eval` report scored → tag `v2.0-pre-b` →
-merge `--no-ff` → set/confirm the env vars in `INFRA.md` → redeploy → one
-real reading with a question → enable the flag → redeploy.
+What actually happened, 2026-09-16: tag `v2.0-pre-b` → merge `--no-ff`
+(`a7c8ba5`) → production verified with the flag absent → variables set and
+the pipeline verified on `preview.tarotova.com` → `GENERATION_ENABLED=true`
+in Production → redeploy → flag confirmed active. The human scoring pass in
+the planned order was skipped by product-owner decision.
 
 ## Checklist for the next release
 

@@ -2,7 +2,7 @@
 
 The product owner's view of Release B: what a reader gets that they did not
 get in Release A, what the language model does and does not do, what it
-costs, what protects it, and what has to be true before it goes live.
+costs, what protects it, and what had to be true before it went live.
 Engineering detail is in `IMPLEMENTATION.md`; environment and accounts in
 `INFRA.md`; the release gate in `../eval/RUBRIC.md`. Written 14 September
 2026 on `feat/release-b`; merged to `main` on 16 September 2026 with
@@ -133,7 +133,7 @@ Prompt versions are recorded on every stored answer:
 | `interpretation.v4` | Live automated gate passed; more careful but more generic, with remaining editorial issues |
 | `interpretation.v9` | Added review/repair; Gemini review missed a known discipline failure in calibration. Not cleared for release. |
 | `interpretation.v10` | Dedicated Anthropic review caught known failures but over-rejected valid reflections; 25/43 approved in the full run. Not cleared for release. |
-| `interpretation.v11` | Keeps the v8 writer; `grounding.v2` distinguishes stated facts and genuinely open questions from invented premises. Dedicated Anthropic review, `repair.v1`, and positive as well as negative calibration controls. Release approval remains pending. |
+| `interpretation.v11` | Keeps the v8 writer; `grounding.v2` distinguishes stated facts and genuinely open questions from invented premises. Dedicated Anthropic review, `repair.v1`, and positive as well as negative calibration controls. Live in production since 2026-09-16 |
 
 The interface uses the same voice: Ask, Pull, Read; "Pull my cards", "Just
 read for me", "Turn them over", "The short of it", "On your question", "One to take with you", "Pull again".
@@ -178,7 +178,7 @@ Protections, all server-side:
 Retention: the answer is deleted with its reading, 30 days after access
 began.
 
-## What has to be true before it goes live
+## What had to be true before it went live, and what was
 
 1. `npm run eval` runs the expanded fixed question set (all four focuses, ambiguous,
    long, prompt-injection, and near-miss pairs such as "should I stop my
@@ -194,8 +194,11 @@ began.
 2. A person reads the report and scores each answer on relevance,
    groundedness, agency, tone and honesty (`../eval/RUBRIC.md`). Mean of 4
    or better on each, nothing below 3 on agency or honesty, every
-   emotionally heavy answer read by a person. Status: the editorial/code review found release blockers;
-   the latest v11 output is available; the product-owner scoring pass remains outstanding.
+   emotionally heavy answer read by a person. Status: **not done at
+   enabling**. The editorial/code review had found blockers, later fixed
+   through v11; the product owner enabled the feature on 2026-09-16 with
+   this pass still outstanding, and the `[generation]` logs stand in for
+   it until it happens.
 3. `TURNSTILE_SECRET_KEY` present in production (it is), `GEMINI_API_KEY`
    set, `ANTHROPIC_API_KEY` and, for an organization-level key,
    `ANTHROPIC_WORKSPACE_ID` set, then `GENERATION_ENABLED=true` and a

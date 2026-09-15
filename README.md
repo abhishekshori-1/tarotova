@@ -6,8 +6,8 @@ Live at [tarotova.com](https://www.tarotova.com).
 
 Production runs **v2, Release A** (guest-first reading, question capture,
 visual foundation). **Release B** — the personalized reflection written for
-the typed question — is built on `feat/release-b` behind a server flag and
-waits on its evaluation gate (`eval/RUBRIC.md`). The build still ships
+the typed question — has been live since 16 September 2026 (`docs/RELEASE-B.md`
+is the product owner's account; `docs/INFRA.md` the switch). The build still ships
 PLAN.md's section-1 **scope contingency**: the
 22-card Major Arcana, not the full 78-card deck, and the interpretive copy has
 not had the practitioner review PLAN.md section 9 requires — treat readings
@@ -41,8 +41,8 @@ production.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | 172 Vitest unit/integration tests against an in-memory Postgres; no network, no keys |
-| `npm run test:e2e` | 4 Playwright browser tests at 320, 390 and 1440 px (starts its own dev server on 47102 with a throwaway database and the stub answer provider; first run needs `npx playwright install chromium`) |
+| `npm test` | 265 Vitest unit/integration tests in 29 files against an in-memory Postgres; no network, no keys |
+| `npm run test:e2e` | 14 Playwright browser tests at 320, 390 and 1440 px (4 full flows, 10 result-page presentation states) (starts its own dev server on 47102 with a throwaway database and the stub answer provider; first run needs `npx playwright install chromium`) |
 | `npm run eval` | Release B's gate: runs `eval/questions.json` through the real Anthropic provider and writes a report to `eval/report/` for scoring against `eval/RUBRIC.md`. Needs `ANTHROPIC_API_KEY`; makes paid calls |
 | `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
 | `npm run db:generate` | Generate a migration after editing `src/server/db/schema.ts` |
