@@ -109,6 +109,8 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
 | `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |
+| `GENERATION_CLASSIFIER_PROVIDER` | Config | Optional: triage by a vendor other than the writer chain's first (that vendor's `*_CLASSIFIER_MODEL` applies). Unset keeps the chain's first provider; a misconfigured value is logged and the chain triages |
+| `ANTHROPIC_PROMPT_CACHE` | Config | Optional `5m` or `1h`: caches Anthropic system prompts. Off by default; pays only above ~2 reviews/hour (1h TTL). `cacheWriteTokens` / `cacheReadTokens` in `[generation]` usage measure it |
 | `GENERATION_REVIEW_MODEL` | Config | Optional override for the review model, otherwise the selected provider's answer model. Changing reviewer requires re-running calibration and the full quality gate |
 | `GEMINI_API_KEY` | Secret | Google AI Studio key (Gemini Developer API). Set a budget/quota on the Google Cloud project it belongs to |
 | `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; default `gemini-3.8-flash` for both |

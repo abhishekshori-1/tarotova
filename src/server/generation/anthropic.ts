@@ -30,6 +30,13 @@ export class AnthropicProvider implements GenerationProvider {
     private readonly workspaceId?: string,
     /** Tests only: a local server that stalls, to prove the timeout ends the call. */
     private readonly endpoint: string = DEFAULT_ENDPOINT,
+    /**
+     * Prompt caching for the (identical, long) system prompts: "5m" or
+     * "1h". Off by default. A cache write costs 1.25x (5m) or 2x (1h) the
+     * plain input price and a read 0.1x, so at low traffic caching costs
+     * more, not less; the usage fields let the eval and logs measure it.
+     */
+    private readonly promptCache?: "5m" | "1h",
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
@@ -75,7 +82,9 @@ export class AnthropicProvider implements GenerationProvider {
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system,
+          system: this.promptCache
+            ? [{ type: "text", text: system, cache_control: this.promptCache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" } }]
+            : system,
           messages: [{ role: "user", content: user }],
           tools: [tool],
           tool_choice: { type: "tool", name: tool.name },
@@ -103,7 +112,12 @@ export class AnthropicProvider implements GenerationProvider {
       return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
-    let body: { stop_reason?: string; content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };
+    let body: {
+      stop_reason?: string;
+      content?: { type: string; name?: string; input?: unknown }[];
+      usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
+      model?: string;
+    };
     try {
       body = await res.json();
     } catch {
@@ -117,7 +131,14 @@ export class AnthropicProvider implements GenerationProvider {
       ok: true,
       value: call.input,
       model: body.model ?? model,
-      usage: body.usage ? { inputTokens: body.usage.input_tokens ?? 0, outputTokens: body.usage.output_tokens ?? 0 } : undefined,
+      usage: body.usage
+        ? {
+            inputTokens: body.usage.input_tokens ?? 0,
+            outputTokens: body.usage.output_tokens ?? 0,
+            ...(body.usage.cache_creation_input_tokens ? { cacheWriteTokens: body.usage.cache_creation_input_tokens } : {}),
+            ...(body.usage.cache_read_input_tokens ? { cacheReadTokens: body.usage.cache_read_input_tokens } : {}),
+          }
+        : undefined,
     };
   }
 }
