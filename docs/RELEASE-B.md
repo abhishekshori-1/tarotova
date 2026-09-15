@@ -219,6 +219,18 @@ the master flag before anything else), so disabling removes the section from
 readings that already had it. Authored support responses are the exception
 and stay visible.
 
+**Long phase timings, resolved.** Two background eval runs recorded a
+single phase far beyond any timeout: a 193 s write phase (report
+2026-09-15T15-18-33Z) and a 145.5 s review call (report
+2026-09-15T16-34-16Z). macOS power logs (`pmset -g log`) show the machine
+asleep 20:42:28–20:45:38 IST (190 s) during the first run and
+22:01:43–22:04:09 IST (146 s) during the second. Timers pause in sleep and
+only the wall clock advances, so each phase reported the sleep interval
+and then ended correctly with `request_deadline` or `provider_timeout`.
+The adapters' own timeout behaviour is separately proven by the real-stall
+tests (`src/server/generation/stall.test.ts`). Eval runs should be made
+with the machine awake; a production function cannot sleep.
+
 This is implementation evidence, not release clearance. An AI-assisted
 read of the final output still found unsupported premises in approved
 answers: `abuse-nearmiss-02` says "past hurt obscures the view" and assumes
