@@ -55,7 +55,7 @@ verification once per browser per 30 days → further readings.
 | Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
 | Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
 | Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
-| Tests | 265 Vitest tests in 29 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
+| Tests | 313 Vitest tests in 34 files (content, shuffle, OTP primitives, access grants, session verification, budgets/delivery, cleanup, routes, save queue, path safety, generation lease/budgets/routing, answer validation, Anthropic adapter with mocked fetch, bot check on lock); 4 Playwright tests × 3 viewports (golden path incl. the stub answer, gate then remembered verification, stranger denied, general reading without a section + crisis routing). `npm run eval` runs the 49-question set against the real provider (needs `ANTHROPIC_API_KEY`) |
 | CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
 
 ## Release B — what is built and what gates it
@@ -99,7 +99,7 @@ schema with the shared text gates; a support response closes the
 conversation while earlier turns stay readable; the panel under the
 reading with authored suggestions per focus; cleanup deletes turns with
 their reading; the privacy page covers follow-up messages; the browser
-suite pins every generation role to the stub. `npm run eval:conversations`
+suite pins every generation role to the stub. `npm run eval:conversations` (gate set), `npm run eval:conversations:unseen` (regression variants kept apart so the gate set stays comparable), `npm run eval:conversations:fresh` (reserved for a final check) and `npm run eval:followup-review` (reviewer calibration on matched pairs) and `npm run eval:repair-diagnostic` (fixed candidates: reviewer consistency and repairer comparison)
 runs 13 fixed sequences (escalation to crisis, a pronoun after a
 medication message, a control disclosure, legal drift, a correction,
 changed facts, understanding-only, access limits, a prediction demand, a

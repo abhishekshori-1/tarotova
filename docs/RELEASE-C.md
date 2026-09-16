@@ -263,5 +263,234 @@ written except where noted: the follow-up answer shape is `paragraphs`
 pipeline was generalised rather than duplicated; the stub classifier now
 distinguishes a request for instruction from a mention so the
 pronoun-after-medication case is testable offline. The conversation eval
-(`eval/conversations.json`, `npm run eval:conversations`) exists and has
-not been run live. C2 is not started. Nothing merged or enabled.
+(`eval/conversations.json`, `npm run eval:conversations`) has been run live.
+The `followup.v2` report `eval/report/conversations-2026-09-16T05-59-46-346Z.md`
+passed four automated checks, publishing 19/21 follow-ups and routing 4/4
+sensitive turns to support. It is not a human quality signoff. Prompt
+`followup.v3` replaces v2's worked example, which was the access-limits
+fixture itself and whose wording ("a week does not change them", "skipping it
+is a fair choice") echoed into answers as claims about time and the cost of
+waiting, with a distinct case (feedback given in public) and a rule against
+pricing time or inaction. Unseen variants (a deadline that moves, access
+arrangements that change, caring duties that change, words for a sibling)
+live in `eval/conversations-unseen.json`, run by `npm run
+eval:conversations:unseen`, and report separately so the gate set stays
+comparable across prompt versions. Under v3 the gate set published 17/21
+within the single pipeline attempt the harness then made, while the unseen
+set published 8/8; one run does not say how much of v2's result came from
+its example, and not every withheld turn was a grounding failure (one was a
+limit line over 480 characters, withheld before review).
+
+Bounded pass, 16 September 2026 (uncommitted): production's retry rule
+(`GENERATION_MAX_ATTEMPTS`, the request deadline and budget) now lives in
+`src/server/generation/attempts.ts` and both production loops and the eval
+harness use it, so the harness measures a production submission: a
+structurally invalid draft or a provider failure may start one more attempt,
+a grounding rejection is terminal, and every attempt's calls are costed. The
+report gives both figures, published on the first pipeline attempt and
+published within one submission; the 90 % gate is the submission figure.
+Mechanical fixes without new editorial rules: the limit line has a writing
+target of one or two sentences, about 300 characters, with the 480 hard limit
+kept and no automatic truncation; a repair request lists the flagged fields
+and requires exactly one replacement each, and the repair tool's schema is
+narrowed per call to those fields on all three adapters; a candidate withheld
+after repair is printed in the transcript for adjudication. A follow-up
+reviewer calibration set of four matched pairs
+(`eval/followup-review-fixtures.json`, `npm run eval:followup-review`)
+measures false rejections as well as misses: a requested step against an
+unsolicited one, an open whether-question against a presuming one, an
+acknowledged constraint against a questioned one, an open conditional
+against one whose branches supply causes. Prompt `followup.v4` replaces the
+long example with two short ones, understanding asked for and a step asked
+for, and drops the permission endings that v3's example echoed. Three fresh
+sequences (`eval/conversations-fresh.json`, `npm run
+eval:conversations:fresh`) are reserved for the final check and were not run
+while iterating. The DeepSeek adapter unwraps tool arguments the model
+occasionally returns under a single `parameters` key, the cause of the
+`output_shape` retries seen in the v4 gate run; the validator still judges
+the unwrapped result. The `no_assumed_resource` check no longer flags a
+resource the person named themselves.
+
+Results under v4, cached, one run each: reviewer calibration 8/8 in both
+directions with the review prompt unchanged (one fixture was corrected to
+the library's Hierophant theme after the reviewer rightly objected to it);
+gate set 18/21 published within one production submission (86 %, gate not
+met), 17 on the first pipeline attempt, 12 with neither retry nor repair,
+3 withheld after repair (the crisis opening, the medication mention, the
+general-focus first question), all on the presupposition family; unseen
+regression set 8/8, 7 with no repair. Two gate turns used the second
+attempt after DeepSeek's wrapped arguments; one published through the
+Gemini fallback. These are single runs.
+
+Fixed-candidate diagnostic, 16 September 2026 (uncommitted). A writer
+switch is on hold: the v4 report does not support a writer-only diagnosis.
+Reading the three withheld turns, the low-mood repair could not touch the
+reflection the fresh review then rejected, because the first review had not
+flagged it and the repair contract rightly forbids editing unflagged fields;
+the medication reflection is an open question that permits "no"; and the
+family answer makes convention explicitly conditional. So the constraint may
+be reviewer consistency, repair quality, or both, and the next experiment
+keeps them apart. `eval/repair-cases.json` holds the eight candidates from
+the v4 gate run exactly as produced (the three withheld turns and five
+published-after-repair turns): complete follow-up input, draft, first-review
+findings, repaired candidate and second-review findings, built by
+`eval/repair-cases.build.eval.ts`. The initial answers the follow-ups were
+written against were not in that report and were regenerated once for the
+fixture, marked `regenerated`; reports now carry the complete initial answer
+and every published answer so later sets are exact. Each finding carries a
+hand adjudication against `eval/RUBRIC.md` (holds, questionable_prose,
+should_pass), a first pass for the owner's review. `npm run
+eval:repair-diagnostic` re-reviews every identical candidate three times
+with unchanged reviewer settings and counts how often each finding recurs
+next to its adjudication, then has each repairer named in
+`DIAGNOSTIC_REPAIRERS` (default `deepseek,gemini`) repair every draft from
+the same issue list under the production contract, with two fresh reviews
+of each result. Nothing publishes. `GENERATION_REPAIR_PROVIDER` is a new
+optional setting that replaces only the repair call; unset keeps the writer
+chain, and it adds no recovery loop.
+
+Diagnostic result, 16 September 2026, Sonnet reviewing, report
+`eval/report/repair-diagnostic-2026-09-16T12-08-37-910Z.md` (about 29 cents;
+an earlier attempt stopped at two cases when the Anthropic balance ran out).
+Reviewer consistency: every finding adjudicated as holding recurred 3/3 on
+the identical candidate; findings adjudicated should-pass or questionable
+were mixed, from 0/3 (the medication contrast and its open reflection, the
+Spanish conditional) to 3/3 (the optional writing step in the prediction
+case, which the reviewer consistently reads as unrequested). Two candidates
+the run rejected passed 3/3 on re-review (the repaired medication reply, the
+Spanish draft), the repaired low-mood reply went 2:1, and one re-review
+returned a quote the parser could not locate. So the run's withholding of
+the medication and general-focus turns was reviewer variance on borderline
+questions, not failed repair. Repair comparison on the same issue lists:
+DeepSeek Flash 7/8 applied (one invalid JSON) and 6/8 passed every fresh
+review, mean 1.3 s; Gemini Flash 8/8 applied and 6/8 passed, mean 8.6 s and
+dearer, with a new presupposition introduced in the low-mood case. No case
+for changing the repairer. Cheaper reviewers were calibrated the same day
+and both approved the crisis near-miss reading (DeepSeek V4 Pro 14/16
+across the two sets, Haiku 4.5 14/16). The owner then removed Sonnet from
+every configured role on cost grounds; Gemini 3.8 Flash reviews at
+`GEMINI_REVIEW_THINKING_LEVEL=low`, which passed both calibration sets
+16/16 including the crisis near-miss, and the gate set 21/21 with all four
+sensitive turns routed. That decision, its runs and its open editorial
+items are recorded in `RELEASE-C-COST.md`. The reviewer-policy questions
+this diagnostic raised (whether a question that permits "no" is a
+presupposition, and whether a fresh review may raise a field the first
+review did not flag) remain open against the new reviewer. C2 is not
+started. This document does not establish the current production flag state.
+
+Server-state review, 16 September 2026 (uncommitted until reviewed): a retry
+of a failed turn is refused once a support response has closed the
+conversation (`conversation_closed`), while another turn is in flight
+(`turn_in_flight`), or when a later message exists (`retry_superseded`), so
+no answer is generated without the messages sent after it. Each claim carries
+a lease token and every later write on the row is conditioned on it; a worker
+that outlives its lease logs `lease_lost` and writes nothing. The daily budget
+is charged per paid attempt: the claim transaction pays for the first, so a
+denial rolls the claim back and a duplicate read pays nothing; a second
+attempt under the same claim pays again or stops with `budget_exhausted`.
+The `retryable` flag on a turn is derived from the conversation, so the
+client offers Retry only where the server would accept one (the last turn,
+conversation open, nothing in flight, the gate open: flags, configuration,
+guest pause and the initial answer; a spent allowance does not block it), and a rejected submission
+restores the server's view with the message shown outside the form and the
+typed text kept. Switching `FOLLOWUPS_ENABLED` off stops new turns but leaves
+the history, support responses included, readable. The trace now records why a
+draft or a repair failed validation. The follow-up reviewer's input is sent
+as two blocks, the frozen reading first (`grounding-followup.v2`, criteria
+unchanged), so Anthropic can cache it across a conversation; the saving has
+not yet been measured. The conversation report now separates answers
+published within one submission from those published without a repair pass,
+counts turns that were withheld, failed classification, were routed to
+support against the fixture or were never reached separately, and prices the
+follow-up spend per generation-eligible turn.
+
+## Current Sonnet-free configuration — 16 September 2026
+
+Sonnet has been removed from the local C configuration at the user’s request.
+DeepSeek writes and repairs; Gemini triages and reviews, and is the fallback
+writer. Review and all publication checks remain mandatory. See
+[RELEASE-C-COST.md](RELEASE-C-COST.md) for the explicit settings, measured
+results and remaining release gates. Production settings have not been changed.
+
+## Historical Sonnet cost configuration and measurement — 16 September 2026
+
+Earlier C1 configuration, retained as the cost comparison baseline (superseded above):
+
+```dotenv
+GENERATION_PROVIDER=deepseek,gemini
+GENERATION_CLASSIFIER_PROVIDER=gemini
+GENERATION_REVIEW_PROVIDER=anthropic
+GENERATION_REVIEW_MODEL=claude-sonnet-5
+ANTHROPIC_PROMPT_CACHE=5m
+```
+
+Keep `FOLLOWUPS_ENABLED` off in Production until the release gates pass.
+These settings do not require changing the generation prompt or skipping a
+review. The API keys for all three configured providers must already exist.
+No production settings are changed by this implementation.
+
+The common reviewer system prompt is the first caching target. Anthropic's
+five-minute cache write costs 1.25 times ordinary input and a cache hit costs
+0.1 times: one subsequent hit repays the premium. A one-hour write costs twice
+ordinary input and needs two hits. Traffic per hour alone is not enough to
+predict reuse; model, tools, exact prefix and timing matter. Isolated cold
+writes can cost more. The runtime default remains uncached. This earlier experiment used five
+minutes for the short conversation flow. Verify actual hits.
+See [Anthropic caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching).
+
+DeepSeek caches matching prefixes automatically. The adapter now records
+cache-hit input separately from cache misses, rather than pricing both at the
+ordinary rate. See [DeepSeek caching](https://api-docs.deepseek.com/guides/kv_cache/).
+Both adapters and pipeline totals retain the cache counters, including
+Anthropic write TTL. Full prompts, history and safety checks remain intact;
+caching reuses input processing, not another person's answer.
+
+Conversation reports now include classification, initial readings, withheld
+drafts, repairs and reviews in separate cost tables. They compare the same
+observed calls with and without Anthropic caching, so random differences in
+repair count do not masquerade as cache savings. Rates in `eval/cost.ts` are
+dated estimates, not a bill; unknown models are unpriced. Failed fallback
+calls and unreported reasoning may add cost. DeepSeek estimates use peak
+rates. Reconcile estimates against provider billing before setting spend caps.
+
+The harness now stops after failed initial triage or an unavailable initial
+answer, matching production. Missing turns stay in the publication denominator,
+and an unreached sensitive fixture fails its routing assertion. Classification
+errors are reported as failures rather than authored support responses. These
+changes prevent a cheaper but incomplete run from appearing to pass.
+
+Editorial review of the earlier v2 transcript remains necessary: the changed-
+facts reply reopens “or nothing” as something to challenge and assigns discomfort
+the person did not state; the access-limits example is also the exact eval
+question/cards/latest message, so success there does not prove transfer to an
+unseen case. The example is echoed in other replies. Cost work leaves this
+prompt unchanged so its editorial revision can be evaluated separately.
+
+Measured cached run:
+[conversations-2026-09-16T07-01-38-228Z.md](../eval/report/conversations-2026-09-16T07-01-38-228Z.md).
+All four automated gates passed: 19/21 follow-ups published, 4/4 sensitive
+turns routed to support, eight follow-up repair attempts, two withheld turns.
+Mean turn time, including classification and support turns, was 8.4 seconds;
+slowest 16.7 seconds. This was an awake run using `caffeinate -i`.
+
+| Recorded-call estimate | Five-minute reviewer cache | Same calls without reviewer cache | Saving |
+| --- | ---: | ---: | ---: |
+| Follow-ups, including classification | $0.18522 | $0.29416 | 37.0% |
+| Initial readings | $0.07795 | $0.13002 | 40.0% |
+| Whole conversation suite | $0.26317 | $0.42418 | 38.0% |
+
+The comparison holds DeepSeek's observed automatic caching constant. Sonnet
+reported 90,690 cache-read tokens and 4,461 five-minute cache-write tokens
+across the whole run. It is an input-processing saving, not evidence of a
+quality improvement or a guarantee at sparse production traffic. Two DeepSeek
+invalid-JSON fallbacks were logged; those failed calls are not priced by the
+available trace. The figures are for this completed suite, not all experiments
+in the session. An earlier command also selected B and was stopped early.
+
+The two heuristic warnings (`no_rushing_claim`, `no_two_offers`) matched
+negated statements, illustrating why those checks need a human read. Other
+editorial concerns remain, including assumed freedom to delay a decision and
+overlong repeated disclaimers. The understanding-only repair remains withheld.
+No publication check or prompt was relaxed to produce the savings. Validation:
+295 unit tests passed, plus types and lint. No commit, push or production
+configuration change was made by this cost pass.
