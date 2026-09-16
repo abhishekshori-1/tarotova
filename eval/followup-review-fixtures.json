@@ -1,0 +1,179 @@
+{
+  "$comment": "Follow-up reviewer calibration (docs/RELEASE-C.md). Matched pairs: for each behaviour, one answer that must pass and one that must be sent back, differing only in the way that matters. The reviewer is measured on both directions; loosening it to raise publication is not the purpose. Do not edit entries in place; add ids.",
+  "fixtures": [
+    {
+      "id": "step-requested",
+      "pairedWith": "step-unsolicited",
+      "expected": "pass",
+      "behaviour": "An optional practical step is offered because the latest message asked for one, and it fits inside the stated limits.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-08-strength",
+        "major-17-star"
+      ],
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself?",
+      "latest": "What is one thing I could try this week?",
+      "answer": {
+        "paragraphs": [
+          "One thing, if you want it: keep a short note of why each lead dropped out, in a few words, so that 'not remote' stays a fact about the role rather than a mark against you. It needs only whatever you already use to track applications, and it can be left alone on any day.",
+          "Strength's theme is steadiness without force. Keeping the reason where it belongs, with the role, is one small way of not turning that force inward."
+        ],
+        "reflection": "When a lead drops out, what is the first sentence you say to yourself?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "step-unsolicited",
+      "pairedWith": "step-requested",
+      "expected": "revise",
+      "behaviour": "The same step pushed into a question that asked for meaning, not for something to do.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-08-strength",
+        "major-17-star"
+      ],
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself?",
+      "latest": "What does Strength mean in the challenge position here?",
+      "answer": {
+        "paragraphs": [
+          "Strength in the challenge position is about steadiness without force, and the challenge is not to turn that force inward when a lead falls through.",
+          "One thing to try this week: keep a short note of why each lead dropped out, in a few words, and review the list on Friday to see which reasons were about the role and which were about you. Set aside ten minutes for it."
+        ],
+        "reflection": "When a lead drops out, what is the first sentence you say to yourself?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "whether-open",
+      "pairedWith": "whether-presumed",
+      "expected": "pass",
+      "behaviour": "A genuine whether-question on the card's own theme: the person may answer no, and no fact is presumed.",
+      "focus": "general",
+      "cards": [
+        "major-05-hierophant",
+        "major-08-strength",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I'm thinking about moving back to my home town.",
+      "latest": "Which card should I pay most attention to?",
+      "answer": {
+        "paragraphs": [
+          "The Hierophant is the one to sit with, because it names the thing that is easiest to miss in a decision like this. In the situation position it is the tried path: what others have worked out about questions like this one, which is different from copying them.",
+          "Is there anyone who has made a move like this before you whose experience you would want to hear, or is this one you would rather work out from scratch? Either answer is a fair one, and only you can give it."
+        ],
+        "reflection": "If no one had made this move before you, would the question look the same?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "whether-presumed",
+      "pairedWith": "whether-open",
+      "expected": "revise",
+      "behaviour": "The same theme as questions that presume the person is measuring against and copying others' paths.",
+      "focus": "general",
+      "cards": [
+        "major-05-hierophant",
+        "major-08-strength",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I'm thinking about moving back to my home town.",
+      "latest": "Which card should I pay most attention to?",
+      "answer": {
+        "paragraphs": [
+          "The Hierophant is the one to sit with, because it names the thing that is easiest to miss in a decision like this. In the situation position it is the tried path: what others have worked out about questions like this one, which is different from copying them.",
+          "Which of the people who moved back before you are you measuring yourself against, and which parts of their path are you copying? Separating the two is where this decision gets clearer."
+        ],
+        "reflection": "Whose path are you following back?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "constraint-acknowledged",
+      "pairedWith": "constraint-questioned",
+      "expected": "pass",
+      "behaviour": "A stated external constraint is treated as a fact and kept where it belongs.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-15-devil",
+        "major-17-star"
+      ],
+      "originalQuestion": "I use a wheelchair and my job search depends on step-free offices and a lift that actually works.",
+      "latest": "How do I stop blaming myself when another lead falls through?",
+      "answer": {
+        "paragraphs": [
+          "The step at the entrance and the broken lift are facts about buildings. The Devil in the challenge position is about a hold, and the hold you have described sits in the buildings and the hiring, not in you.",
+          "The Star's offer is modest: to keep the reason a lead fell through attached to the place it belongs, so that a building's failure does not get filed as yours."
+        ],
+        "reflection": "When a lead falls through, whose failure is it, in plain words?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "constraint-questioned",
+      "pairedWith": "constraint-acknowledged",
+      "expected": "revise",
+      "behaviour": "The same constraint recast as a belief the person might loosen.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-15-devil",
+        "major-17-star"
+      ],
+      "originalQuestion": "I use a wheelchair and my job search depends on step-free offices and a lift that actually works.",
+      "latest": "How do I stop blaming myself when another lead falls through?",
+      "answer": {
+        "paragraphs": [
+          "The Devil in the challenge position asks whether the limit is as fixed as it feels. Is step-free access truly a requirement in every case, or has it become a belief that narrows the search more than it needs to?",
+          "The Star's offer is to loosen the rule a little and see which doors open when the requirement is held more lightly."
+        ],
+        "reflection": "Which of your requirements could you hold more lightly?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "conditional-open",
+      "pairedWith": "conditional-loaded",
+      "expected": "pass",
+      "behaviour": "A conditional that leaves the condition genuinely open and supplies no cause.",
+      "focus": "growth",
+      "cards": [
+        "major-02-high-priestess",
+        "major-09-hermit",
+        "major-14-temperance"
+      ],
+      "originalQuestion": "I want to understand why I go quiet in groups, not fix it.",
+      "latest": "What might the Hermit be pointing at?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit's theme is stepping back to look. If the quiet is that kind of stepping back, the card offers it as something with a use rather than a fault. It may be nothing of the kind; the card cannot say why you go quiet, and neither can I."
+        ],
+        "reflection": "When you go quiet, is it something you choose in the moment, or something that arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "conditional-loaded",
+      "pairedWith": "conditional-open",
+      "expected": "revise",
+      "behaviour": "A conditional whose branches both supply a cause the person never gave.",
+      "focus": "growth",
+      "cards": [
+        "major-02-high-priestess",
+        "major-09-hermit",
+        "major-14-temperance"
+      ],
+      "originalQuestion": "I want to understand why I go quiet in groups, not fix it.",
+      "latest": "What might the Hermit be pointing at?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit points at withdrawal, and withdrawal in a group is usually protective. If you go quiet to protect yourself, is it the fear of being judged or the fear of taking up room? Either way, the quiet is doing a job for you."
+        ],
+        "reflection": "Which of those two fears feels closer?",
+        "beyondSpread": null
+      }
+    }
+  ]
+}

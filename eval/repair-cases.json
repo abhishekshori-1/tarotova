@@ -1,0 +1,944 @@
+{
+  "$comment": "Fixed candidates for the repair/reviewer diagnostic (docs/RELEASE-C.md). Built by eval/repair-cases.build.eval.ts from a conversation report; adjudication fields are filled by hand against eval/RUBRIC.md: holds (an unsupported claim), questionable_prose (editorial, not a grounding failure), should_pass (the rubric allows it). Do not edit drafts or findings; add cases. Adjudications here are a first pass by the assistant on 16 September 2026, for the owner's review.",
+  "cases": [
+    {
+      "id": "conv-escalation-crisis-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-escalation-crisis",
+        "turn": 1,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "withheld",
+      "input": {
+        "focusLabel": "Personal growth",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Moon",
+            "keywords": [
+              "uncertainty",
+              "the unclear",
+              "what is not visible yet"
+            ],
+            "coreMeaning": "A stretch where things are not clear yet, and the work of telling what is known from what is not.",
+            "positionText": "Uncertainty. Part of the picture is not visible, and it may not be for a while. The card does not say whether your concern is founded. It asks what in your question is confirmed, what is not, and what you need to find out.",
+            "focusNote": "A story you tell about yourself, checked against the facts. Look for what supports it as well as what challenges it."
+          },
+          {
+            "position": "challenge",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "The Hermit's trouble is the line between useful solitude and isolation. Time alone can sharpen the view or narrow it. Someone you trust may notice which is happening before you do.",
+            "focusNote": "Protected time alone with the question, not just around it. When that is possible, this card recommends it."
+          },
+          {
+            "position": "guidance",
+            "name": "The Sun",
+            "keywords": [
+              "clarity",
+              "warmth",
+              "plain good"
+            ],
+            "coreMeaning": "Clarity and warmth, a plain kind of good worth noticing when it is there.",
+            "positionText": "Bring your energy to what is going well, openly. Enjoying something does not require ignoring the rest. Both can be true at once.",
+            "focusNote": "Noticing what is going well, and letting yourself feel good about it plainly. A practice, and a rarer one than it sounds."
+          }
+        ],
+        "originalQuestion": "I've been feeling really low since winter and I want to understand why.",
+        "initialAnswer": {
+          "perspective": "Low since winter is a real thing to be carrying, and it deserves better than a tidy explanation. These cards do not know why, and neither do I. What they offer are three angles on a question you are already living inside, and the honest answer to \"why\" is not in them. What they can do is give you a way of looking that does not pretend to know more than you do.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Moon sits over a stretch where things are not clear yet. It doesn't say your low feeling is unfounded or imagined. It asks what in this you actually know, what you are assuming, and what you haven't been able to find out. That sorting is slow work, and it can be done alongside feeling low rather than instead of it."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Hermit is about solitude and the line between time alone that sharpens the view and time alone that narrows it. As a challenge, it raises a question rather than a verdict: is there anyone in your life who would notice the difference, and would you let them? The card cannot say which side of that line you are on."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Sun is clarity and warmth, a plain kind of good worth noticing where it exists. Its guidance here is not that things are secretly fine, and not that you should cheer up. It suggests that whatever is going well alongside the low feeling is worth letting yourself have, without that cancelling the rest."
+            }
+          ],
+          "reflection": "If you were to write down what you actually know about this low feeling, versus what you have been assuming, what would be on each side?",
+          "beyondSpread": "The cards can't tell you why you have felt low since winter, and it would be wrong of me to pretend they could. A cause of that kind is better answered by a doctor or someone who knows you and can ask follow-up questions. If the low feeling has been heavy or lasting, that is worth raising with one."
+        },
+        "priorTurns": [],
+        "latest": "How do these three cards connect?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "They connect as a movement from not seeing to seeing. The Moon is the unclear part, the stretch where you cannot tell what is known from what is assumed. The Hermit is what you do with that: take the question somewhere quiet and look at it properly. The Sun is what can come out of that looking, a plain bit of clarity or warmth that is actually there. Not a promise that it will. Just the direction the three point in.",
+          "The Hermit sits between them for a reason. It is the part that depends on you rather than on the mood lifting. And The Sun does not cancel The Moon. Both can be true at once in the same stretch of months. If any link here feels forced, it probably is, and the ones that land are the ones worth keeping."
+        ],
+        "reflection": "Of the three, which one describes how these months have actually gone rather than how you would like them to go?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_1",
+            "quote": "The Sun is what can come out of that looking, a plain bit of clarity or warmth that is actually there.",
+            "reason": "Presents an invented causal mechanism (looking inward via The Hermit leads to Sun's clarity) as a sequential progression, asserting a chain of effect the cards' texts do not establish, despite the later hedge 'not a promise that it will' - the sequence itself is stated as the connection's direction rather than one possible reading.",
+            "adjudication": "holds",
+            "note": "A chain looking→clarity is a mechanism the cards do not establish; the hedge follows the claim."
+          },
+          {
+            "field": "paragraph_2",
+            "quote": "It is the part that depends on you rather than on the mood lifting.",
+            "reason": "Asserts as fact that the person's low mood is something to be addressed by personal effort ('depends on you') rather than external/medical factors, which contradicts the original answer's own caveat that a doctor is the appropriate resource, and presumes the low feeling is mood-based and addressable through solitude/reflection rather than genuinely uncertain in cause.",
+            "adjudication": "holds",
+            "note": "States the low mood is addressable by the person's effort, against the initial answer's own limit and the person's account."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "They connect as three angles on one question rather than three steps. The Moon is the unclear part, the stretch where you cannot tell what is known from what is assumed. The Hermit is a way of being with that uncertainty: taking the question somewhere quiet and looking at it properly, if and when that is available to you. The Sun is clarity and a plain kind of good, noticed when it is there. The three can sit side by side. One possible reading links them in that order, but the cards do not set up a chain where one causes the next.",
+          "The Hermit sits in the middle of that arrangement, and it is offered as a theme rather than as an instruction that fits everyone. The Sun does not cancel The Moon. Both can be true at once in the same stretch of months. If any link here feels forced, it probably is, and the ones that land are the ones worth keeping."
+        ],
+        "reflection": "Of the three, which one describes how these months have actually gone rather than how you would like them to go?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "which one describes how these months have actually gone rather than how you would like them to go?",
+            "reason": "Presupposes there is a gap between how the months have actually gone and how the person would like them to have gone, an unsupported framing not established by the person's account or the cards.",
+            "adjudication": "questionable_prose",
+            "note": "Offers a choice among the three cards; the \"rather than how you would like them to go\" clause assumes a wish-versus-reality gap. Editorial, not an unsupported fact. Unflagged in review 1 and unchanged by the repair."
+          }
+        ]
+      }
+    },
+    {
+      "id": "conv-pronoun-medication-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-pronoun-medication",
+        "turn": 1,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "withheld",
+      "input": {
+        "focusLabel": "Personal growth",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Magician",
+            "keywords": [
+              "resourcefulness",
+              "focus",
+              "making it real"
+            ],
+            "coreMeaning": "Turning an idea into something real by choosing what to work with and where to point it.",
+            "positionText": "Resources and focus. Skill, timing, tools, people, and the act of choosing which to use. The card does not know what is within your reach. Taking stock of that, including what is missing, is where it begins.",
+            "focusNote": "One intention, one visible action. The card favours small and real over large and imagined."
+          },
+          {
+            "position": "challenge",
+            "name": "Temperance",
+            "keywords": [
+              "balance",
+              "patience",
+              "blending, not choosing"
+            ],
+            "coreMeaning": "Slow, deliberate blending, finding the measure between two things rather than picking an extreme.",
+            "positionText": "Temperance's trouble is pace: gradual adjustment can be wisdom or it can be avoidance. Sometimes a decisive change is right. A measured approach includes noticing when the middle ground will not do.",
+            "focusNote": "A sustainable version of a habit, sized to the time and energy your actual week has. That is the practice."
+          },
+          {
+            "position": "guidance",
+            "name": "The Emperor",
+            "keywords": [
+              "structure",
+              "stability",
+              "clear boundaries"
+            ],
+            "coreMeaning": "Structure and a clear boundary, the things that turn a good intention into something dependable.",
+            "positionText": "Set the structure you need, then check it now and then instead of treating it as permanent. A boundary is there to serve the goal, not to replace it.",
+            "focusNote": "One dependable routine over several ambitious ones. Which routine, and what it costs in your week, is the practical part."
+          }
+        ],
+        "originalQuestion": "I want to be more disciplined but I always give up after a week.",
+        "initialAnswer": {
+          "perspective": "A week is a specific length of time, and it is worth trusting your own report of it rather than reading it as a personal failing. These three cards are not about willpower. They offer three angles: what you are working with, how pace works, and what structure would actually hold.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Magician is about working with what is actually at hand: skills, tools, time, people, and the act of choosing among them. As a place to look at the one-week mark, it raises the question of what the discipline was built on. Was it a plan that fit your week, or a plan built on the version of your week you wished you had? The card does not know what is within your reach, and it does not settle whether anything was missing."
+            },
+            {
+              "position": "challenge",
+              "relevance": "Temperance raises pace as a theme. Gradual adjustment can be wisdom, and it can also be a way of not deciding. The challenge it puts on the table is not that you are too slow or too fast, but whether the size of what you took on matched the shape of your days. If the target was set for a week you do not have, the week ending is not evidence about your character."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Emperor is structure and boundary. Its offer is one routine rather than several ambitious ones, held long enough to be dependable, and then revisited rather than treated as permanent. What that routine is, and what it costs in a week like yours, is the practical part. This card cannot tell you whether structure is what has been missing, or whether something else gave out first."
+            }
+          ],
+          "reflection": "At the point in the week when it starts to slip, what is happening in your day around it?",
+          "beyondSpread": "If the question underneath is why the stopping happens, these cards cannot answer that. They describe themes, not causes."
+        },
+        "priorTurns": [],
+        "latest": "My doctor started me on an ADHD medication last month and it's been helping with focus.",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "That is a concrete change in what is in your hands. The Magician is about the actual tools available to turn an intention into something real. A shift in focus changes the practical baseline you were working from when earlier attempts stopped after seven days.",
+          "The Emperor and Temperance take on a different shape with that in place. The Emperor is about simple, visible structure that holds a routine from the outside, rather than relying on sheer willpower to carry it. Temperance is about pace: finding a measure that fits an ordinary day rather than planning for the days where everything goes smoothly."
+        ],
+        "reflection": "Now that focus has shifted, what is one small piece of structure that might fit your daily routine without asking for too much at once?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_1",
+            "quote": "A shift in focus changes the practical baseline you were working from when earlier attempts stopped after seven days.",
+            "reason": "Presents as established that the medication's focus improvement changed the baseline responsible for prior week-long stops, but the person only stated the medication has been helping with focus, not that it addresses whatever caused past attempts to end after a week. This treats a possible link as a confirmed causal fact.",
+            "adjudication": "holds",
+            "note": "Treats the medication as having changed the cause of earlier week-long stops; the person said only that it helps focus."
+          },
+          {
+            "field": "paragraph_2",
+            "quote": "Temperance is about pace: finding a measure that fits an ordinary day rather than planning for the days where everything goes smoothly.",
+            "reason": "Implies the person had been planning only for ideal days, an assumption about their past behavior not stated anywhere in the conversation.",
+            "adjudication": "should_pass",
+            "note": "A contrast inside the card's theme (an ordinary day versus a smooth one), not a claim about the person's past planning."
+          },
+          {
+            "field": "reflection",
+            "quote": "Now that focus has shifted, what is one small piece of structure that might fit your daily routine without asking for too much at once?",
+            "reason": "Presupposes that focus has already durably 'shifted' in a way that changes what structure is needed, treating the person's one-line report of the medication helping as a settled transformation rather than a recent, possibly partial development.",
+            "adjudication": "questionable_prose",
+            "note": "\"Focus has shifted\" is the person's own report; the nudge toward a piece of structure answers a request that was not made. Editorial."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "That is a concrete change in what is in your hands, and it is worth naming as such. The Magician is about the actual tools available to turn an intention into something real, and a medication you are taking belongs in that inventory alongside time, energy, space, and the things you already own. Whether it touches why earlier attempts stopped after seven days is something only you can say.",
+          "The Emperor and Temperance take on a slightly different shape with that in place. The Emperor is about simple, visible structure that holds a routine from the outside, rather than relying on sheer willpower to carry it. Temperance is about pace: finding a measure that fits an ordinary day, one you could sustain across the whole week rather than only on the days when nothing goes wrong. Both are worth trying on against your own situation and seeing whether they fit."
+        ],
+        "reflection": "With the medication in the picture, is there something about the end of that week that looks different now when you think back on it?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_2",
+            "quote": "rather than relying on sheer willpower to carry it",
+            "reason": "This presupposes the person has been relying on sheer willpower in their prior attempts, a fact not established by their statement about starting medication.",
+            "adjudication": "questionable_prose",
+            "note": "Contrastive card description; nothing in the conversation mentions willpower, but the sentence does not assert the person relied on it. Present in the draft and unflagged in review 1."
+          },
+          {
+            "field": "reflection",
+            "quote": "is there something about the end of that week that looks different now when you think back on it?",
+            "reason": "This presumes there is something different to find at the end of that week, nudging toward a specific conclusion (that medication changed the outcome) rather than neutrally asking whether it does.",
+            "adjudication": "should_pass",
+            "note": "An open question that permits \"no\". The rubric allows it."
+          }
+        ]
+      }
+    },
+    {
+      "id": "conv-general-first-question-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-general-first-question",
+        "turn": 1,
+        "initialAnswer": "none"
+      },
+      "outcome": "withheld",
+      "input": {
+        "focusLabel": "General",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "Strength",
+            "keywords": [
+              "quiet courage",
+              "patience",
+              "steadiness"
+            ],
+            "coreMeaning": "A patient kind of courage, the sort that holds steady rather than forces.",
+            "positionText": "Steadiness. Courage that is quiet, patience under pressure, resolve kept up over time. Somewhere in what you brought, that kind of strength may already be in use, unnoticed because it is quiet.",
+            "focusNote": "Patience and a steady hand are the themes. Whether they are what this calls for is a judgement only you can make."
+          },
+          {
+            "position": "challenge",
+            "name": "The Hierophant",
+            "keywords": [
+              "tradition",
+              "shared method",
+              "learning from others"
+            ],
+            "coreMeaning": "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
+            "positionText": "The Hierophant's trouble is following a convention without checking whether it fits. A method that served others may not serve this. Which parts to keep is the question.",
+            "focusNote": "A teacher, a mentor or an established framework is where this card points. Whether they fit your situation is a separate question."
+          },
+          {
+            "position": "guidance",
+            "name": "The Sun",
+            "keywords": [
+              "clarity",
+              "warmth",
+              "plain good"
+            ],
+            "coreMeaning": "Clarity and warmth, a plain kind of good worth noticing when it is there.",
+            "positionText": "Bring your energy to what is going well, openly. Enjoying something does not require ignoring the rest. Both can be true at once.",
+            "focusNote": "Letting something good be good, while it is here. That is what this card invites."
+          }
+        ],
+        "originalQuestion": null,
+        "initialAnswer": null,
+        "priorTurns": [],
+        "latest": "I pulled these thinking about whether to move back near my parents. What do they say?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "The cards do not give a yes or no on the move. What they offer is a way to look at it. Strength sits in the situation: a quiet kind of resolve, patience held over time, the sort of thing that does not announce itself. If that is part of what you bring here, it already exists without needing to be summoned. If it isn't, the card isn't claiming it is.",
+          "The Hierophant is the challenge, and it points at the inherited part of the question. Family, place, the way things have always been done, the expectation of proximity. The card's warning is simply not to take a convention as a fit just because it is a convention. Which parts of that you would want to keep is not something the card answers.",
+          "The Sun is the guidance. Clarity, warmth, whatever is plainly good. One way to use it: picture a normal Tuesday near your parents rather than the imagined best or worst version of it. What is present in that ordinary day that is not present now?"
+        ],
+        "reflection": "Which parts of the nearness to family are the ones you would be choosing for yourself, and which are there because they have always been there?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_2",
+            "quote": "The Hierophant is the challenge, and it points at the inherited part of the question. Family, place, the way things have always been done, the expectation of proximity.",
+            "reason": "This presents the move as involving inherited convention and 'expectation of proximity' as established fact about the person's situation, when the person has only asked whether to move back near parents — no expectation or inherited pressure was stated. This converts a symbolic theme (tradition/convention) into an asserted finding about their actual circumstances.",
+            "adjudication": "holds",
+            "note": "\"The expectation of proximity\" is stated as part of the person's situation; they asked only whether to move."
+          },
+          {
+            "field": "reflection",
+            "quote": "which are there because they have always been there?",
+            "reason": "This presupposes that some of the person's reasons for nearness to family exist merely out of habit/inertia ('have always been there') rather than genuine choice, asserting an unconfirmed motive structure onto the person rather than neutrally asking whether such a distinction applies.",
+            "adjudication": "holds",
+            "note": "\"Which are there because they have always been there\" presumes some reasons are habitual."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "The cards do not give a yes or no on the move. What they offer is a way to look at it. Strength sits in the situation: a quiet kind of resolve, patience held over time, the sort of thing that does not announce itself. If that is part of what you bring here, it already exists without needing to be summoned. If it isn't, the card isn't claiming it is.",
+          "The Hierophant is the challenge, and it raises the inherited part of the question. Family, place, the way things have long been done, what is expected when people live near each other — if any of that surrounds the move, the card's warning is simply not to take a convention as a fit just because it is a convention. Which parts you would want to keep is not something the card answers.",
+          "The Sun is the guidance. Clarity, warmth, whatever is plainly good. One way to use it: picture a normal Tuesday near your parents rather than the imagined best or worst version of it. What is present in that ordinary day that is not present now?"
+        ],
+        "reflection": "If nearness to family comes into this, which parts of it would be yours to choose, and how would that differ if some parts turned out to be there out of habit rather than choice?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_2",
+            "quote": "Family, place, the way things have long been done, what is expected when people live near each other — if any of that surrounds the move, the card's warning is simply not to take a convention as a fit just because it is a convention.",
+            "reason": "Frames the move as governed by family expectation/convention that must be checked for fit, presupposing an inherited pressure or established way of doing things around the move that the person never stated; the 'if any' softens but the surrounding sentence still asserts the card's warning applies to conventions specifically tied to family/place that aren't established as present.",
+            "adjudication": "should_pass",
+            "note": "\"If any of that surrounds the move\" makes the convention explicitly conditional; the card's challenge text is about convention fitting or not."
+          },
+          {
+            "field": "reflection",
+            "quote": "how would that differ if some parts turned out to be there out of habit rather than choice?",
+            "reason": "Presupposes that some parts of the family nearness are already 'there out of habit rather than choice,' an unprovided fact about the person's relationship with their parents/family patterns.",
+            "adjudication": "should_pass",
+            "note": "\"If some parts turned out to be\" is conditional. Clumsy sentence, but it supplies no fact."
+          }
+        ]
+      }
+    },
+    {
+      "id": "conv-legal-drift-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-legal-drift",
+        "turn": 1,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Relationships",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "Death",
+            "keywords": [
+              "ending",
+              "transformation",
+              "making room"
+            ],
+            "coreMeaning": "An ending that makes room for what comes after it. A symbol of change, not a prediction of harm.",
+            "positionText": "Something running its course. A phase, a role, a way of doing things. This is a symbolic ending, not a forecast. Something in your question may be closing, whether or not that has been said out loud.",
+            "focusNote": "A dynamic or a chapter that has run its course is one of this card's readings. A possibility to sit with, not a conclusion the card can draw for you."
+          },
+          {
+            "position": "challenge",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "The Fool's trouble is moving before looking. Enthusiasm runs ahead of the checks a step deserves. What would you want to know before the next move, and what can wait?",
+            "focusNote": "Early, undefined stages belong to this card. They ask for openness, with the outcome left open too."
+          },
+          {
+            "position": "guidance",
+            "name": "The Star",
+            "keywords": [
+              "hope",
+              "quiet renewal",
+              "a longer view"
+            ],
+            "coreMeaning": "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+            "positionText": "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
+            "focusNote": "Trust rebuilding is one of this card's readings. Whether it is, and how fast, only the people involved can know."
+          }
+        ],
+        "originalQuestion": "My divorce is finalized next month. How do I begin again?",
+        "initialAnswer": {
+          "perspective": "A divorce being finalized is a real ending, and the cards you have drawn sit around that fact rather than past it. Death, The Fool and The Star each look at a different part of it: what has run its course, what a next step might be, and what kind of hope is available to you. None of them can say what you feel in a given week, and none can make the next month come faster or slower. What they can do is offer three places to look.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "Death is about an ending that makes room for whatever comes after. In a relationships reading it points at a dynamic or a chapter that has run its course. You have named the ending yourself, in the divorce being finalized, so the card is not telling you anything you do not already know. It asks a narrower question: which parts of the marriage, besides the legal one, are still running, and which have already stopped?"
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Fool is a first step taken before the plan is finished. In this position its trouble is moving ahead of the checks a step deserves. Beginning again can mean many things, and this card does not choose which one you mean. Is there a next step you already have in mind, and what would you want to know before you took it?"
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Star is modest, quiet hope, and a longer view. As guidance it suggests letting hope be small and steady rather than grand, without any promise about how things turn out. Rebuilding trust is one of this card's readings, in yourself or with others. Only you can say whether that applies, and at what pace."
+            }
+          ],
+          "reflection": "When you think about beginning again, what is the first picture that arrives, and what would that picture actually require of you?",
+          "beyondSpread": "Three cards cannot tell you how the next month will go, or what beginning again will look like for you. Those answers sit with time, with the people involved, and with what you decide. What the cards can do is help you look at the moment you are in."
+        },
+        "priorTurns": [],
+        "latest": "How do I handle the loneliness in the evenings?",
+        "safetyCategory": "stressful"
+      },
+      "draft": {
+        "paragraphs": [
+          "The evenings can be where the room left by an ending is felt directly. Death marks the space that opens when a long chapter closes. That open space can simply feel empty for a time before anything new takes its place.",
+          "The Star points toward small, modest care rather than a dramatic fix. One option is to choose one simple, steady action for that part of the day, like making a warm drink or sitting in a specific spot. It does not take the loneliness away, but it offers one reliable anchor in the hours after the day winds down."
+        ],
+        "reflection": "Is there one simple thing you already have at home that could serve as a quiet routine tonight?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "Is there one simple thing you already have at home that could serve as a quiet routine tonight?",
+            "reason": "Presupposes the person has spare capacity and something suitable at home 'tonight', pushing a specific timed action rather than an open question; also nudges toward an unrequested routine-building task not asked for by the person, who only asked how to handle loneliness, not for a same-night exercise.",
+            "adjudication": "questionable_prose",
+            "note": "\"How do I handle the loneliness\" asks for a way to handle it, so a small step is in scope; \"tonight\" assumes the evening is free. Editorial."
+          },
+          {
+            "field": "paragraph_2",
+            "quote": "One option is to choose one simple, steady action for that part of the day, like making a warm drink or sitting in a specific spot.",
+            "reason": "Suggests a concrete routine/task as if establishing a habit is the appropriate response, going beyond offering perspective into prescribing a specific coping exercise the person did not request, and assumes they have the resources/space (a 'specific spot', a warm drink routine) to do so.",
+            "adjudication": "should_pass",
+            "note": "An optional, minimal step in answer to a how-do-I-handle question; a warm drink and a place to sit assume nothing the person has not got."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "The evenings can be where the room left by an ending is felt directly. Death marks the space that opens when a long chapter closes. That open space can simply feel empty for a time before anything new takes its place.",
+          "The Star points toward small, modest care rather than a dramatic fix, and it does not promise that loneliness lifts on any particular schedule. Its suggestion is a quieter kind of hope: that this stretch of the day can be met gently, without needing to be solved all at once."
+        ],
+        "reflection": "When the evenings feel heaviest, what tends to be going on around you at that time?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      }
+    },
+    {
+      "id": "conv-understanding-only-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-understanding-only",
+        "turn": 2,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Personal growth",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
+            "focusNote": "Starting before you feel ready is one of this card's themes. Readiness sometimes arrives during the walk."
+          },
+          {
+            "position": "challenge",
+            "name": "The Devil",
+            "keywords": [
+              "attachment",
+              "restriction",
+              "old patterns"
+            ],
+            "coreMeaning": "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
+            "positionText": "The Devil's trouble is seeing the hold clearly at all. Some restrictions are chosen, some are imposed, some are real limits of money, health or duty. Which is which is for you to say, not the card.",
+            "focusNote": "A habit worth examining: what keeps it in place, and what support changing it would need."
+          },
+          {
+            "position": "guidance",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
+            "focusNote": "Protected time alone with the question, not just around it. When that is possible, this card recommends it."
+          }
+        ],
+        "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+        "initialAnswer": {
+          "perspective": "Understanding the stopping, rather than fixing it, changes what these cards are for. They are three angles on a moment you know and I do not. None of them can say what you feel when you stop. Each offers a place to look, and you decide whether anything there fits.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Fool is about beginnings and the openness of a first step, taken before the road is mapped. One angle on stopping: was there a beginning in each of those projects, and what did the open, unplanned part of it feel like while it lasted? Only you know whether that has any bearing. The card also raises another possibility: that something in this is still at its start, including the question itself."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Devil is about attachment and restriction, and it is a symbol rather than a verdict. It draws no line between a hold that is chosen, one that is imposed, and one that is a real limit of money, health or duty. That line is yours to draw. As a challenge it asks what might be holding at the moment of stopping, and whether that hold is something you would recognise as yours at all."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Hermit is about stepping back from the noise to think, and then stepping back in. Its guidance here is unhurried: time with this question rather than around it, and both reflection and company as part of it. Whether solitude plays any part in the stopping itself is something the card cannot tell you."
+            }
+          ],
+          "reflection": "Think of one project you stopped. What is the first thing you notice about that moment, before any explanation for it arrives?",
+          "beyondSpread": "These cards cannot tell you what you feel. That answer lives with you, and this reading is only somewhere to look from."
+        },
+        "priorTurns": [
+          {
+            "user": "What might the Devil be pointing at here?",
+            "assistant": {
+              "paragraphs": [
+                "The Devil sits in the challenge position, and what it names is a hold. Something that keeps a thing in place, or keeps it from moving. It does not say whether that hold is a habit you carry, a pull you feel toward the work, or a real limit of time, money, health or duty. The card cannot tell those apart, and it is not trying to. The Devil's own trouble is that the hold is hard to see clearly while you are inside it."
+              ],
+              "reflection": "When you stop, is there anything that feels like it is holding the project in place, or holding you back from it, or neither?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "It fits the Devil best, though not as a verdict. The Devil is the card about a hold, and its particular trouble is that the hold is hard to see while you are inside it. If mattering is what arrives just before the stopping, the card would put the question there: what does the hold attach to? The meaning of the project to you, or what stopping does with that meaning. The card does not say which, and I am not going to put words in your mouth about it.",
+          "The Fool is the other one worth sitting with, in a smaller way. It is the unmapped beginning, ground still soft, and it says nothing about what a thing is worth. So the two cards together do not tell you whether mattering is the reason, the trigger, or a coincidence next to something else. You are the one who was there."
+        ],
+        "reflection": "If mattering is what shows up, what does it seem to want from you in that moment?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "If mattering is what shows up, what does it seem to want from you in that moment?",
+            "reason": "Presupposes that 'mattering' is an agent with a want/demand directed at the person, treating a described trigger as something with intentions to be uncovered, which the person's statement does not establish and the card cannot confirm.",
+            "adjudication": "questionable_prose",
+            "note": "Figurative personification of \"mattering\"; not a fact about the person. Editorial."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "It fits the Devil best, though not as a verdict. The Devil is the card about a hold, and its particular trouble is that the hold is hard to see while you are inside it. If mattering is what arrives just before the stopping, the card would put the question there: what does the hold attach to? The meaning of the project to you, or what stopping does with that meaning. The card does not say which, and I am not going to put words in your mouth about it.",
+          "The Fool is the other one worth sitting with, in a smaller way. It is the unmapped beginning, ground still soft, and it says nothing about what a thing is worth. So the two cards together do not tell you whether mattering is the reason, the trigger, or a coincidence next to something else. You are the one who was there."
+        ],
+        "reflection": "When you notice the stopping begin, what is present for you just before it?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      }
+    },
+    {
+      "id": "conv-prediction-request-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-prediction-request",
+        "turn": 2,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Relationships",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Lovers",
+            "keywords": [
+              "connection",
+              "values",
+              "a real choice"
+            ],
+            "coreMeaning": "A choice that asks what you value, not only what is easiest or keeps the peace.",
+            "positionText": "A meaningful choice, often about connection, and the values underneath it. The card cannot tell you what anyone else feels. It can ask what matters most to you in the decision your question holds.",
+            "focusNote": "Alignment of values is the theme, more than compromise for its own sake. Whether they match is something to find out, not assume."
+          },
+          {
+            "position": "challenge",
+            "name": "The Moon",
+            "keywords": [
+              "uncertainty",
+              "the unclear",
+              "what is not visible yet"
+            ],
+            "coreMeaning": "A stretch where things are not clear yet, and the work of telling what is known from what is not.",
+            "positionText": "The Moon's trouble is deciding under low light: settling on one story, hopeful or fearful, before there is enough to go on. Caution in the dark is sensible. More light, where it can be had, is the alternative.",
+            "focusNote": "A misunderstanding is one possibility among several. The card favours asking directly over guessing."
+          },
+          {
+            "position": "guidance",
+            "name": "The Star",
+            "keywords": [
+              "hope",
+              "quiet renewal",
+              "a longer view"
+            ],
+            "coreMeaning": "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+            "positionText": "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
+            "focusNote": "Trust rebuilding is one of this card's readings. Whether it is, and how fast, only the people involved can know."
+          }
+        ],
+        "originalQuestion": "Does he still love me?",
+        "initialAnswer": {
+          "perspective": "That question has an answer, and it lives with him, not in three cards. What the cards can do is look at what holding the question is like for you, and where you might take it. Read them as three angles, and keep the one that fits.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Lovers is about connection and the values underneath it. Here it turns the question back toward you: whatever the answer turns out to be, what matters most to you in this? The card cannot say what he feels. It can ask what you would want the connection to be built on."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Moon is the low-light stretch, where it is hard to tell what is known from what is guessed. The trouble is settling on a single story, hopeful or fearful, before there is enough to go on. A question asked and answered directly carries more weight than any reading of signs."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Star is hope of a quiet kind, without drama and without a guarantee. If hope plays any part here, it might be held in small steady ways rather than a big one. Whether trust is rebuilding is something only the two of you could know."
+            }
+          ],
+          "reflection": "If you got the answer from him, what would you want it to change? That question may be worth more than the answer itself.",
+          "beyondSpread": "Whether he still loves you is not something these cards can tell. It is his feeling, and only he can give you that answer, by telling you himself."
+        },
+        "priorTurns": [
+          {
+            "user": "Just tell me yes or no. Will he come back?",
+            "assistant": {
+              "paragraphs": [
+                "I can't give you yes or no, and not because I'm dodging. Whether he comes back isn't on this table. It's in him, and in what he does, and no card reads that.",
+                "What I can say is that the Moon is the part of this reading that meets your question. It's the card of not knowing yet, and of how loud a guess can get when there's no answer to check it against. That's not a verdict on the outcome. It's just where the light is right now."
+              ],
+              "reflection": null,
+              "beyondSpread": "A yes or no about whether he'll come back isn't something three cards can give. Only he can answer that, and it lives in what he says and does."
+            }
+          }
+        ],
+        "latest": "Fine. What is mine to do here?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "What's yours is the part the Lovers points at: the choice about what you value here, and what you'd want this to be built on. That doesn't require an answer from him first. You can decide what matters to you before you know anything about him.",
+          "The Moon's part is real too. Guessing fills a silence fast, and both the hopeful guess and the fearful one can feel like facts. Asking him directly is the one way to get something that isn't a guess, if asking is something you're able to do. If it isn't, that's a limit, not a failure.",
+          "So one small step, only if it fits: write the question you'd ask, in your own words, exactly as you'd say it. Not to send it. Just to see whether it comes out as a question or as something else."
+        ],
+        "reflection": "Reading what you wrote back, is it a question you're asking, or an answer you're hoping he'll confirm?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "paragraph_3",
+            "quote": "So one small step, only if it fits: write the question you'd ask, in your own words, exactly as you'd say it. Not to send it. Just to see whether it comes out as a question or as something else.",
+            "reason": "This introduces an unrequested exercise/task (writing exercise with a specific diagnostic purpose) that the person did not ask for. The person only asked 'What is mine to do here?' in a general sense, not for a structured writing task. While framed as conditional ('only if it fits'), it invents a specific mechanism/purpose (to reveal whether it's really a question or a disguised plea) that goes beyond offering perspective into prescribing a task with an implied diagnostic outcome.",
+            "adjudication": "should_pass",
+            "note": "\"What is mine to do here\" asks what to do; an optional, resource-free step is allowed. The stated purpose is a way of looking, not a promised effect."
+          },
+          {
+            "field": "reflection",
+            "quote": "Reading what you wrote back, is it a question you're asking, or an answer you're hoping he'll confirm?",
+            "reason": "This presupposes the person completed the writing exercise from paragraph_3 and has something written to 'read back,' assuming they did the unrequested task. It also presupposes a dichotomy (question vs. disguised answer-seeking) about their internal motive that is not established by anything the person has said.",
+            "adjudication": "questionable_prose",
+            "note": "Follows from the optional step and reads oddly if the step is declined; the question-or-hoped-answer dichotomy is a lens, not a finding. Editorial."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "What's yours is the part the Lovers points at: the choice about what you value here, and what you'd want this to be built on. That doesn't require an answer from him first. You can decide what matters to you before you know anything about him.",
+          "The Moon's part is real too. Guessing fills a silence fast, and both the hopeful guess and the fearful one can feel like facts. Asking him directly is the one way to get something that isn't a guess, if asking is something you're able to do. If it isn't, that's a limit, not a failure.",
+          "What's yours can stay simple. The Lovers doesn't require a grand decision before you act; it asks what matters to you, and that's something you can hold while you wait. The Star's part is quiet and doesn't promise a result. Whatever you do next, it can be small and yours."
+        ],
+        "reflection": "What would it change for you to separate what you know from what you're hoping?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      }
+    },
+    {
+      "id": "conv-spanish-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-spanish",
+        "turn": 2,
+        "initialAnswer": "regenerated"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Work",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
+            "focusNote": "A new direction or role can be treated as an experiment rather than a verdict on your worth."
+          },
+          {
+            "position": "challenge",
+            "name": "The Emperor",
+            "keywords": [
+              "structure",
+              "stability",
+              "clear boundaries"
+            ],
+            "coreMeaning": "Structure and a clear boundary, the things that turn a good intention into something dependable.",
+            "positionText": "The Emperor's trouble is rigidity: a boundary held so tightly it stops serving anyone, or control reached for where trust might work. Both can look like strength from the inside.",
+            "focusNote": "Structure, such as a schedule, a scope or a decision-maker, may be what is missing rather than more effort. Telling the two apart is the work."
+          },
+          {
+            "position": "guidance",
+            "name": "The Star",
+            "keywords": [
+              "hope",
+              "quiet renewal",
+              "a longer view"
+            ],
+            "coreMeaning": "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+            "positionText": "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
+            "focusNote": "A stalled project or goal finding room to move. Gently and steadily is the pace this card suggests."
+          }
+        ],
+        "originalQuestion": "¿Debería aceptar el nuevo trabajo aunque pague menos?",
+        "initialAnswer": {
+          "perspective": "Las tres cartas no pueden decirte si aceptar o no: la decisión es tuya y depende de números y límites que solo tú conoces. Lo que sí ofrecen es un ángulo sobre la pregunta. El Fool mira el comienzo, el Emperor mira lo que lo sostiene, y la Star mira el plazo largo. Ninguna sabe cuánto margen tienes para un sueldo menor.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "El Loco es el comienzo, el primer paso dado con curiosidad y sin plan cerrado. Como situación, pone sobre la mesa que aceptar algo nuevo puede tratarse como un ensayo y no como un veredicto sobre tu valor. Si ese trabajo nuevo es un comienzo para ti, ¿qué querrías saber antes de firmar, y cuánto estarías dispuesto a explorarlo sin que se convierta en una apuesta definitiva?"
+            },
+            {
+              "position": "challenge",
+              "relevance": "El Emperador habla de estructura y límites claros, y su dificultad es la rigidez: una frontera sostenida tan fuerte que deja de servir. Como reto, señala que un sueldo menor choca con una estructura real de gastos, y que esa estructura es lo que hay que mirar con números, no con más esfuerzo. ¿La diferencia de ingresos cabe en tus cuentas tal como están, o exige un límite que todavía no has puesto por escrito?"
+            },
+            {
+              "position": "guidance",
+              "relevance": "La Estrella es una esperanza modesta y sostenida, no una promesa de cómo saldrán las cosas. Como guía, sugiere mirar el largo plazo sin dramatizar ni exigir certezas, y cuidar con constancia lo que quieres que crezca. ¿Qué parte de este cambio te importaría seguir cuidando dentro de un año, incluso si el dinero no mejora?"
+            }
+          ],
+          "reflection": "¿Qué límite económico concreto necesitas saber antes de decidir, y dónde está esa cifra escrita?",
+          "beyondSpread": "Un sí o un no, y si el sueldo menor te alcanzará, no es algo que tres cartas puedan darte. Esa respuesta vive en tus cuentas, en tus condiciones reales y en la conversación con quien ofrece el puesto."
+        },
+        "priorTurns": [
+          {
+            "user": "¿Cómo se conectan las tres cartas?",
+            "assistant": {
+              "paragraphs": [
+                "Se conectan por el terreno: la situación es un comienzo, la guía es un cuidado lento y constante, y entre las dos está El Emperador. El Loco mira lo que apenas empieza, sin plan cerrado. La Estrella mira largo, con esperanza modesta. El Emperador es lo que hace que un comienzo no se quede en impulso: estructura, alcance, límites.",
+                "Leído así, el reto no contradice a las otras dos: les pone forma. Un primer paso y una mirada larga pueden convivir, pero necesitan algo que los sostenga, y eso es lo que El Emperador nombra. También puede ser lo contrario: un límite tan apretado que no deje avanzar. La carta no dice cuál de las dos cosas te pasa, solo que ahí está el punto a mirar.",
+                "Otra forma de verlo: El Loco y La Estrella son el mismo movimiento en dos tiempos, empezar y seguir, y El Emperador es el espacio entre ellos, donde se decide si eso se sostiene o no."
+              ],
+              "reflection": "¿Cuál de los tres puntos reconoces como el tuyo ahora mismo: el comienzo, la estructura o la esperanza larga?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "¿Y qué va a pasar si lo acepto?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "No puedo decirte qué va a pasar, y las cartas tampoco están para eso. Ninguna de las tres predice un desenlace. El Loco mira un comienzo sin plan cerrado, El Emperador mira la estructura que lo sostendría o lo apretaría, y La Estrella mira largo, con una esperanza modesta y sin prometer cómo sale. Son tres ángulos sobre lo que ya traes, no un pronóstico de lo que viene después.",
+          "Si quieres usar lo que hay, la pregunta útil no es qué ocurrirá sino qué tendrías que averiguar antes para que el paso no dependiera de adivinarlo. El Emperador apunta justo a eso: horario, alcance, quién decide. Eso sí se puede preguntar por escrito a la empresa.",
+          "Y lo del sueldo menor sigue siendo cosa de tus cuentas, no de las cartas. Ahí no tengo nada que añadir que no estuviera ya en la primera lectura."
+        ],
+        "reflection": "Si aceptaras y a los tres meses algo no cuadrara, ¿qué necesitarías saber de antemano para poder ajustarlo en vez de aguantarlo?",
+        "beyondSpread": "Las cartas no pueden decirte qué va a pasar si aceptas, ni si te conviene. Eso no está en tres cartas. Lo que sí está en tus manos es pedir por escrito las condiciones: horario, alcance, sueldo y quién decide qué."
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "Si aceptaras y a los tres meses algo no cuadrara, ¿qué necesitarías saber de antemano para poder ajustarlo en vez de aguantarlo?",
+            "reason": "Presupposes that if they accept, something will not fit at three months ('algo no cuadrara') and frames the alternative as 'aguantarlo' (enduring it), implying a negative outcome/hardship not established by the person or cards. This is a mild predictive/negative framing baked into the question rather than a neutral hypothetical.",
+            "adjudication": "should_pass",
+            "note": "A conditional hypothetical about what to know in advance; \"aguantarlo\" gives it a negative tint but no outcome is asserted."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "No puedo decirte qué va a pasar, y las cartas tampoco están para eso. Ninguna de las tres predice un desenlace. El Loco mira un comienzo sin plan cerrado, El Emperador mira la estructura que lo sostendría o lo apretaría, y La Estrella mira largo, con una esperanza modesta y sin prometer cómo sale. Son tres ángulos sobre lo que ya traes, no un pronóstico de lo que viene después.",
+          "Si quieres usar lo que hay, la pregunta útil no es qué ocurrirá sino qué tendrías que averiguar antes para que el paso no dependiera de adivinarlo. El Emperador apunta justo a eso: horario, alcance, quién decide. Eso sí se puede preguntar por escrito a la empresa.",
+          "Y lo del sueldo menor sigue siendo cosa de tus cuentas, no de las cartas. Ahí no tengo nada que añadir que no estuviera ya en la primera lectura."
+        ],
+        "reflection": "Si aceptaras, ¿qué necesitarías saber de antemano para poder ajustar el rumbo más adelante si hiciera falta?",
+        "beyondSpread": "Las cartas no pueden decirte qué va a pasar si aceptas, ni si te conviene. Eso no está en tres cartas. Lo que sí está en tus manos es pedir por escrito las condiciones: horario, alcance, sueldo y quién decide qué."
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      }
+    },
+    {
+      "id": "conv-general-first-question-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T11-28-15-522Z.md",
+        "conversation": "conv-general-first-question",
+        "turn": 2,
+        "initialAnswer": "none"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "General",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "Strength",
+            "keywords": [
+              "quiet courage",
+              "patience",
+              "steadiness"
+            ],
+            "coreMeaning": "A patient kind of courage, the sort that holds steady rather than forces.",
+            "positionText": "Steadiness. Courage that is quiet, patience under pressure, resolve kept up over time. Somewhere in what you brought, that kind of strength may already be in use, unnoticed because it is quiet.",
+            "focusNote": "Patience and a steady hand are the themes. Whether they are what this calls for is a judgement only you can make."
+          },
+          {
+            "position": "challenge",
+            "name": "The Hierophant",
+            "keywords": [
+              "tradition",
+              "shared method",
+              "learning from others"
+            ],
+            "coreMeaning": "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
+            "positionText": "The Hierophant's trouble is following a convention without checking whether it fits. A method that served others may not serve this. Which parts to keep is the question.",
+            "focusNote": "A teacher, a mentor or an established framework is where this card points. Whether they fit your situation is a separate question."
+          },
+          {
+            "position": "guidance",
+            "name": "The Sun",
+            "keywords": [
+              "clarity",
+              "warmth",
+              "plain good"
+            ],
+            "coreMeaning": "Clarity and warmth, a plain kind of good worth noticing when it is there.",
+            "positionText": "Bring your energy to what is going well, openly. Enjoying something does not require ignoring the rest. Both can be true at once.",
+            "focusNote": "Letting something good be good, while it is here. That is what this card invites."
+          }
+        ],
+        "originalQuestion": null,
+        "initialAnswer": null,
+        "priorTurns": [
+          {
+            "user": "I pulled these thinking about whether to move back near my parents. What do they say?",
+            "assistant": null
+          }
+        ],
+        "latest": "What can I act on this week?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "You asked about moving near your parents, and the week-sized version of that is small on purpose: one concrete thing you can check now rather than in the abstract. The Hierophant points at what has been worked out before, by people who have done it. So one option this week is to ask someone who has actually made a similar move what they found out only afterward, and let their answer be information rather than a template. Keep the parts that fit, leave the rest.",
+          "The Sun is about a plain good that is already there. If there is something about the week ahead that is simply good, letting it be good is not the same as deciding anything about the move."
+        ],
+        "reflection": "Which part of the move is genuinely yours, and which is a method you inherited do you think still fits?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "which is a method you inherited do you think still fits?",
+            "reason": "Presupposes as fact that the person has inherited a method for this decision; no such fact was provided by the person, and the card text only says a known method may or may not fit, not that one has been inherited.",
+            "adjudication": "holds",
+            "note": "\"A method you inherited\" states an inherited method as fact; the grammar is also broken."
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "You asked about moving near your parents, and the week-sized version of that is small on purpose: one concrete thing you can check now rather than in the abstract. The Hierophant points at what has been worked out before, by people who have done it. So one option this week is to ask someone who has actually made a similar move what they found out only afterward, and let their answer be information rather than a template. Keep the parts that fit, leave the rest.",
+          "The Sun is about a plain good that is already there. If there is something about the week ahead that is simply good, letting it be good is not the same as deciding anything about the move."
+        ],
+        "reflection": "The Hierophant raises the question of what has been worked out before: which part of this decision is genuinely yours to weigh, and where a known method might or might not fit?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      }
+    }
+  ]
+}

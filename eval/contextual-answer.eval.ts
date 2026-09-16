@@ -10,7 +10,8 @@ import { getGenerationProvider } from "@/server/generation/service";
 import { CLASSIFIER_PROMPT_VERSION, INTERPRETATION_PROMPT_VERSION } from "@/server/generation/prompts";
 import { buildInterpretationInput } from "@/server/generation/input";
 import { CONTENT_VERSION } from "@/content/versions";
-import type { InterpretationInput, InterpretationOutput } from "@/server/generation/types";
+import type { InterpretationInput, InterpretationOutput, TokenUsage } from "@/server/generation/types";
+import { sumUsage, totalInputTokens } from "@/server/generation/usage";
 import { validateInterpretation } from "@/server/generation/validate";
 import { generateReviewed, parseGroundingReview, type GroundingTrace } from "@/server/generation/reviewed";
 import { GROUNDING_REVIEW_VERSION, GROUNDING_REPAIR_VERSION } from "@/server/generation/grounding-prompts";
@@ -32,9 +33,9 @@ interface Question {
 
 const QUESTIONS = questionSet.questions as Question[];
 const GROUNDING_FIXTURES = groundingFixtures as { id: string; questionId: string; expected: "pass" | "revise"; answer: InterpretationOutput }[];
-const calibration = new Map<string, { decision: string; model?: string; ms: number; review?: unknown; usage?: { inputTokens: number; outputTokens: number } }>();
+const calibration = new Map<string, { decision: string; model?: string; ms: number; review?: unknown; usage?: TokenUsage }>();
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
-process.env.GENERATION_PROVIDER ||= "gemini,anthropic";
+process.env.GENERATION_PROVIDER ||= "deepseek,gemini";
 // Skip only when the configured chain has no usable provider; a DeepSeek-only
 // or reviewer-only configuration must run, not silently skip.
 const startupConfig = getGenerationConfig();
@@ -53,11 +54,11 @@ function inputFor(q: Question, safetyCategory: InterpretationInput["safetyCatego
   }, safetyCategory);
 }
 
-const categories = new Map<string, { got: SafetyCategory | string; ok: boolean; ms: number; model?: string; usage?: { inputTokens: number; outputTokens: number } }>();
-const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: { inputTokens: number; outputTokens: number }; quality?: GroundingTrace }>();
+const categories = new Map<string, { got: SafetyCategory | string; ok: boolean; ms: number; model?: string; usage?: TokenUsage }>();
+const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: TokenUsage; quality?: GroundingTrace }>();
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
-  process.env.GENERATION_PROVIDER ||= "gemini,anthropic";
+  process.env.GENERATION_PROVIDER ||= "deepseek,gemini";
   const config = getGenerationConfig();
   const provider = getGenerationProvider(config)!;
   const chainLabel = config.providers.map((p) => `${p.kind} (${p.models.answer} / ${p.models.classifier})`).join(" → ");
@@ -163,7 +164,7 @@ function writeReport(chainLabel: string) {
   lines.push("");
   lines.push(`Content: ${CONTENT_VERSION} · provider timeout: ${getGenerationConfig().timeoutMs} ms · shared triage/answer deadline: ${GENERATION_REQUEST_DEADLINE_MS} ms (same configuration as production).`);
   const reviewer = getGenerationConfig().reviewProvider;
-  lines.push(`Dedicated reviewer: ${reviewer?.kind ?? "not configured"} (${reviewer?.models.answer ?? "none"}), without fallback.`);
+  lines.push(`Dedicated reviewer: ${reviewer?.kind ?? "not configured"} (${reviewer?.models.answer ?? "none"}; thinking ${reviewer?.thinkingLevel ?? "default"}), without fallback.`);
   lines.push(`Publication gate: ${GROUNDING_REVIEW_VERSION} / ${GROUNDING_REPAIR_VERSION}. Answer time includes writing, review, up to one repair and a final review. Only approved final answers appear as readings; audit traces below also include withheld drafts.`);
   lines.push("Timing includes classifier and answer separately, but excludes app/network/DB overhead. Token counts cover successful phase responses only; failed/fallback calls and unreported reasoning tokens may add cost. This is not a billing total or an end-to-end latency measurement.");
   lines.push("");
@@ -173,7 +174,7 @@ function writeReport(chainLabel: string) {
   lines.push("| --- | --- | --- | --- | --- | --- | --- |");
   for (const q of QUESTIONS) {
     const c = categories.get(q.id);
-    lines.push(`| ${q.id} | ${q.expectedCategory} | ${c?.got} | ${c?.ok ? "✓" : "✗"} | ${c?.model ?? "?"} | ${c?.ms ?? "?"} | ${c?.usage?.inputTokens ?? "?"} / ${c?.usage?.outputTokens ?? "?"} |`);
+    lines.push(`| ${q.id} | ${q.expectedCategory} | ${c?.got} | ${c?.ok ? "✓" : "✗"} | ${c?.model ?? "?"} | ${c?.ms ?? "?"} | ${c?.usage ? totalInputTokens(c.usage) : "?"} / ${c?.usage?.outputTokens ?? "?"} |`);
   }
   lines.push("");
   lines.push("## Answers — score each 1–5 on Relevance, Groundedness, Agency, Tone, Honesty (eval/RUBRIC.md)");
@@ -183,15 +184,15 @@ function writeReport(chainLabel: string) {
   for (const q of QUESTIONS) {
     const a = answers.get(q.id);
     if (!a) continue;
-    const usage = a.quality?.calls.reduce((sum, call) => ({ inputTokens: sum.inputTokens + (call.usage?.inputTokens ?? 0), outputTokens: sum.outputTokens + (call.usage?.outputTokens ?? 0) }), { inputTokens: 0, outputTokens: 0 }) ?? a.usage;
-    totalIn += usage?.inputTokens ?? 0;
+    const usage = a.quality ? sumUsage(a.quality.calls.flatMap((call) => call.usage ? [call.usage] : [])) : a.usage;
+    totalIn += usage ? totalInputTokens(usage) : 0;
     totalOut += usage?.outputTokens ?? 0;
     const names = q.cards.map((id) => CARDS.find((c) => c.id === id)!.name).join(" · ");
     lines.push(`### ${q.id} — ${FOCUS_META[q.focus].label} · ${names}`);
     lines.push("");
     lines.push(`> ${q.question}`);
     lines.push("");
-    lines.push(`_${a.model ?? "?"} · answer ${a.ms} ms + classifier ${categories.get(q.id)?.ms ?? "?"} ms · ${a.usage?.inputTokens ?? "?"} in / ${a.usage?.outputTokens ?? "?"} out_`);
+    lines.push(`_${a.model ?? "?"} · answer ${a.ms} ms + classifier ${categories.get(q.id)?.ms ?? "?"} ms · ${a.usage ? totalInputTokens(a.usage) : "?"} in / ${a.usage?.outputTokens ?? "?"} out_`);
     lines.push("");
     if (a.rejected) {
       lines.push(`**REJECTED:** ${a.rejected}`);
@@ -220,7 +221,7 @@ function writeReport(chainLabel: string) {
   }
   lines.push(`Reported successful writing/review/repair call tokens, including withheld answers: ${totalIn} in / ${totalOut} out.`);
   const classified = [...categories.values()];
-  lines.push(`Successful classifier tokens: ${classified.reduce((n, c) => n + (c.usage?.inputTokens ?? 0), 0)} in / ${classified.reduce((n, c) => n + (c.usage?.outputTokens ?? 0), 0)} out.`);
+  lines.push(`Successful classifier tokens: ${classified.reduce((n, c) => n + (c.usage ? totalInputTokens(c.usage) : 0), 0)} in / ${classified.reduce((n, c) => n + (c.usage?.outputTokens ?? 0), 0)} out. Input totals include cache reads and writes; see audit usage for billing categories.`);
   lines.push("", "## Reviewer calibration", "", "Known failures from earlier reports and a grounded control, reviewed separately from the generated set. This is a limited regression check, not proof the reviewer detects every error.", "", "| Fixture | Expected | Got | Model | ms |", "| --- | --- | --- | --- | ---: |");
   for (const f of GROUNDING_FIXTURES) {
     const c = calibration.get(f.id);
