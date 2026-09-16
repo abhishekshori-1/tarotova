@@ -14,13 +14,14 @@ export const FOLLOWUP_SUGGESTIONS: Record<Focus, string[]> = {
 
 export const FOLLOWUP_COPY = {
   heading: "Explore this reading",
-  intro: "Ask about the cards you were dealt. Three follow-ups per reading; a retry uses the same one.",
+  intro: "Stay with what matters to you. Explore a theme, ask for a practical angle, or say what the reading missed.",
   remaining: (n: number) => (n === 1 ? "1 follow-up left" : `${n} follow-ups left`),
   placeholder: "Ask about this reading…",
-  send: "Send",
+  send: "Explore this",
   pending: "Thinking about that…",
   failed: "Couldn't answer that one. The reading above stands.",
   retry: "Try that once more",
-  ended: "That's the three. The reading stays here for 30 days.",
+  ended: "A place to pause",
+  endingNote: "You can return to these words without needing another answer. Take what is useful, and let the rest stay here.",
   closed: "We'll leave the cards there for this one.",
 } as const;

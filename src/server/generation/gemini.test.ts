@@ -91,7 +91,7 @@ describe("GeminiProvider", () => {
 
   it("maps HTTP failures, keeping Google's status and message", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(429, { error: { status: "RESOURCE_EXHAUSTED", message: "Quota exceeded" } })));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_http_429", detail: "RESOURCE_EXHAUSTED: Quota exceeded", retryable: true, uncertain: false });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_429", detail: "RESOURCE_EXHAUSTED: Quota exceeded", retryable: true, uncertain: false });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(400, { error: { status: "INVALID_ARGUMENT", message: "API key not valid" } })));
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_400", retryable: false });
@@ -110,6 +110,6 @@ describe("GeminiProvider", () => {
     const timeout = new Error("aborted");
     timeout.name = "TimeoutError";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeout));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
   });
 });

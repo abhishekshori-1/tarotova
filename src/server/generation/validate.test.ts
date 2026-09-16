@@ -24,6 +24,13 @@ describe("validateInterpretation", () => {
     if (result.ok) expect(result.output.beyondSpread).toBeNull();
   });
 
+  it("canonicalizes a serialized optional null without changing a real boundary or required reflection", () => {
+    expect(validateInterpretation({ ...good(), beyondSpread: " null " }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: null } });
+    const boundary = "A card cannot tell you whether an agreement is null or valid.";
+    expect(validateInterpretation({ ...good(), beyondSpread: boundary }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: boundary } });
+    expect(validateInterpretation({ ...good(), reflection: "null" }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+  });
+
   it("rejects the wrong shape or position order", () => {
     const swapped = good();
     [swapped.cards[0], swapped.cards[1]] = [swapped.cards[1], swapped.cards[0]];
@@ -113,6 +120,13 @@ describe("validateFollowup", () => {
     reflection: "Which of the two pulls is the one you would rather not name?",
     beyondSpread: null,
   };
+  it("does not publish a literal null as an optional reflection or boundary", () => {
+    const source = { ...ok, reflection: "null", beyondSpread: "null" };
+    expect(validateFollowup(source, DRAWN)).toMatchObject({ ok: true, output: { reflection: null, beyondSpread: null } });
+    expect(source.beyondSpread).toBe("null"); // normalization does not rewrite stored input
+    const boundary = "The cards cannot determine how another person will react.";
+    expect(validateFollowup({ ...ok, beyondSpread: boundary }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: boundary } });
+  });
   it("accepts one to three paragraphs with optional reflection and limit line", () => {
     expect(validateFollowup(ok, DRAWN).ok).toBe(true);
     expect(validateFollowup({ ...ok, reflection: null, paragraphs: [ok.paragraphs[0], ok.paragraphs[0], ok.paragraphs[0]] }, DRAWN).ok).toBe(true);

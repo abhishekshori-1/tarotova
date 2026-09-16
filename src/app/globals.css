@@ -45,6 +45,7 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
@@ -277,4 +278,21 @@ h3 {
 }
 .reveal-card {
   animation: reveal-card 360ms ease-out both;
+}
+
+/* A reading becomes a conversation without changing into a chat screen. */
+.reader-message { border-left: 2px solid var(--accent); padding: 0.75rem 1rem; }
+.reflection-panel { border-radius: 1rem; background: color-mix(in srgb, var(--accent) 10%, var(--raised)); }
+.limit-note { border-left: 2px solid var(--line); padding-left: 1rem; line-height: 1.65; }
+.answer-arrival { animation: settle-in 240ms ease-out both; }
+.journey-tile { display: block; border: 1px solid var(--line); border-radius: 1.25rem; padding: 1.5rem; background: var(--raised); transition: border-color 160ms, transform 160ms; }
+.journey-tile:hover { border-color: var(--accent); transform: translateY(-3px); }
+.journey-motif { width: 5rem; height: 5rem; color: var(--accent); }
+.journey-stages { display: flex; gap: 0.75rem; }
+.journey-stages li { flex: 1; padding-top: 0.65rem; border-top: 2px solid var(--line); font-size: 0.875rem; color: var(--fg-soft); }
+.journey-stages li[aria-current="step"] { border-color: var(--accent); color: var(--fg); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .journey-tile:hover { transform: none; } }
+@media print {
+  .reader-message, .reflection-panel, .journey-stages, .limit-note { break-inside: avoid; }
+  .conversation-turn p { orphans: 3; widows: 3; }
 }

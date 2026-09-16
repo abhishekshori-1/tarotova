@@ -35,18 +35,29 @@ export interface InterpretationInput {
   cards: { position: Position; name: string; keywords: string[]; coreMeaning: string; positionText: string; focusNote: string }[];
 }
 
-export type ProviderOutcome<T> =
+export interface ProviderCallRecord {
+  provider?: string;
+  model?: string;
+  ms: number;
+  reason?: string;
+  detail?: string;
+  usage?: TokenUsage;
+}
+
+export type ProviderOutcome<T> = (
   | { ok: true; value: T; model: string; usage?: TokenUsage }
   | {
       ok: false;
       reason: string;
+      model?: string;
+      usage?: TokenUsage;
       /** The provider's own error type/message when it sent one — never contains the key or the question. */
       detail?: string;
       /** Worth a second paid attempt (overload, transient network, timeout). */
       retryable: boolean;
       /** The provider may have done the work (timeout after send) — counts as spent. */
       uncertain: boolean;
-    };
+    }) & { calls?: ProviderCallRecord[] };
 
 /**
  * A user message in two parts: a prefix that repeats across calls in the

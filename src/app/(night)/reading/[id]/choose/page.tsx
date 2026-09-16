@@ -34,7 +34,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const load = useCallback(async () => {
     try {
       const s = await getStatus(id);
-      if (s.state !== "drafting") return router.replace(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
+      if (s.state !== "drafting") return router.replace(s.entitlement === "granted" ? (s.journeyId ? `/journey/${s.journeyId}` : resultHref) : verifyHref(s.journeyId ? `/journey/${s.journeyId}` : resultHref));
       // The continuation gate comes before card selection (docs/ACCESS-FLOW.md section 2).
       if (s.entitlement === "verification_required") return router.replace(verifyHref(`/reading/${id}/choose`));
       revisionRef.current = s.revision;
@@ -115,7 +115,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       setStatus(s);
       // A lost race with another tab locks the draw but grants nothing;
       // verification then unlocks this same reading.
-      router.push(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
+      router.push(s.entitlement === "granted" ? (s.journeyId ? `/journey/${s.journeyId}` : resultHref) : verifyHref(s.journeyId ? `/journey/${s.journeyId}` : resultHref));
     } catch (e) {
       if ((e as ApiError).status === 409) {
         setError("This reading changed in another tab. Your cards are shown as they are now.");
@@ -141,7 +141,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="mx-auto max-w-md px-6 py-16 text-center">
         <p className="text-lg">{error}</p>
-        <Link href="/" className="mt-4 inline-block underline">
+        <Link href="/" prefetch={false} className="mt-4 inline-block underline">
           Start a new reading
         </Link>
       </div>

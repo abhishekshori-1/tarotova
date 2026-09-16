@@ -9,7 +9,7 @@ function fake(name: string, outcome: ProviderOutcome<unknown>): GenerationProvid
 }
 
 const ok = (model: string): ProviderOutcome<unknown> => ({ ok: true, value: { model }, model });
-const fail = (reason: string, retryable = true, uncertain = false, detail?: string): ProviderOutcome<unknown> => ({ ok: false, reason, retryable, uncertain, detail });
+const fail = (reason: string, retryable = true, uncertain = false, detail?: string): Extract<ProviderOutcome<unknown>, { ok: false }> => ({ ok: false, reason, retryable, uncertain, detail });
 
 describe("FallbackProvider", () => {
   it("uses the preferred provider alone when it succeeds", async () => {
@@ -46,7 +46,7 @@ describe("FallbackProvider", () => {
     const gemini = fake("gemini", fail("provider_timeout", true, true));
     const anthropic = fake("anthropic", fail("provider_http_401", false));
     const chain = new FallbackProvider([gemini, anthropic]);
-    expect(await chain.interpret(INPUT)).toEqual({
+    expect(await chain.interpret(INPUT)).toMatchObject({
       ok: false,
       reason: "provider_http_401",
       detail: "gemini: provider_timeout; anthropic: provider_http_401",
@@ -54,4 +54,24 @@ describe("FallbackProvider", () => {
       uncertain: true,
     });
   });
+});
+
+it("preserves each billed fallback attempt and the winner separately", async () => {
+  const first = fake("deepseek", { ...fail("provider_invalid_json"), model: "deepseek-flash", usage: { inputTokens: 70, outputTokens: 12 }, detail: "tool_arguments_invalid_json" });
+  const second = fake("gemini", { ...ok("gemini-3.8-flash"), usage: { inputTokens: 80, outputTokens: 15 } });
+  const result = await new FallbackProvider([first, second]).interpret(INPUT);
+  expect(result.calls).toEqual([
+    expect.objectContaining({ provider: "deepseek", model: "deepseek-flash", reason: "provider_invalid_json", detail: "tool_arguments_invalid_json", ms: expect.any(Number), usage: { inputTokens: 70, outputTokens: 12 } }),
+    expect.objectContaining({ provider: "gemini", model: "gemini-3.8-flash", ms: expect.any(Number), usage: { inputTokens: 80, outputTokens: 15 } }),
+  ]);
+});
+
+it("retains attempted calls when the shared deadline prevents fallback", async () => {
+  const first = fake("deepseek", fail("provider_timeout"));
+  const second = fake("gemini", ok("gemini-3.8-flash"));
+  const options = { deadlineAt: Date.now() + 10_000 };
+  first.interpret.mockImplementation(async () => { options.deadlineAt = 0; return fail("provider_timeout"); });
+  const result = await new FallbackProvider([first, second]).interpret(INPUT, options);
+  expect(result).toMatchObject({ ok: false, reason: "request_deadline", calls: [{ provider: "deepseek", reason: "provider_timeout" }] });
+  expect(second.interpret).not.toHaveBeenCalled();
 });

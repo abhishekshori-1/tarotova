@@ -17,6 +17,7 @@ export interface PendingChallenge {
 
 export interface ReadingStatus {
   id: string;
+  journeyId?: string;
   state: "drafting" | "locked";
   revision: number;
   focus: Focus;
@@ -113,6 +114,7 @@ export interface ResultCard {
   focusNote: string;
 }
 export interface ReadingResult {
+  followupSupport?: import("@/content/safety").SafetyResponse | null;
   question: string | null;
   focus: Focus;
   overview: string;
@@ -144,4 +146,21 @@ export function sendFollowup(id: string, submissionId: string, text: string, sig
 /** A client-side id that survives a retry; the server's pattern is [A-Za-z0-9_-]{8,64}. */
 export function newSubmissionId(): string {
   return crypto.randomUUID().replace(/-/g, "");
+}
+
+
+export type { JourneyView } from "@/server/journeys";
+import type { JourneyView } from "@/server/journeys";
+import type { JourneyStage } from "@/content/journeys";
+export function listJourneys(signal?: AbortSignal) {
+  return fetch("/api/journeys", { cache: "no-store", signal }).then((r) => asJson<{ enabled: boolean; active: { id: string; title: string; stage: JourneyStage }[] }>(r));
+}
+export function getJourney(id: string, signal?: AbortSignal) {
+  return fetch(`/api/journeys/${id}`, { cache: "no-store", signal }).then((r) => asJson<JourneyView>(r));
+}
+export function createJourney(slug: string, question: string, submissionId: string) {
+  return fetch("/api/journeys", json("POST", { slug, question, submissionId })).then((r) => asJson<JourneyView>(r));
+}
+export function advanceJourney(id: string, revision: number, submissionId: string, destination: JourneyStage) {
+  return fetch(`/api/journeys/${id}`, json("PATCH", { revision, submissionId, destination })).then((r) => asJson<JourneyView>(r));
 }

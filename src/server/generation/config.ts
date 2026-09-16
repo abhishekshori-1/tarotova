@@ -20,7 +20,8 @@
  * - GENERATION_REPAIR_PROVIDER: repairs by a vendor other than the writer
  *   chain (its <VENDOR>_ANSWER_MODEL applies). Unset keeps the writer chain.
  *   It replaces the repair call; the pipeline still makes at most one repair
- *   and one fresh review under the same deadline and budget.
+ *   and one fresh review under the same deadline and budget. One review
+ *   transport failure may retry the same candidate within that deadline.
  * - GENERATION_REVIEW_PROVIDER / GENERATION_REVIEW_MODEL: the grounding
  *   reviewer, configured independently of the writer chain. No vendor is
  *   assumed; unset means every generated answer is withheld after triage
@@ -49,7 +50,7 @@ export interface ProviderSpec {
   workspaceId?: string;
   /** Anthropic only: opt-in prompt caching of the system prompt, ANTHROPIC_PROMPT_CACHE=5m|1h. */
   promptCache?: "5m" | "1h";
-  /** Gemini only; explicitly calibrated reviewer effort, unset preserves the model default. */
+  /** Gemini only; independently configured role effort, unset preserves the model default. */
   thinkingLevel?: "low" | "medium" | "high";
   models: { answer: string; classifier: string };
 }
@@ -101,6 +102,10 @@ function env(...names: string[]): string | undefined {
   return undefined;
 }
 
+function thinkingLevel(name: string): ProviderSpec["thinkingLevel"] {
+  return (["low", "medium", "high"] as const).find((v) => v === env(name));
+}
+
 type Resolved = { spec: ProviderSpec; problem?: undefined } | { spec?: undefined; problem: string };
 
 /** One provider kind → its spec from the environment, or the reason it cannot be used. */
@@ -109,7 +114,7 @@ export function specFor(kind: string, production: boolean): Resolved {
   if (kind === "gemini") {
     const apiKey = env("GEMINI_API_KEY");
     if (!apiKey) return { problem: "gemini skipped: GEMINI_API_KEY is not set." };
-    return { spec: { kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-3.8-flash", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.8-flash" } } };
+    return { spec: { kind, apiKey, thinkingLevel: thinkingLevel("GEMINI_WRITER_THINKING_LEVEL"), models: { answer: env("GEMINI_MODEL") ?? "gemini-3.8-flash", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.8-flash" } } };
   }
   if (kind === "anthropic") {
     const apiKey = env("ANTHROPIC_API_KEY");
@@ -164,7 +169,7 @@ export function getGenerationConfig(): GenerationConfig {
     const resolved = specFor(reviewKind, production);
     if (resolved.spec) reviewProvider = {
       ...resolved.spec,
-      ...(resolved.spec.kind === "gemini" ? { thinkingLevel: (["low", "medium", "high"] as const).find((v) => v === env("GEMINI_REVIEW_THINKING_LEVEL")) } : {}),
+      ...(resolved.spec.kind === "gemini" ? { thinkingLevel: thinkingLevel("GEMINI_REVIEW_THINKING_LEVEL") } : {}),
       models: { ...resolved.spec.models, answer: env("GENERATION_REVIEW_MODEL") ?? resolved.spec.models.answer },
     };
     else problems.push(`reviewer unavailable (${resolved.problem}); generated answers will be withheld after triage.`);
@@ -176,7 +181,7 @@ export function getGenerationConfig(): GenerationConfig {
   const classifierKind = env("GENERATION_CLASSIFIER_PROVIDER")?.toLowerCase();
   if (classifierKind) {
     const resolved = specFor(classifierKind, production);
-    if (resolved.spec) classifierProvider = resolved.spec;
+    if (resolved.spec) classifierProvider = { ...resolved.spec, ...(resolved.spec.kind === "gemini" ? { thinkingLevel: thinkingLevel("GEMINI_CLASSIFIER_THINKING_LEVEL") } : {}) };
     else problems.push(`classifier unavailable (${resolved.problem}); the writer chain will triage instead.`);
   }
 

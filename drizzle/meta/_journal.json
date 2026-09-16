@@ -43,6 +43,13 @@
       "when": 1789546143805,
       "tag": "0005_followup_lease_token",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789568162522,
+      "tag": "0006_guided_journeys",
+      "breakpoints": true
     }
   ]
 }

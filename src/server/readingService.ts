@@ -1,8 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "./db/client";
-import { readings } from "./db/schema";
+import { readings, journeyRuns, readingFollowups } from "./db/schema";
 import { randomId } from "./ids";
 import { cryptoShuffle } from "./shuffle";
+import { SAFETY_RESPONSES, isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { CARDS } from "@/content/cards";
 import { DECK_VERSION, SPREAD_VERSION, CONTENT_VERSION } from "@/content/versions";
 import { DEFAULT_FOCUS } from "@/content/focuses";
@@ -35,10 +36,16 @@ function cleanQuestion(question: string | null | undefined): string | null {
 }
 
 export async function createReading(sessionId: string, focus: Focus = DEFAULT_FOCUS, question?: string | null) {
+  const row = await insertDraftReading(db, sessionId, focus, question);
+  return safeStatus(row, sessionId);
+}
+
+/** Used by journey creation inside its transaction. No provider calls or access grant. */
+export async function insertDraftReading(ex: Executor, sessionId: string, focus: Focus, question?: string | null) {
   const mapping = cryptoShuffle(CARDS.map((c) => c.id));
   const id = randomId();
   const t = now();
-  const [row] = await db.insert(readings).values({
+  const [row] = await ex.insert(readings).values({
     id,
     browserSessionId: sessionId,
     state: "drafting",
@@ -54,7 +61,7 @@ export async function createReading(sessionId: string, focus: Focus = DEFAULT_FO
     createdAt: t,
     updatedAt: t,
   }).returning();
-  return safeStatus(row, sessionId);
+  return row;
 }
 
 type ReadingRow = typeof readings.$inferSelect;
@@ -106,13 +113,14 @@ async function updateDraftAtRevision(ex: Executor, readingId: string, sessionId:
 
 export async function safeStatus(row: ReadingRow, sessionId: string) {
   const t = now();
-  const [session, grant] = await Promise.all([getSessionRow(db, sessionId), getGrant(db, row.id)]);
+  const [session, grant, runs] = await Promise.all([getSessionRow(db, sessionId), getGrant(db, row.id), db.select({ id: journeyRuns.id }).from(journeyRuns).where(eq(journeyRuns.readingId, row.id)).limit(1)]);
   const entitlement: Entitlement = row.state === "drafting" && sessionIsVerified(session, t)
     ? "eligible"
     : entitlementFor(row.id, session, grant, t);
 
   return {
     id: row.id,
+    journeyId: runs[0]?.id,
     state: row.state,
     revision: row.revision,
     focus: row.focus,
@@ -266,5 +274,8 @@ export async function loadGrantedReading(readingId: string, sessionId: string) {
 export async function getResult(readingId: string, sessionId: string) {
   const { row, grant, snapshot } = await loadGrantedReading(readingId, sessionId);
   const interpretation = viewOf(await getGeneration(db, readingId), grant.basis, row.question, now());
-  return { question: row.question, ...snapshot, interpretation };
+  const turns = await db.select({ category: readingFollowups.safetyCategory }).from(readingFollowups).where(eq(readingFollowups.readingId, readingId));
+  const category = turns.find((t) => t.category && isRefusalCategory(t.category as SafetyCategory))?.category;
+  const followupSupport = category ? SAFETY_RESPONSES[category as keyof typeof SAFETY_RESPONSES] : null;
+  return { question: row.question, ...snapshot, interpretation, followupSupport };
 }

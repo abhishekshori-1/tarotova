@@ -18,7 +18,7 @@ import {
 } from "./types";
 import { validateFollowup, validateInterpretation } from "./validate";
 import { isProviderRefusal } from "./refusal";
-import { sumUsage } from "./usage";
+import { providerCalls, sumUsage } from "./usage";
 
 // Ignore incidental annotations inside a finding; only these required,
 // validated fields can affect publication or repair. The verdict stays strict.
@@ -35,7 +35,7 @@ export interface GroundingTrace<T = InterpretationOutput> {
   draft?: T;
   repaired?: T;
   repairAttempted: boolean;
-  calls: { phase: "write" | "validate" | "review" | "repair"; ms: number; model?: string; reason?: string; usage?: TokenUsage }[];
+  calls: { phase: "write" | "validate" | "review" | "repair"; ms: number; provider?: string; model?: string; reason?: string; detail?: string; usage?: TokenUsage }[];
   reviews: GroundingReview[];
 }
 export type ReviewedOutcome<T = InterpretationOutput> = ProviderOutcome<T> & { quality: GroundingTrace<T> };
@@ -108,22 +108,32 @@ export function followupShape(input: FollowupInput): AnswerShape<FollowupOutput>
   };
 }
 
-export function parseReviewFor<T>(shape: AnswerShape<T>, raw: unknown, answer: T): GroundingReview | undefined {
+export function parseReviewDetailed<T>(shape: AnswerShape<T>, raw: unknown, answer: T): { ok: true; review: GroundingReview } | { ok: false; detail: string } {
   const result = reviewSchema.safeParse(raw);
-  if (!result.success) return;
+  if (!result.success) {
+    // Codes and known schema paths only, never provider text or the question.
+    const keys = new Set(["decision", "issues", "field", "quote", "reason"]);
+    const detail = result.error.issues.map((i) => `${i.code}@${i.path.map((p) => typeof p === "number" || keys.has(String(p)) ? String(p) : "?").join(".") || "root"}`).join(", ");
+    return { ok: false, detail: `review_shape: ${detail}` };
+  }
   // Require an actual quote. If the model mislabels its field, a unique
   // exact match can locate it without guessing or discarding the finding.
   const issues: GroundingIssue[] = [];
-  for (const issue of result.data.issues) {
+  for (const [index, issue] of result.data.issues.entries()) {
     const named = shape.fields.includes(issue.field) ? issue.field : undefined;
     if (named && shape.fieldText(answer, named)?.includes(issue.quote)) issues.push({ ...issue, field: named as GroundingIssue["field"] });
     else {
       const matches = shape.fields.filter((field) => shape.fieldText(answer, field)?.includes(issue.quote));
-      if (matches.length !== 1) return;
+      if (matches.length !== 1) return { ok: false, detail: `review_quote: issue ${index + 1} ${matches.length ? "matches multiple fields" : "does not match any field"}` };
       issues.push({ ...issue, field: matches[0] as GroundingIssue["field"] });
     }
   }
-  return { ...result.data, issues };
+  return { ok: true, review: { ...result.data, issues } };
+}
+
+export function parseReviewFor<T>(shape: AnswerShape<T>, raw: unknown, answer: T): GroundingReview | undefined {
+  const result = parseReviewDetailed(shape, raw, answer);
+  return result.ok ? result.review : undefined;
 }
 
 /**
@@ -168,10 +178,14 @@ export async function runReviewed<T>(shape: AnswerShape<T>, provider: Generation
   const quality: GroundingTrace<T> = { repairAttempted: false, calls: [], reviews: [] };
   const expired = () => Date.now() >= options.deadlineAt;
   const fail = (reason: string, uncertain = false): ReviewedOutcome<T> => ({ ok: false, reason, retryable: false, uncertain, quality });
+  // At most one transport retry across both review phases. Retain the same
+  // candidate and deadline, and count both calls. A returned verdict, invalid
+  // review, refusal or configuration error never buys another judgement.
+  let reviewTransportRetried = false;
   async function call(phase: "write" | "review" | "repair", fn: () => Promise<ProviderOutcome<unknown>>) {
     const started = Date.now();
     const result = await fn();
-    quality.calls.push({ phase, ms: Date.now() - started, ...(result.ok ? { model: result.model, usage: result.usage } : { reason: result.reason }) });
+    quality.calls.push(...providerCalls(result, Date.now() - started).map((c) => ({ phase, ...c })));
     return result;
   }
   if (expired()) return fail("request_deadline");
@@ -190,11 +204,19 @@ export async function runReviewed<T>(shape: AnswerShape<T>, provider: Generation
 
   for (let pass = 0; pass < 2; pass++) {
     if (expired()) return fail("request_deadline");
-    const checked = await call("review", () => shape.review(provider, answer, options));
+    let checked = await call("review", () => shape.review(provider, answer, options));
+    if (!checked.ok && checked.retryable && /^(provider_network|provider_timeout|provider_http_(429|5\d\d))$/.test(checked.reason) && !reviewTransportRetried && options.deadlineAt - Date.now() >= 5_000) {
+      reviewTransportRetried = true;
+      checked = await call("review", () => shape.review(provider, answer, options));
+    }
     if (!checked.ok) return fail(isProviderRefusal(checked.reason) ? checked.reason : `grounding_review:${checked.reason}`, checked.uncertain);
     if (expired()) return fail("request_deadline");
-    const review = parseReviewFor(shape, checked.value, answer);
-    if (!review) return fail("grounding_review_invalid");
+    const parsed = parseReviewDetailed(shape, checked.value, answer);
+    if (!parsed.ok) {
+      quality.calls.push({ phase: "validate", ms: 0, reason: parsed.detail });
+      return fail("grounding_review_invalid");
+    }
+    const review = parsed.review;
     quality.reviews.push(review);
     if (review.decision === "pass") {
       const usages = quality.calls.flatMap((c) => (c.usage ? [c.usage] : []));

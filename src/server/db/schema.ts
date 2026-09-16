@@ -202,3 +202,30 @@ export const readingFollowups = pgTable(
   },
   (t) => [uniqueIndex("reading_followups_submission_idx").on(t.readingId, t.submissionId), uniqueIndex("reading_followups_sequence_idx").on(t.readingId, t.sequence)],
 );
+
+// C2: a single frozen template and reading, no private reflection notes.
+export const journeyRuns = pgTable("journey_runs", {
+  id: text("id").primaryKey(),
+  browserSessionId: text("browser_session_id").notNull().references(() => browserSessions.id),
+  readingId: text("reading_id").notNull().references(() => readings.id),
+  submissionId: text("submission_id").notNull(),
+  templateSlug: text("template_slug").notNull(),
+  templateVersion: text("template_version").notNull(),
+  templateSnapshot: text("template_snapshot").notNull(),
+  initialQuestion: text("initial_question").notNull(),
+  stage: text("stage").notNull().default("frame"),
+  revision: integer("revision").notNull().default(0),
+  completedAt: epochMs("completed_at"),
+  createdAt: epochMs("created_at").notNull(),
+  updatedAt: epochMs("updated_at").notNull(),
+}, (t) => [uniqueIndex("journey_runs_submission_idx").on(t.browserSessionId, t.submissionId), uniqueIndex("journey_runs_reading_idx").on(t.readingId)]);
+
+// A durable replay ledger prevents an old acknowledged transition from being
+// applied again after back/forward navigation. Deleted with its parent run.
+export const journeyTransitions = pgTable("journey_transitions", {
+  id: text("id").primaryKey(),
+  journeyId: text("journey_id").notNull().references(() => journeyRuns.id, { onDelete: "cascade" }),
+  submissionId: text("submission_id").notNull(),
+  expectedRevision: integer("expected_revision").notNull(),
+  destination: text("destination").notNull(),
+}, (t) => [uniqueIndex("journey_transitions_submission_idx").on(t.journeyId, t.submissionId)]);

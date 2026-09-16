@@ -3,7 +3,7 @@ import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, R
 import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
 import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
-import { callTimeout, deadlineExceeded } from "./deadline";
+import { callTimeout, deadlineExceeded, networkDetail } from "./deadline";
 
 const DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -50,7 +50,7 @@ export class GeminiProvider implements GenerationProvider {
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown })?.category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
-      return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
+      return { ok: false, model: outcome.model, usage: outcome.usage, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
     return { ...outcome, value: category as SafetyCategory };
   }
@@ -100,7 +100,7 @@ export class GeminiProvider implements GenerationProvider {
       });
     } catch (err) {
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
-      return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
+      return { ok: false, model, reason: timedOut ? "provider_timeout" : "provider_network", detail: networkDetail(err), retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
@@ -112,7 +112,7 @@ export class GeminiProvider implements GenerationProvider {
       } catch {
         // No JSON body; the status alone will have to do.
       }
-      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
+      return { ok: false, model, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
     let body: {
@@ -124,27 +124,10 @@ export class GeminiProvider implements GenerationProvider {
     try {
       body = await res.json();
     } catch {
-      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      if (signal.aborted) return { ok: false, model, reason: "provider_timeout", retryable: true, uncertain: true };
+      return { ok: false, model, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
-    if (body.promptFeedback?.blockReason) {
-      return { ok: false, reason: "provider_blocked", detail: body.promptFeedback.blockReason, retryable: false, uncertain: false };
-    }
-    const candidate = body.candidates?.[0];
-    const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-    if (candidate?.finishReason && candidate.finishReason !== "STOP") {
-      return { ok: false, reason: `provider_finish_${candidate.finishReason.toLowerCase()}`, retryable: candidate.finishReason === "MAX_TOKENS", uncertain: false };
-    }
-    if (!text.trim()) return { ok: false, reason: "provider_empty_response", retryable: true, uncertain: false };
-    let value: unknown;
-    try {
-      value = JSON.parse(text);
-    } catch {
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
-    }
-    return {
-      ok: true,
-      value,
+    const metadata = {
       model: body.modelVersion ?? model,
       usage: body.usageMetadata ? {
         inputTokens: Math.max(0, (body.usageMetadata.promptTokenCount ?? 0) - (body.usageMetadata.cachedContentTokenCount ?? 0)),
@@ -152,6 +135,26 @@ export class GeminiProvider implements GenerationProvider {
         outputTokens: (body.usageMetadata.candidatesTokenCount ?? 0) + (body.usageMetadata.thoughtsTokenCount ?? 0),
         ...(body.usageMetadata.cachedContentTokenCount !== undefined ? { cacheReadTokens: body.usageMetadata.cachedContentTokenCount } : {}),
       } : undefined,
+    };
+    if (body.promptFeedback?.blockReason) {
+      return { ok: false, ...metadata, reason: "provider_blocked", detail: body.promptFeedback.blockReason, retryable: false, uncertain: false };
+    }
+    const candidate = body.candidates?.[0];
+    const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+    if (candidate?.finishReason && candidate.finishReason !== "STOP") {
+      return { ok: false, ...metadata, reason: `provider_finish_${candidate.finishReason.toLowerCase()}`, retryable: candidate.finishReason === "MAX_TOKENS", uncertain: false };
+    }
+    if (!text.trim()) return { ok: false, ...metadata, reason: "provider_empty_response", retryable: true, uncertain: false };
+    let value: unknown;
+    try {
+      value = JSON.parse(text);
+    } catch {
+      return { ok: false, ...metadata, reason: "provider_invalid_json", retryable: true, uncertain: false };
+    }
+    return {
+      ok: true,
+      value,
+      ...metadata,
     };
   }
 }

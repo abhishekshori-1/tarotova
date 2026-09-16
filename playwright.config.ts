@@ -15,6 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   timeout: 60_000,
+  expect: { timeout: 15_000 },
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",
@@ -22,6 +23,7 @@ export default defineConfig({
   projects: [
     { name: "narrow", use: { viewport: { width: 320, height: 568 }, hasTouch: true, deviceScaleFactor: 2 } },
     { name: "mobile", use: { viewport: { width: 390, height: 844 }, hasTouch: true, deviceScaleFactor: 2 } },
+    { name: "tablet", use: { viewport: { width: 820, height: 1180 }, hasTouch: true, deviceScaleFactor: 2 } },
     { name: "desktop", use: { viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
@@ -35,6 +37,8 @@ export default defineConfig({
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
       GENERATION_ENABLED: "true",
       FOLLOWUPS_ENABLED: "true",
+      JOURNEYS_ENABLED: process.env.E2E_JOURNEYS_ENABLED ?? "true",
+      GENERATION_REPAIR_PROVIDER: "stub",
       // Every generation role on the offline stub, and every vendor key blank:
       // Next.js lets an existing process variable win over .env.local, so the
       // suite can never reach a real provider whatever the developer has set.

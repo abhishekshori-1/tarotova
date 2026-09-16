@@ -26,7 +26,7 @@ async function settleTurn(readingId: string, submissionId: string, first: Follow
  * flight; the sent text shows at once; a failed turn keeps its text and
  * retries with the same submission id; a support response ends it.
  */
-export function FollowupPanel({ readingId, focus }: { readingId: string; focus: Focus }) {
+export function FollowupPanel({ readingId, focus, suggestions, onChange }: { readingId: string; focus: Focus; suggestions?: string[]; onChange?: () => void }) {
   const [view, setView] = useState<FollowupsView | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -59,6 +59,7 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
     try {
       const next = await settleTurn(readingId, submissionId, await sendFollowup(readingId, submissionId, body));
       setView(next);
+      onChange?.();
       setText("");
     } catch (e) {
       const err = e as ApiError;
@@ -86,17 +87,19 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
   const closedBySupport = view.turns.some((t) => t.status === "refused");
 
   return (
-    <section className="mt-12 border-t border-[var(--line)] pt-8" aria-labelledby="followups-heading">
-      <p className="eyebrow" id="followups-heading">
+    <section className="conversation-section mt-12 border-t border-[var(--line)] pt-8" aria-labelledby="followups-heading">
+      <h2 className="text-2xl" id="followups-heading">
         {FOLLOWUP_COPY.heading}
-      </p>
+      </h2>
       {view.turns.length === 0 && <p className="prose-measure mt-2 text-sm text-[var(--fg-soft)]">{FOLLOWUP_COPY.intro}</p>}
 
-      <ol className="mt-4 space-y-6" aria-live="polite">
+      <ol className="conversation-thread mt-6 space-y-8" aria-live="polite" aria-relevant="additions text">
         {view.turns.map((turn) => (
-          <li key={turn.submissionId}>
-            <p className="prose-measure text-sm text-[var(--fg-soft)]">You asked</p>
-            <p className="prose-measure mt-1 font-medium">{turn.text}</p>
+          <li key={turn.submissionId} className="conversation-turn">
+            <div className="reader-message">
+              <p className="eyebrow">Your words · {turn.sequence} of 3</p>
+              <p className="prose-measure mt-2 text-lg font-medium">{turn.text}</p>
+            </div>
             <div className="mt-3">
               <Turn turn={turn} onRetry={() => submit(turn.submissionId, turn.text)} busy={busy} />
             </div>
@@ -106,16 +109,17 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
 
       {view.available && (
         <form
-          className="mt-8"
+          className="panel mt-8 p-5 sm:p-6"
           onSubmit={(e) => {
             e.preventDefault();
             const body = text.trim();
             if (body) submit(newSubmissionId(), body);
           }}
         >
+          <p className="mb-3 text-sm text-[var(--fg-soft)]">A starting point, if you want one</p>
           <div className="flex flex-wrap gap-2">
-            {FOLLOWUP_SUGGESTIONS[focus].map((s) => (
-              <button key={s} type="button" className="chip" onClick={() => setText(s)} disabled={busy}>
+            {(suggestions ?? FOLLOWUP_SUGGESTIONS[focus]).filter((s) => !view.turns.some((t) => t.text === s)).map((s) => (
+              <button key={s} type="button" className="chip" onClick={() => { if (!text.trim() || window.confirm("Replace the follow-up you have written?")) setText(s); }} disabled={busy}>
                 {s}
               </button>
             ))}
@@ -134,6 +138,7 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
               {busy ? FOLLOWUP_COPY.pending : FOLLOWUP_COPY.send}
             </button>
           </div>
+          <p className="mt-3 text-xs text-[var(--fg-soft)]">Retries use the same follow-up.</p>
         </form>
       )}
       {error && (
@@ -142,7 +147,7 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
         </p>
       )}
 
-      {!view.available && view.reason === "allowance_exhausted" && <p className="prose-measure mt-6 text-sm text-[var(--fg-soft)]">{FOLLOWUP_COPY.ended}</p>}
+      {!view.available && view.reason === "allowance_exhausted" && <div className="reflection-panel mt-8 p-6"><h3 className="text-xl">{FOLLOWUP_COPY.ended}</h3><p className="prose-measure mt-3 text-[var(--fg-soft)]">{FOLLOWUP_COPY.endingNote}</p></div>}
       {closedBySupport && <p className="prose-measure mt-6 text-sm text-[var(--fg-soft)]">{FOLLOWUP_COPY.closed}</p>}
     </section>
   );
@@ -160,14 +165,14 @@ function Turn({ turn, onRetry, busy }: { turn: FollowupTurnView; onRetry: () => 
   }
   if (turn.status === "succeeded") {
     return (
-      <div className="panel p-5">
+      <div className="answer-arrival rounded-2xl bg-[var(--raised)] p-5 sm:p-7">
         {turn.answer.paragraphs.map((p) => (
           <p key={p} className="prose-measure leading-relaxed [&+&]:mt-3">
             {p}
           </p>
         ))}
-        {turn.answer.reflection && <p className="prose-measure mt-3 italic text-[var(--fg-soft)]">{turn.answer.reflection}</p>}
-        {turn.answer.beyondSpread && <p className="prose-measure mt-3 text-sm text-[var(--fg-soft)]">{turn.answer.beyondSpread}</p>}
+        {turn.answer.reflection && <p className="prose-measure reflection-panel mt-5 p-4 text-lg leading-relaxed">{turn.answer.reflection}</p>}
+        {turn.answer.beyondSpread && <p className="prose-measure limit-note mt-5 text-sm text-[var(--fg-soft)]">{turn.answer.beyondSpread}</p>}
       </div>
     );
   }

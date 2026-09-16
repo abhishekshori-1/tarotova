@@ -110,3 +110,34 @@ test("no-question readings keep the editorial reading", async ({ page }) => {
   await expect(page.getByText("General closing reflection.")).toBeVisible();
   await expect(page.getByText("On your question", { exact: true })).toHaveCount(0);
 });
+
+test("a stored follow-up support response suppresses earlier card advice on reload", async ({ page }) => {
+  await page.route("**/api/readings/presentation/status", (route) => route.fulfill({ json: { state: "locked" } }));
+  await page.route("**/api/readings/presentation/result", (route) => route.fulfill({ json: {
+    question: "A question", focus: "general", cards, interpretation: { status: "disabled" },
+    overview: "Old card advice", reflection: "Old reflection", followupSupport: SAFETY_RESPONSES.abuse,
+  } }));
+  await page.goto("/reading/presentation/result");
+  await expect(page.getByRole("heading", { name: SAFETY_RESPONSES.abuse.heading })).toBeVisible();
+  await expect(page.getByRole("list", { name: "Your three cards" })).toHaveCount(0);
+  await expect(page.getByText("Old card advice")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
+});
+
+test("finished conversation keeps its reflections and one retention notice", async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/readings/presentation/followups", (route) => route.fulfill({ json: {
+    status: "ready", available: false, remaining: 0, reason: "allowance_exhausted",
+    turns: [1, 2, 3].map((sequence) => ({ sequence, submissionId: `fixture-${sequence}`, text: `My follow-up ${sequence}`, status: "succeeded", answer: {
+      paragraphs: ["There is room to consider the question without deciding everything today. This is a fixture for the layout, not a generated reading."],
+      reflection: sequence === 3 ? null : "What would you like to understand next?", beyondSpread: null,
+    } })),
+  } }));
+  await openResult(page, { status: "not_applicable" }, null);
+  await expect(page.getByRole("heading", { name: "A place to pause" })).toBeVisible();
+  await expect(page.getByText("This reading stays here for 30 days.", { exact: true })).toHaveCount(1);
+  await expect(page.getByRole("textbox")).toHaveCount(0);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+  await page.getByRole("heading", { name: "Explore this reading" }).scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath("conversation.png"), fullPage: true });
+});

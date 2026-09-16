@@ -137,3 +137,13 @@ describe("deepseek", () => {
     expect(config.configurationProblem).toBeUndefined();
   });
 });
+
+it("keeps Gemini writer, classifier and reviewer effort independent", () => {
+  vi.stubEnv("GENERATION_PROVIDER", "gemini"); vi.stubEnv("GEMINI_API_KEY", "test-key");
+  vi.stubEnv("GENERATION_CLASSIFIER_PROVIDER", "gemini"); vi.stubEnv("GENERATION_REVIEW_PROVIDER", "gemini");
+  vi.stubEnv("GEMINI_WRITER_THINKING_LEVEL", "low"); vi.stubEnv("GEMINI_CLASSIFIER_THINKING_LEVEL", "high"); vi.stubEnv("GEMINI_REVIEW_THINKING_LEVEL", "medium");
+  const config = getGenerationConfig();
+  expect([config.providers[0].thinkingLevel, config.classifierProvider?.thinkingLevel, config.reviewProvider?.thinkingLevel]).toEqual(["low", "high", "medium"]);
+  vi.stubEnv("GEMINI_CLASSIFIER_THINKING_LEVEL", undefined);
+  expect(getGenerationConfig().classifierProvider?.thinkingLevel).toBeUndefined();
+});

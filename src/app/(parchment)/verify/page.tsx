@@ -116,7 +116,7 @@ function VerifyForm() {
 
       <p className="mt-4 text-xs text-[var(--fg-soft)]">No newsletter. No nonsense.</p>
       <p className="mt-6 text-sm">
-        <Link href="/" className="underline">
+        <Link href="/" prefetch={false} className="underline">
           Back to my reading
         </Link>
       </p>

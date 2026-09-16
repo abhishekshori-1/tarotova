@@ -55,9 +55,16 @@ function connect(): Db {
     const dataDir = isTest ? undefined : path.resolve(process.cwd(), process.env.PGLITE_DATA_DIR || path.join("data", "pglite"));
     // pglite only creates the leaf directory; a fresh checkout has no data/.
     if (dataDir) mkdirSync(dataDir, { recursive: true });
-    const client = new PGlite(dataDir);
+    // Next compiles route handlers and Server Components as separate module
+    // graphs. They must share the embedded database in this process: two
+    // PGlite instances on one directory otherwise see divergent snapshots.
+    // Vitest keeps its per-file in-memory database isolated.
+    const shared = globalThis as typeof globalThis & { tarotovaPglite?: Map<string, PGlite> };
+    const pool = !isTest && dataDir ? (shared.tarotovaPglite ??= new Map()) : undefined;
+    const client = (dataDir ? pool?.get(dataDir) : undefined) ?? new PGlite(dataDir);
+    if (dataDir) pool?.set(dataDir, client);
     instance = drizzlePglite(client, { schema }) as unknown as Db;
-    closeFn = () => client.close();
+    closeFn = () => { if (dataDir) pool?.delete(dataDir); return client.close(); };
   }
   return instance;
 }

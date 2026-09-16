@@ -109,7 +109,7 @@ describe("AnthropicProvider", () => {
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_529", retryable: true, uncertain: false });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(401, { type: "error", error: { type: "authentication_error", message: "invalid x-api-key" } })));
-    expect(await provider().interpret(INPUT)).toEqual({
+    expect(await provider().interpret(INPUT)).toMatchObject({
       ok: false,
       reason: "provider_http_401",
       detail: "authentication_error: invalid x-api-key",
@@ -122,7 +122,7 @@ describe("AnthropicProvider", () => {
     const timeout = new Error("aborted");
     timeout.name = "TimeoutError";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeout));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, { content: [{ type: "text", text: "Sure!" }] })));
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_no_tool_call", retryable: true });

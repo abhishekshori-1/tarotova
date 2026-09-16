@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => { await page.setExtraHTTPHeaders({ "x-forwarded-for": crypto.randomUUID() }); });
+
 async function expectNoHorizontalOverflow(page: Page) {
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow, "page must not scroll horizontally").toBeLessThanOrEqual(0);
@@ -41,7 +43,7 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   await expect(page.getByRole("heading", { name: "What should I consider before changing jobs?" })).toBeVisible();
 
   // Release B: one contextual answer, with optional general library text.
-  await expect(page.getByText("On your question").first()).toBeVisible();
+  await expect(page.getByText("On your question", { exact: true }).first()).toBeVisible();
   await expect(page.getByText(/Here's the short of it for what you asked/)).toBeVisible();
   await expect(page.getByText("On your question", { exact: true })).toHaveCount(1);
   await expect(page.getByText("One to take with you", { exact: true })).toHaveCount(1);
@@ -62,7 +64,7 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   await expect(page.getByText("Explore this reading")).toBeVisible();
   await page.getByRole("button", { name: "How do these three cards connect?" }).click();
   await expect(page.getByLabel("Your follow-up")).toHaveValue("How do these three cards connect?");
-  await page.getByRole("button", { name: "Send" }).click();
+  await page.getByRole("button", { name: "Explore this" }).click();
   await expect(page.getByText(/is the card to look at/)).toBeVisible();
   await expect(page.getByText("2 follow-ups left")).toBeVisible();
   await expectNoHorizontalOverflow(page);
@@ -75,7 +77,7 @@ test("a general reading has no personalized section; a crisis question gets the 
   await page.getByRole("button", { name: "Just read for me" }).click();
   await chooseThreeAndReveal(page);
   await expectResult(page);
-  await expect(page.getByText("On your question")).toHaveCount(0);
+  await expect(page.getByText("On your question", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Reading your cards against")).toHaveCount(0);
   const firstResult = page.url();
 
@@ -84,7 +86,7 @@ test("a general reading has no personalized section; a crisis question gets the 
   await page.getByLabel(/Your question/).fill("I don't want to be here anymore. Is there any point?");
   await page.getByRole("button", { name: "Pull my cards" }).click();
   await expect(page).toHaveURL(/\/verify\?next=/);
-  await page.getByLabel("Email address").fill("crisis-check@example.com");
+  await page.getByLabel("Email address").fill(`crisis-${crypto.randomUUID()}@example.com`);
   await page.getByRole("button", { name: "Send my code" }).click();
   const code = await page.locator("strong.font-mono").textContent();
   await page.getByLabel("6-digit verification code").fill(code!);
@@ -98,7 +100,7 @@ test("a general reading has no personalized section; a crisis question gets the 
   await expect(page.getByRole("list", { name: "Your three cards" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Pull again" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Back to home" })).toBeVisible();
-  await expect(page.getByText("On your question")).toHaveCount(0);
+  await expect(page.getByText("On your question", { exact: true })).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
   expect(page.url()).not.toBe(firstResult);
 });
@@ -114,7 +116,7 @@ test("a second reading asks for email once, then later draws go straight through
 
   await expect(page).toHaveURL(/\/verify\?next=/);
   await expect(page.getByRole("heading", { name: "Back for another?" })).toBeVisible();
-  await page.getByLabel("Email address").fill("second@example.com");
+  await page.getByLabel("Email address").fill(`second-${crypto.randomUUID()}@example.com`);
   await page.getByRole("button", { name: "Send my code" }).click();
 
   await expect(page).toHaveURL(/\/verify\/code\?next=/);

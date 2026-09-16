@@ -18,7 +18,8 @@
     "eval:conversations:unseen": "CONVERSATION_FIXTURES=eval/conversations-unseen.json vitest run --config vitest.eval.config.ts eval/conversations.eval.ts",
     "eval:conversations:fresh": "CONVERSATION_FIXTURES=eval/conversations-fresh.json vitest run --config vitest.eval.config.ts eval/conversations.eval.ts",
     "eval:followup-review": "vitest run --config vitest.eval.config.ts eval/followup-review.eval.ts",
-    "eval:repair-diagnostic": "vitest run --config vitest.eval.config.ts eval/repair-diagnostic.eval.ts"
+    "eval:repair-diagnostic": "vitest run --config vitest.eval.config.ts eval/repair-diagnostic.eval.ts",
+    "eval:reviewer-misses": "DIAGNOSTIC_CASES=eval/reviewer-miss-cases.json DIAGNOSTIC_REPAIRERS= vitest run --config vitest.eval.config.ts eval/repair-diagnostic.eval.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

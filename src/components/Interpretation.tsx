@@ -54,7 +54,7 @@ export function InterpretationPanel({ view, onRetry, retryUsed }: { view: Interp
         {view.status === "succeeded" && (
           <>
             <p className="prose-measure text-lg leading-relaxed">{view.answer.perspective}</p>
-            {view.answer.beyondSpread && <p className="prose-measure mt-3 text-sm italic text-[var(--fg-soft)]">{view.answer.beyondSpread}</p>}
+            {view.answer.beyondSpread && <p className="prose-measure limit-note mt-5 text-sm text-[var(--fg-soft)]">{view.answer.beyondSpread}</p>}
           </>
         )}
         {view.status === "unavailable" && <p className="prose-measure text-[var(--fg-soft)]">{RETRY_REASONS[view.reason]}</p>}

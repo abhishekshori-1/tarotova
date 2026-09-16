@@ -1,7 +1,7 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierSystem, classifierUserMessage, followupUserMessage, interpretationUserMessage } from "./prompts";
 import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
-import { callTimeout, deadlineExceeded } from "./deadline";
+import { callTimeout, deadlineExceeded, networkDetail } from "./deadline";
 import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
 
 /**
@@ -48,7 +48,7 @@ export class DeepSeekProvider implements GenerationProvider {
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown })?.category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
-      return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
+      return { ok: false, model: outcome.model, usage: outcome.usage, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
     return { ...outcome, value: category as SafetyCategory };
   }
@@ -101,7 +101,7 @@ export class DeepSeekProvider implements GenerationProvider {
       });
     } catch (err) {
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
-      return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
+      return { ok: false, model, reason: timedOut ? "provider_timeout" : "provider_network", detail: networkDetail(err), retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
@@ -113,7 +113,7 @@ export class DeepSeekProvider implements GenerationProvider {
       } catch {
         // No JSON body; the status alone will have to do.
       }
-      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
+      return { ok: false, model, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
     let body: {
@@ -124,29 +124,36 @@ export class DeepSeekProvider implements GenerationProvider {
     try {
       body = await res.json();
     } catch {
-      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      if (signal.aborted) return { ok: false, model, reason: "provider_timeout", retryable: true, uncertain: true };
+      return { ok: false, model, reason: "provider_invalid_json", detail: "response_body_invalid_json", retryable: true, uncertain: false };
     }
-    const choice = body.choices?.[0];
-    if (choice?.finish_reason === "content_filter") return { ok: false, reason: "provider_blocked", detail: "content_filter", retryable: false, uncertain: false };
-    if (choice?.finish_reason === "length") return { ok: false, reason: "provider_finish_max_tokens", retryable: true, uncertain: false };
-    const call = choice?.message?.tool_calls?.find((c) => c.function?.name === tool.name);
-    if (!call?.function?.arguments) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
-    let value: unknown;
-    try {
-      value = unwrapArguments(JSON.parse(call.function.arguments));
-    } catch {
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
-    }
-    return {
-      ok: true,
-      value,
+    const metadata = {
       model: body.model ?? model,
       usage: body.usage ? {
         inputTokens: body.usage.prompt_cache_miss_tokens ?? Math.max(0, (body.usage.prompt_tokens ?? 0) - (body.usage.prompt_cache_hit_tokens ?? 0)),
         outputTokens: body.usage.completion_tokens ?? 0,
         ...(body.usage.prompt_cache_hit_tokens !== undefined ? { cacheReadTokens: body.usage.prompt_cache_hit_tokens } : {}),
       } : undefined,
+    };
+    const choice = body.choices?.[0];
+    if (choice?.finish_reason === "content_filter") return { ok: false, ...metadata, reason: "provider_blocked", detail: "content_filter", retryable: false, uncertain: false };
+    if (choice?.finish_reason === "length") return { ok: false, ...metadata, reason: "provider_finish_max_tokens", retryable: true, uncertain: false };
+    const call = choice?.message?.tool_calls?.find((c) => c.function?.name === tool.name);
+    if (!call?.function?.arguments) return { ok: false, ...metadata, reason: "provider_no_tool_call", retryable: true, uncertain: false };
+    let value: unknown;
+    try {
+      value = unwrapArguments(JSON.parse(call.function.arguments));
+    } catch (err) {
+      const message = err instanceof SyntaxError ? err.message : "";
+      const detail = call.function.arguments.trim().startsWith("```") ? "tool_arguments_fenced_json"
+        : /control character/i.test(message) ? "tool_arguments_unescaped_control_character"
+        : /unterminated|unexpected end/i.test(message) ? "tool_arguments_incomplete_json" : "tool_arguments_invalid_json";
+      return { ok: false, ...metadata, reason: "provider_invalid_json", detail, retryable: true, uncertain: false };
+    }
+    return {
+      ok: true,
+      value,
+      ...metadata,
     };
   }
 }

@@ -1,3 +1,4 @@
+import { networkDetail } from "./deadline";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { GeminiProvider } from "./gemini";
 import { AnthropicProvider } from "./anthropic";
@@ -65,4 +66,9 @@ describe("one deadline across triage, answer and fallback", () => {
       expect(await provider.interpret(input, { deadlineAt: Date.now() + 1000 })).toMatchObject({ ok: false, reason: "provider_timeout", uncertain: true });
     }
   });
+});
+
+it("keeps transport codes without copying request-bearing exception messages", () => {
+  expect(networkDetail({ message: "private question", cause: { code: "ENOTFOUND" } })).toBe("ENOTFOUND");
+  expect(networkDetail({ cause: { code: "private question" } })).toBeUndefined();
 });

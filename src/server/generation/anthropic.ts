@@ -3,7 +3,7 @@ import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, R
 import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
 import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
-import { callTimeout, deadlineExceeded } from "./deadline";
+import { callTimeout, deadlineExceeded, networkDetail } from "./deadline";
 
 const DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
@@ -46,7 +46,7 @@ export class AnthropicProvider implements GenerationProvider {
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown }).category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
-      return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
+      return { ok: false, model: outcome.model, usage: outcome.usage, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
     return { ...outcome, value: category as SafetyCategory };
   }
@@ -116,7 +116,7 @@ export class AnthropicProvider implements GenerationProvider {
       // The request may have been received and billed before the timeout —
       // the caller treats this as a spent attempt.
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
-      return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
+      return { ok: false, model, reason: timedOut ? "provider_timeout" : "provider_network", detail: networkDetail(err), retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
@@ -131,7 +131,7 @@ export class AnthropicProvider implements GenerationProvider {
       } catch {
         // No JSON body; the status alone will have to do.
       }
-      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
+      return { ok: false, model, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
     let body: {
@@ -143,15 +143,10 @@ export class AnthropicProvider implements GenerationProvider {
     try {
       body = await res.json();
     } catch {
-      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      if (signal.aborted) return { ok: false, model, reason: "provider_timeout", retryable: true, uncertain: true };
+      return { ok: false, model, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
-    if (body.stop_reason === "refusal") return { ok: false, reason: "provider_refused", retryable: false, uncertain: false };
-    const call = body.content?.find((block) => block.type === "tool_use" && block.name === tool.name);
-    if (!call || call.input === undefined) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
-    return {
-      ok: true,
-      value: call.input,
+    const metadata = {
       model: body.model ?? model,
       usage: body.usage
         ? {
@@ -167,6 +162,14 @@ export class AnthropicProvider implements GenerationProvider {
             } : {}),
           }
         : undefined,
+    };
+    if (body.stop_reason === "refusal") return { ok: false, ...metadata, reason: "provider_refused", retryable: false, uncertain: false };
+    const call = body.content?.find((block) => block.type === "tool_use" && block.name === tool.name);
+    if (!call || call.input === undefined) return { ok: false, ...metadata, reason: "provider_no_tool_call", retryable: true, uncertain: false };
+    return {
+      ok: true,
+      value: call.input,
+      ...metadata,
     };
   }
 }

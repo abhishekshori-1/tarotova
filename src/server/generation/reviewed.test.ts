@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyGroundingRepair, applyRepairDetailed, generateReviewed, parseGroundingReview, readingShape } from "./reviewed";
+import { applyGroundingRepair, applyRepairDetailed, generateReviewed, parseGroundingReview, parseReviewDetailed, readingShape } from "./reviewed";
 import type { GenerationProvider, GroundingIssue, GroundingReview, InterpretationInput, InterpretationOutput } from "./types";
+import { FallbackProvider } from "./fallback";
 import { REPAIR_TOOL, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
 const ids = ["major-00-fool", "major-14-temperance", "major-09-hermit"];
@@ -114,6 +115,61 @@ describe("reviewed publication", () => {
     const p = fake();
     p.review.mockResolvedValue({ ok: false, reason: "provider_blocked", retryable: false, uncertain: false });
     expect(await generateReviewed(p, input, ids)).toMatchObject({ ok: false, reason: "provider_blocked", retryable: false });
+    expect(p.review).toHaveBeenCalledOnce();
+  });
+
+  it("retries a review transport failure once without rewriting, under the same deadline and with both calls priced", async () => {
+    const p = fake();
+    const options = { deadlineAt: Date.now() + 55_000 };
+    p.review.mockResolvedValueOnce({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true, model: "reviewer", usage: { inputTokens: 7, outputTokens: 2 } }).mockResolvedValueOnce(ok(pass));
+    const result = await generateReviewed(p, input, ids, options);
+    expect(result).toMatchObject({ ok: true, usage: { inputTokens: 27, outputTokens: 12 } });
+    expect(p.interpret).toHaveBeenCalledOnce();
+    expect(p.review).toHaveBeenCalledTimes(2);
+    expect(p.review).toHaveBeenNthCalledWith(2, input, draft, options);
+    expect(result.quality.calls.map((c) => c.reason)).toEqual([undefined, "provider_timeout", undefined]);
+  });
+
+  it("shares one transport retry across the original and repaired review", async () => {
+    const p = fake();
+    const failure = { ok: false, reason: "provider_http_503", retryable: true, uncertain: false };
+    p.review.mockResolvedValueOnce(failure).mockResolvedValueOnce(ok(revise)).mockResolvedValueOnce(failure);
+    expect(await generateReviewed(p, input, ids)).toMatchObject({ ok: false, reason: "grounding_review:provider_http_503" });
+    expect(p.review).toHaveBeenCalledTimes(3);
+    expect(p.interpret).toHaveBeenCalledOnce();
+    expect(p.repair).toHaveBeenCalledOnce();
+  });
+
+  it("does not retry a review when fewer than five seconds remain", async () => {
+    let now = 1_000;
+    vi.spyOn(Date, "now").mockImplementation(() => now);
+    const p = fake();
+    p.review.mockImplementation(async () => { now = 52_000; return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true }; });
+    expect(await generateReviewed(p, input, ids, { deadlineAt: 56_000 })).toMatchObject({ ok: false, reason: "grounding_review:provider_timeout" });
+    expect(p.review).toHaveBeenCalledOnce();
+  });
+
+  it("does not retry invalid JSON, authentication failure or an unusable verdict", async () => {
+    for (const reason of ["provider_invalid_json", "provider_http_401"]) {
+      const p = fake();
+      p.review.mockResolvedValue({ ok: false, reason, retryable: true, uncertain: false });
+      expect(await generateReviewed(p, input, ids)).toMatchObject({ ok: false });
+      expect(p.review).toHaveBeenCalledOnce();
+    }
+    const p = fake();
+    p.review.mockResolvedValue(ok({ decision: "revise", issues: [{ ...revise.issues[0], quote: "a quote from a different answer" }] }));
+    const result = await generateReviewed(p, input, ids);
+    expect(result).toMatchObject({ ok: false, reason: "grounding_review_invalid" });
+    expect(p.review).toHaveBeenCalledOnce();
+    expect(result.quality.calls.at(-1)).toMatchObject({ phase: "validate", reason: "review_quote: issue 1 does not match any field" });
+  });
+
+  it("distinguishes invalid review shape, contradictory verdict and ambiguous quotes without exposing text", () => {
+    const shape = readingShape(input);
+    expect(parseReviewDetailed(shape, { decision: "private reader text", issues: [] }, draft)).toEqual({ ok: false, detail: "review_shape: invalid_value@decision" });
+    expect(parseReviewDetailed(shape, { decision: "pass", issues: revise.issues }, draft)).toEqual({ ok: false, detail: "review_shape: custom@root" });
+    expect(parseReviewDetailed(shape, { decision: "revise", issues: [{ ...revise.issues[0], field: "unknown", quote: "The" }] }, draft)).toEqual({ ok: false, detail: "review_quote: issue 1 matches multiple fields" });
+    expect(parseReviewDetailed(shape, revise, draft)).toEqual({ ok: true, review: revise });
   });
 
   it.each([
@@ -193,4 +249,13 @@ describe("reviewed publication", () => {
   it("rejects a repair missing a flagged field", () => {
     expect(applyGroundingRepair({ edits: [{ field: "challenge", replacement }] }, draft, { decision: "revise", issues: [...revise.issues, { field: "reflection", quote: "What do you notice", reason: "Test second field." }] })).toBeUndefined();
   });
+});
+
+it("prices a failed writer call once alongside its fallback and review", async () => {
+  const preferred = fake();
+  preferred.interpret.mockResolvedValue({ ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false, model: "deepseek-flash", usage: { inputTokens: 7, outputTokens: 3 } } as never);
+  const fallback = fake();
+  const result = await generateReviewed(new FallbackProvider([preferred, fallback]), input, ids);
+  expect(result).toMatchObject({ ok: true, usage: { inputTokens: 27, outputTokens: 13 } });
+  expect(result.quality.calls.map((c) => [c.phase, c.reason])).toEqual([["write", "provider_invalid_json"], ["write", undefined], ["review", undefined]]);
 });

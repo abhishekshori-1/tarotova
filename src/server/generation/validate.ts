@@ -11,6 +11,11 @@ import type { FollowupOutput, InterpretationOutput } from "./types";
 export const LIMITS = { perspective: 900, relevance: 600, reflection: 320, beyondSpread: 480 } as const;
 const MINIMUMS = { perspective: 80, relevance: 40, reflection: 20 } as const;
 
+// Providers sometimes serialize the absent optional value as the literal
+// string "null". Canonicalize only that exact token (and existing empty text)
+// before review, never a sentence containing it or a substantive boundary.
+const optionalText = (limit: number) => z.string().trim().max(limit).nullable().transform((v) => (!v || v === "null" ? null : v));
+
 const outputSchema = z.strictObject({
   perspective: z.string().trim().min(MINIMUMS.perspective).max(LIMITS.perspective),
   cards: z
@@ -18,7 +23,7 @@ const outputSchema = z.strictObject({
     .length(3)
     .refine((cards) => cards.every((c, i) => c.position === POSITIONS[i]), "cards must be in Situation, Challenge, Guidance order"),
   reflection: z.string().trim().min(MINIMUMS.reflection).max(LIMITS.reflection),
-  beyondSpread: z.string().trim().max(LIMITS.beyondSpread).nullable().transform((v) => (v ? v : null)),
+  beyondSpread: optionalText(LIMITS.beyondSpread),
 });
 
 /** Always rejected, whatever surrounds them. */
@@ -124,8 +129,8 @@ const FOLLOWUP_MINIMUMS = { paragraph: 40, reflection: 20 } as const;
 
 const followupSchema = z.strictObject({
   paragraphs: z.array(z.string().trim().min(FOLLOWUP_MINIMUMS.paragraph).max(FOLLOWUP_LIMITS.paragraph)).min(1).max(3),
-  reflection: z.string().trim().max(FOLLOWUP_LIMITS.reflection).nullable().transform((v) => (v ? v : null)),
-  beyondSpread: z.string().trim().max(FOLLOWUP_LIMITS.beyondSpread).nullable().transform((v) => (v ? v : null)),
+  reflection: optionalText(FOLLOWUP_LIMITS.reflection),
+  beyondSpread: optionalText(FOLLOWUP_LIMITS.beyondSpread),
 });
 
 export type FollowupValidationResult = { ok: true; output: FollowupOutput } | { ok: false; reason: string; detail?: string };

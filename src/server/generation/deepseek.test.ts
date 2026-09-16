@@ -68,7 +68,7 @@ describe("DeepSeekProvider", () => {
 
   it("maps HTTP failures with DeepSeek's message, and a content reply as no tool call", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(400, { error: { type: "invalid_request_error", message: "Thinking mode does not support this tool_choice" } })));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_http_400", detail: "invalid_request_error: Thinking mode does not support this tool_choice", retryable: false, uncertain: false });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_400", detail: "invalid_request_error: Thinking mode does not support this tool_choice", retryable: false, uncertain: false });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(429, { error: { message: "rate limited" } })));
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_429", retryable: true });
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, { choices: [{ finish_reason: "stop", message: { content: "Sure!" } }] })));
@@ -79,10 +79,18 @@ describe("DeepSeekProvider", () => {
     const timeout = new Error("aborted");
     timeout.name = "TimeoutError";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeout));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     expect(await provider().review(INPUT, { perspective: "", cards: [], reflection: "", beyondSpread: null }, { deadlineAt: Date.now() - 1 })).toMatchObject({ ok: false, reason: "request_deadline" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
+});
+
+it("keeps billed usage when malformed tool arguments trigger a fallback", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, {
+    model: "deepseek-flash", choices: [{ finish_reason: "tool_calls", message: { tool_calls: [{ function: { name: "deliver_reading", arguments: '{"perspective":' } }] } }],
+    usage: { prompt_tokens: 300, prompt_cache_hit_tokens: 240, prompt_cache_miss_tokens: 60, completion_tokens: 40 },
+  })));
+  expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, model: "deepseek-flash", reason: "provider_invalid_json", detail: expect.stringMatching(/^tool_arguments_(invalid|incomplete)_json$/), usage: { inputTokens: 60, outputTokens: 40, cacheReadTokens: 240 } });
 });
