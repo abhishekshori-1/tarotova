@@ -253,3 +253,15 @@ production enablement. C1 may be released before C2 once its own gates pass.
 Use migrations compatible with the deployed B code. Record actual deployment
 and review evidence; do not mark unfinished work as enabled or approved. As
 with B, Vercel environment changes require a new deployment to take effect.
+
+## Status — 16 September 2026
+
+C1 is built on `feat/release-c` (server `496e8cc`, client `d6bcf82`),
+behind `FOLLOWUPS_ENABLED=false`, with the contracts above implemented as
+written except where noted: the follow-up answer shape is `paragraphs`
+(1–3), `reflection` (nullable) and `beyondSpread` (nullable); the review
+pipeline was generalised rather than duplicated; the stub classifier now
+distinguishes a request for instruction from a mention so the
+pronoun-after-medication case is testable offline. The conversation eval
+(`eval/conversations.json`, `npm run eval:conversations`) exists and has
+not been run live. C2 is not started. Nothing merged or enabled.

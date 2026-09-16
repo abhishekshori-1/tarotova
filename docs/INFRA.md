@@ -107,6 +107,7 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
 | `GENERATION_ENABLED` | Config | Release B master flag, **on in production since 2026-09-16**. False hides the personalized section entirely, including answers already stored. A change takes effect on the next deployment, not immediately |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
+| `FOLLOWUPS_ENABLED` | Config | Release C1: follow-up turns under a reading (three per reading, each a full triage/write/review pipeline). Needs `GENERATION_ENABLED`. **Off in production** |
 | `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
 | `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |
 | `GENERATION_CLASSIFIER_PROVIDER` | Config | Optional: triage by a vendor other than the writer chain's first (that vendor's `*_CLASSIFIER_MODEL` applies). Unset keeps the chain's first provider; a misconfigured value is logged and the chain triages |

@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "eval": "vitest run --config vitest.eval.config.ts"
+    "eval": "vitest run --config vitest.eval.config.ts eval/contextual-answer.eval.ts",
+    "eval:conversations": "vitest run --config vitest.eval.config.ts eval/conversations.eval.ts"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",

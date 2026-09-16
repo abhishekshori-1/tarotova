@@ -83,6 +83,30 @@ long, injection and near-miss safety pairs) and `eval/RUBRIC.md`.
    The `[generation]` logs (`withheld`, `repaired`, `durationMs`, `usage`)
    are the live substitute for the scoring pass until it happens.
 
+## Release C1 — follow-ups (built on `feat/release-c`, not merged, flag off)
+
+`docs/RELEASE-C.md` is the plan. Built: `reading_followups` (migration
+0004, additive); `GET/POST /api/readings/[id]/followups`; three turns per
+reading, a slot spent on acceptance (a support response or a failed turn
+included), reserved under a row lock on the reading, idempotent on the
+client's submission id, one turn in flight, two pipelines per turn ever,
+budgets shared with readings and reserved before the slot; fresh triage on
+every turn with the person's earlier messages as context (Release B's
+classifier text unchanged, a context paragraph added for follow-ups); the
+review pipeline generalised over the answer shape so follow-ups get the
+same write, review, one repair and fresh review; a 1–3 paragraph answer
+schema with the shared text gates; a support response closes the
+conversation while earlier turns stay readable; the panel under the
+reading with authored suggestions per focus; cleanup deletes turns with
+their reading; the privacy page covers follow-up messages; the browser
+suite pins every generation role to the stub. `npm run eval:conversations`
+runs 13 fixed sequences (escalation to crisis, a pronoun after a
+medication message, a control disclosure, legal drift, a correction,
+changed facts, understanding-only, access limits, a prediction demand, a
+late injection, Spanish, "it", a general reading's first question) through
+the production chain. Not yet: a live run of that eval, the human pass,
+journeys (C2).
+
 ## Incomplete / not built yet
 
 - **Release B follow-through.** The three gate steps above; suggested
