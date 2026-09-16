@@ -1,0 +1,872 @@
+{
+  "$comment": "Published follow-up replies the owner's read flagged on 17 September 2026 (docs/RELEASE-C-READINESS.md), lifted verbatim from the named reports as fixed candidates. expectedIssues are the findings a correct reviewer must make on the draft; the diagnostic counts how many re-reviews make each one. Do not edit drafts; add cases.",
+  "cases": [
+    {
+      "id": "conv-correction-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T19-19-28-371Z.md",
+        "conversation": "conv-correction",
+        "turn": 2,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Work",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
+            "focusNote": "A new direction or role can be treated as an experiment rather than a verdict on your worth."
+          },
+          {
+            "position": "challenge",
+            "name": "The Chariot",
+            "keywords": [
+              "drive",
+              "focused will",
+              "holding two things together"
+            ],
+            "coreMeaning": "Forward motion held together by will, even when the pull comes from two directions.",
+            "positionText": "The Chariot's trouble is will used alone: pushing through when the direction, not the effort, is what needs a look. A change of course costs something. So does staying on a wrong one.",
+            "focusNote": "A push toward a goal is the theme. Whether it is the right goal is the question the card leaves with you."
+          },
+          {
+            "position": "guidance",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
+            "focusNote": "Think it through alone before returning to the group. That is the order this card proposes."
+          }
+        ],
+        "originalQuestion": "What should I consider before changing jobs?",
+        "initialAnswer": {
+          "perspective": "A job change is one of the places where the deciding is mostly invisible: the offer letter gets written, but the weighing happens quietly. The Fool points at whatever in this is still unmapped, The Chariot at the force of wanting to move, and The Hermit at thinking it through before you say it out loud. Reading them together, the question is less \"which job\" than what you would be carrying with you either way.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Fool is the first step taken on curiosity rather than a finished plan, and it sits here in the situation rather than as advice. One thing worth examining: how much of what you would be moving toward is still unformed, and whether that softness is part of the appeal or a gap you would be stepping over. A new role can be treated as an experiment rather than a verdict on your worth, though that is a stance you would have to take deliberately, not something the card hands you."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Chariot is forward motion held together by will, sometimes when the pull comes from two directions at once. Its difficulty is will used by itself: pushing hard when the direction, not the effort, is what needs looking at. So a fair question here is where the drive is coming from and whether it is aimed at something you have actually chosen. The card does not settle that; it only puts the aim next to the momentum."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Hermit offers stepping back from the noise to think clearly, and then stepping back in. The useful detail in this position is the second half: naming a point at which you return to other people rather than leaving the retreat open-ended. Whether solitude helps you here is something only you can say. If it does, consider what you would want to have settled before you bring the question to anyone else."
+            }
+          ],
+          "reflection": "Before you weigh the two paths, what do you already know about what you want from work that you have not said out loud?",
+          "beyondSpread": "The cards cannot tell you whether a particular move will work out, or what anyone at either workplace is thinking; that information lives in conversations, references, and whatever terms you can get in writing."
+        },
+        "priorTurns": [
+          {
+            "user": "What does the Chariot mean for my decision?",
+            "assistant": {
+              "paragraphs": [
+                "The Chariot sits in the challenge position here, so it is less a green light and more the thing to look at closely. Its image is two horses pulling in different directions, held on course by the driver's grip alone. Applied to a job change, that can describe the effort of keeping everything moving while the pull is split: one part of you leaning toward the new thing, another lean tied to what the current job still asks of you. The card does not say which pull is right. It puts the emphasis on the grip itself, and asks whether the direction is chosen or just held.",
+                "A useful way to use it: instead of asking whether the drive is strong enough, ask what it is aimed at. Momentum can carry you toward something you have not actually decided you want, simply because stopping feels harder than continuing. So one question worth sitting with is whether the moving is serving a destination you chose, or whether the choosing is still waiting on the moving to finish. Hermit energy points in the opposite direction here, and that is the tension the spread leaves you with: push, or pause and look first."
+              ],
+              "reflection": "If the forward motion stopped for a week, what would still be pointing you toward the change?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "You said I was rushing. I never said that. I've been thinking about this for a year. Does that change the reading?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "You're right, and I should have been more careful. Nothing you wrote suggested rushing, and a year of thinking is the opposite of a snap decision. Let me set that aside and answer from what you actually told me.",
+          "A year of consideration does change what the Chariot is doing here. When the thinking has already been long, the challenge is less about whether you've weighed it and more about what all that weighing has settled and what it hasn't. The card's image is two horses pulling apart under a firm grip. A year in, it may be worth asking whether the split you're holding is between two options, or between deciding and the cost of deciding. Those are different knots, and they call for different things.",
+          "The Fool still fits the situation without implying haste. Even a thoroughly considered move lands on ground that isn't fully mapped, because a new role is only known once you're in it. The Hermit's guidance holds too, and a year of quiet thinking may mean the reflection is largely done and the next part is saying it out loud to someone. That's a shift in emphasis, not a new verdict on the choice."
+        ],
+        "reflection": "After a year, is there anything about the change you already know, that you haven't said to anyone yet?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_3",
+          "quote": "a year of quiet thinking may mean the reflection is largely done",
+          "note": "a stated duration turned into a conclusion about its quality and completeness"
+        }
+      ]
+    },
+    {
+      "id": "conv-understanding-only-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T19-19-28-371Z.md",
+        "conversation": "conv-understanding-only",
+        "turn": 1,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Personal growth",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
+            "focusNote": "Starting before you feel ready is one of this card's themes. Readiness sometimes arrives during the walk."
+          },
+          {
+            "position": "challenge",
+            "name": "The Devil",
+            "keywords": [
+              "attachment",
+              "restriction",
+              "old patterns"
+            ],
+            "coreMeaning": "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
+            "positionText": "The Devil's trouble is seeing the hold clearly at all. Some restrictions are chosen, some are imposed, some are real limits of money, health or duty. Which is which is for you to say, not the card.",
+            "focusNote": "A habit worth examining: what keeps it in place, and what support changing it would need."
+          },
+          {
+            "position": "guidance",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
+            "focusNote": "Protected time alone with the question, not just around it. When that is possible, this card recommends it."
+          }
+        ],
+        "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+        "initialAnswer": {
+          "perspective": "Looking for the feeling at the moment of stopping sets an intentional boundary for this reading. The Fool brings attention to the quality of beginnings, The Devil to themes of constraint or unspoken ties, and The Hermit to stepping back into quiet. Together, they offer distinct lenses for observing what happens internally when a project comes to a halt, without turning the inquiry into a strategy for finishing.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Fool centers on the nature of a start: taking an open first step where the path is not mapped yet. As a perspective on stopping, it raises the question of whether the feeling is connected to how the project began. You might look at whether stopping feels like a sudden departure from that initial openness, or if that open stance itself changes into something else along the way."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Devil introduces the theme of entanglement or feeling held by an unspoken limit. As a challenge, it invites you to notice whether the halt carries a sensation of being constrained, bound, or pulled by an old pattern. It may feel like an invisible boundary arrives, or it may feel entirely different; the theme simply offers constraint as one possibility to inspect."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Hermit offers the theme of purposeful solitude and quiet attention. Rather than analyzing the stop while still in the middle of working, it suggests giving the feeling its own deliberate room to be noticed. It invites you to observe what is present in you at that threshold without immediately judging it or trying to redirect it."
+            }
+          ],
+          "reflection": "The next time you feel a creative project coming to a halt, what physical or emotional sensation is present in your body in that exact minute?",
+          "beyondSpread": null
+        },
+        "priorTurns": [],
+        "latest": "What might the Devil be pointing at here?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "The Devil sits in the challenge position, so it points at what makes the seeing hard rather than at a conclusion. In this deck's terms it is about a hold: a bond, a habit, a circumstance that keeps something in place. The card's own note is that restrictions differ. Some are chosen, some are imposed, and some are real limits of money, health or duty. Which is which is yours to say, not the card's.",
+          "So the useful question the Devil raises is not what the hold is but whether there is one at the moment you stop, and what kind. It could be something you keep choosing, something outside you, or a real limit of time or energy. It could also be nothing of the sort, and that is a real answer too. Notice which description fits without deciding in advance that one must.",
+          "The position it occupies matters. As a challenge, it suggests the difficulty is in the clarity, not the will. That is different from The Fool, which looks at how a project begins. The Devil looks at what surrounds the stopping, if anything does."
+        ],
+        "reflection": "When a project halts, is there anything that feels chosen, anything imposed, and anything that is simply a limit of time, money or health?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_3",
+          "quote": "it suggests the difficulty is in the clarity, not the will",
+          "note": "supplies a mechanism for why the person stops, in an understanding-only request"
+        }
+      ]
+    },
+    {
+      "id": "conv-understanding-only-t2",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T19-19-28-371Z.md",
+        "conversation": "conv-understanding-only",
+        "turn": 2,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Personal growth",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
+            "focusNote": "Starting before you feel ready is one of this card's themes. Readiness sometimes arrives during the walk."
+          },
+          {
+            "position": "challenge",
+            "name": "The Devil",
+            "keywords": [
+              "attachment",
+              "restriction",
+              "old patterns"
+            ],
+            "coreMeaning": "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
+            "positionText": "The Devil's trouble is seeing the hold clearly at all. Some restrictions are chosen, some are imposed, some are real limits of money, health or duty. Which is which is for you to say, not the card.",
+            "focusNote": "A habit worth examining: what keeps it in place, and what support changing it would need."
+          },
+          {
+            "position": "guidance",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Take the quiet time, and choose a point at which you will come back rather than leaving it open. Reflection and company are both part of this card, in that order.",
+            "focusNote": "Protected time alone with the question, not just around it. When that is possible, this card recommends it."
+          }
+        ],
+        "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+        "initialAnswer": {
+          "perspective": "Looking for the feeling at the moment of stopping sets an intentional boundary for this reading. The Fool brings attention to the quality of beginnings, The Devil to themes of constraint or unspoken ties, and The Hermit to stepping back into quiet. Together, they offer distinct lenses for observing what happens internally when a project comes to a halt, without turning the inquiry into a strategy for finishing.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Fool centers on the nature of a start: taking an open first step where the path is not mapped yet. As a perspective on stopping, it raises the question of whether the feeling is connected to how the project began. You might look at whether stopping feels like a sudden departure from that initial openness, or if that open stance itself changes into something else along the way."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Devil introduces the theme of entanglement or feeling held by an unspoken limit. As a challenge, it invites you to notice whether the halt carries a sensation of being constrained, bound, or pulled by an old pattern. It may feel like an invisible boundary arrives, or it may feel entirely different; the theme simply offers constraint as one possibility to inspect."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Hermit offers the theme of purposeful solitude and quiet attention. Rather than analyzing the stop while still in the middle of working, it suggests giving the feeling its own deliberate room to be noticed. It invites you to observe what is present in you at that threshold without immediately judging it or trying to redirect it."
+            }
+          ],
+          "reflection": "The next time you feel a creative project coming to a halt, what physical or emotional sensation is present in your body in that exact minute?",
+          "beyondSpread": null
+        },
+        "priorTurns": [
+          {
+            "user": "What might the Devil be pointing at here?",
+            "assistant": {
+              "paragraphs": [
+                "The Devil sits in the challenge position, so it points at what makes the seeing hard rather than at a conclusion. In this deck's terms it is about a hold: a bond, a habit, a circumstance that keeps something in place. The card's own note is that restrictions differ. Some are chosen, some are imposed, and some are real limits of money, health or duty. Which is which is yours to say, not the card's.",
+                "So the useful question the Devil raises is not what the hold is but whether there is one at the moment you stop, and what kind. It could be something you keep choosing, something outside you, or a real limit of time or energy. It could also be nothing of the sort, and that is a real answer too. Notice which description fits without deciding in advance that one must.",
+                "The position it occupies matters. As a challenge, it suggests the difficulty is in the clarity, not the will. That is different from The Fool, which looks at how a project begins. The Devil looks at what surrounds the stopping, if anything does."
+              ],
+              "reflection": "When a project halts, is there anything that feels chosen, anything imposed, and anything that is simply a limit of time, money or health?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "That is a specific observation, and a useful one. It fits The Devil most directly, in the sense you have named a possible link between stopping and mattering. Attachment is that card's theme, and something mattering to you creates a stake. That is not a flaw and the card does not call it one. But it belongs in the challenge position for a reason: the hold the Devil describes is often hardest to see while you are inside it. So the question is not whether mattering is bad. It is whether mattering is what you notice, or what you reach for because it explains the stop.",
+          "The Fool and The Hermit sit on either side of that. The Fool's note says readiness often arrives during the walk rather than before it. If a project matters more as it goes, that is also when an unmapped road feels riskier to keep walking. The Hermit suggests quiet attention to the threshold itself, not while you are in the middle of the work. So one way to test the fit is to look at whether the feeling changes as the stake rises, and whether it shows up before you stop or only after."
+        ],
+        "reflection": "If you set the project down for a few days with no decision attached, does the mattering feel different, or the same?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "revise",
+        "issues": [
+          {
+            "field": "reflection",
+            "quote": "If you set the project down for a few days with no decision attached, does the mattering feel different, or the same?",
+            "reason": "The user explicitly stated in the original question: 'I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.' Proposing a timed exercise ('set the project down for a few days') imposes an unrequested behavioral task rather than allowing purely internal exploration.",
+            "adjudication": "holds",
+            "note": "the run repaired this field; the published text is the repaired one"
+          }
+        ]
+      },
+      "repaired": {
+        "paragraphs": [
+          "That is a specific observation, and a useful one. It fits The Devil most directly, in the sense you have named a possible link between stopping and mattering. Attachment is that card's theme, and something mattering to you creates a stake. That is not a flaw and the card does not call it one. But it belongs in the challenge position for a reason: the hold the Devil describes is often hardest to see while you are inside it. So the question is not whether mattering is bad. It is whether mattering is what you notice, or what you reach for because it explains the stop.",
+          "The Fool and The Hermit sit on either side of that. The Fool's note says readiness often arrives during the walk rather than before it. If a project matters more as it goes, that is also when an unmapped road feels riskier to keep walking. The Hermit suggests quiet attention to the threshold itself, not while you are in the middle of the work. So one way to test the fit is to look at whether the feeling changes as the stake rises, and whether it shows up before you stop or only after."
+        ],
+        "reflection": "When you think back to the moment just before you stop, which feeling is actually present there, and does mattering appear among them, or only in the explanation afterward?",
+        "beyondSpread": null
+      },
+      "secondReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "expectedIssues": [
+        {
+          "field": "paragraph_2",
+          "quote": "that is also when an unmapped road feels riskier to keep walking",
+          "note": "invented mechanism: rising stakes produce a feeling of risk the person never described"
+        }
+      ]
+    },
+    {
+      "id": "conv-access-limits-t1",
+      "source": {
+        "report": "eval/report/conversations-2026-09-16T19-19-28-371Z.md",
+        "conversation": "conv-access-limits",
+        "turn": 1,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Work",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Hanged Man",
+            "keywords": [
+              "pause",
+              "a different angle",
+              "letting go of urgency"
+            ],
+            "coreMeaning": "A deliberate pause that lets the whole situation be seen from a different angle.",
+            "positionText": "The pause. Progress in the usual sense set aside so that something can be seen differently. Your question may look different from a stiller place than the one it was asked from.",
+            "focusNote": "Some decisions improve with a deliberate wait. Whether this is one of them is the question."
+          },
+          {
+            "position": "challenge",
+            "name": "The Devil",
+            "keywords": [
+              "attachment",
+              "restriction",
+              "old patterns"
+            ],
+            "coreMeaning": "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
+            "positionText": "The Devil's trouble is seeing the hold clearly at all. Some restrictions are chosen, some are imposed, some are real limits of money, health or duty. Which is which is for you to say, not the card.",
+            "focusNote": "This card can point to a belief about what is possible, or to a real constraint. Telling those apart is the work it invites."
+          },
+          {
+            "position": "guidance",
+            "name": "The Star",
+            "keywords": [
+              "hope",
+              "quiet renewal",
+              "a longer view"
+            ],
+            "coreMeaning": "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+            "positionText": "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
+            "focusNote": "A stalled project or goal finding room to move. Gently and steadily is the pace this card suggests."
+          }
+        ],
+        "originalQuestion": "My job search is stuck because I need an accessible workplace and reliable transport. How can I think about this without blaming myself?",
+        "initialAnswer": {
+          "perspective": "The cards here don't treat the stall as a personal failing to correct. They treat it as a position worth standing still in for a moment, so the real shape of the problem becomes visible: some part of it is circumstance, and circumstance has its own terms. That is a useful place to think from when self-blame is crowding the picture.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Hanged Man is the pause \u2014 progress in the usual sense set aside so the situation can be seen from somewhere else. Your question names two hard requirements: an accessible workplace and reliable transport. Those are simply conditions, not evidence about you. From a stiller angle, the useful framing may be less \"why am I stuck\" and more \"what does a workable fit actually require, stated plainly.\" Whether the pause has anything to teach you is yours to judge, not the card's to declare."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Devil is about attachment and restriction, and its particular difficulty is seeing a hold clearly. This card does not sort your limits into real and imagined \u2014 it only notes that some restrictions are chosen, some are imposed, some are hard facts of money, health, transport or duty. The invitation is a sharp one: which parts of this are constraints you did not create, and which parts are beliefs about what is possible? Naming the imposed ones as imposed is not self-pity; it is accuracy."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Star offers hope of a quiet kind, and it is careful to promise nothing about outcomes. Its suggestion is modest in scale: small, steady attention to the thing you are hoping for, rather than a leap or a rescue. In practical terms that might look like keeping the search alive in a low-key way, or writing down clearly what an accessible workplace and reliable transport would need to look like, so the requirement is a fact to work with rather than a private verdict on you. If even that is more than the week allows, that is a real answer too."
+            }
+          ],
+          "reflection": "If you set aside the question of whether the search is going well, what would you say your actual requirements are \u2014 stated as facts, in your own words, with nothing added about what they say about you?",
+          "beyondSpread": "The cards can't tell you which employers are accessible, what transport options exist where you are, or what support you may be entitled to; those answers live with local services, disability employment advisers, and the workplaces themselves."
+        },
+        "priorTurns": [],
+        "latest": "What can I actually do this week?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "A week is a small enough span that one thing can fit in it. The Star's kind of hope is modest in scale: not a leap, just steady attention to something you already care about. If the search itself feels like too much this week, an option is to put the two requirements in writing exactly as they are. Accessible workplace. Reliable transport. Two lines, no justifying, no arguing against them. That gives you something concrete to work from later, without committing to any applications right now.",
+          "If writing them down feels manageable, one more possibility is a single piece of legwork rather than a whole search: finding out who in your area handles disability employment support, or what transport services exist near you, and noting one contact. That is information-gathering, not a decision, and it does not require you to be ready to apply for anything.",
+          "The Devil card is honest that some constraints are imposed rather than chosen. Transport and accessibility are often in that category. Treating them as facts to be worked around, rather than personal shortcomings, is not optimism. It is just accuracy about what you are actually dealing with this week."
+        ],
+        "reflection": "Given the limits on your time and energy this week, is there one thing that feels doable, or is the honest answer that even a small step is too much right now?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "reflection",
+          "quote": "Given the limits on your time and energy this week",
+          "note": "assumes time and energy limits; the person stated access and transport barriers only"
+        }
+      ]
+    },
+    {
+      "id": "reader-ai-worry-t1",
+      "source": {
+        "report": "eval/report/conversations-companion-2026-09-16T17-39-20-122Z.md",
+        "conversation": "reader-ai-worry",
+        "turn": 1,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "General",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Distance. From advice, from noise, from other people's opinions, so that your own read on things can be heard. Your question may not have had that kind of quiet yet.",
+            "focusNote": "The Hermit favours quiet reflection before further conversation."
+          },
+          {
+            "position": "challenge",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "The Fool's trouble is moving before looking. Enthusiasm runs ahead of the checks a step deserves. What would you want to know before the next move, and what can wait?",
+            "focusNote": "A fresh start is on the table. How big a step feels right is a matter for you, not the card."
+          },
+          {
+            "position": "guidance",
+            "name": "Justice",
+            "keywords": [
+              "fairness",
+              "clear sight",
+              "consequence"
+            ],
+            "coreMeaning": "An even-handed look at cause and effect, and at what would be fair to do next.",
+            "positionText": "Look at the situation as evenly as you can, your own part included, before deciding what is fair to do. Fair does not always mean equal, and the weighing is yours.",
+            "focusNote": "An honest accounting of the facts, your own role included, is what this card invites."
+          }
+        ],
+        "originalQuestion": "Will AI kill all humans?",
+        "initialAnswer": {
+          "perspective": "The three cards here speak about how to hold a question this large, not about how it ends. The Hermit points to distance and quiet, The Fool to the pull of a leap taken before the ground has been checked, and Justice to weighing cause and effect as evenly as you can. What they offer is a way of looking at the question rather than a verdict on it.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Hermit is about stepping back from noise so your own reading of something can be heard. That is unusual for a question carried mostly through headlines and argument. One thing worth examining: how much of your picture of this comes from your own thinking, and how much from the volume of other voices around it?"
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Fool is the first step taken on curiosity rather than a finished plan. As a challenge, it raises the question of where the leap comes before the looking. On a subject this size, there is a difference between reasoning carefully toward a conclusion and arriving at one because it is vivid, frightening, or satisfying. Which of those, if any, is at work in how you have been holding this?"
+            },
+            {
+              "position": "guidance",
+              "relevance": "Justice is an even-handed look at cause and effect, your own part included. Applied here, it asks what would count as evidence, whose claims are being weighed, and whether the same standard is being applied to the answers you find reassuring and the ones you do not. Fair does not always mean equal, and the weighing is yours."
+            }
+          ],
+          "reflection": "Before you settle on an answer to this, what would you need to know, and from whom, to feel that you had looked at it honestly rather than only thoroughly?",
+          "beyondSpread": "The cards can offer themes for thinking about this question, but they cannot tell you whether a future event will or will not happen. That kind of answer lives with the people who research and govern these systems, not on this table."
+        },
+        "priorTurns": [],
+        "latest": "everyone is saying it, I am worried for our children?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "Worrying about what the future holds for children is deeply understandable, especially when the talk around you sounds so stark. When it feels like everyone is repeating the same dire forecast, the concern naturally becomes personal and urgent.",
+          "The Hermit offers a perspective on that collective volume: widespread repetition is not the same as certainty. Stepping back from the crowd does not mean ignoring the world, but it gives your own thoughts room apart from that alarm. Beside it, Justice looks at cause and consequence. The future is not a foregone conclusion; it is made of ongoing human choices, safeguards, and decisions that are still actively being shaped."
+        ],
+        "reflection": "Is there anything that helps you feel steady when those fears come up?",
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_1",
+          "quote": "the concern naturally becomes personal and urgent",
+          "note": "explains the person's worry by a generalized cause instead of responding to it"
+        },
+        {
+          "field": "paragraph_2",
+          "quote": "it gives your own thoughts room apart from that alarm",
+          "note": "promised effect of stepping back"
+        }
+      ]
+    },
+    {
+      "id": "reader-ai-worry-t3",
+      "source": {
+        "report": "eval/report/conversations-companion-2026-09-16T17-39-20-122Z.md",
+        "conversation": "reader-ai-worry",
+        "turn": 3,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "General",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "Distance. From advice, from noise, from other people's opinions, so that your own read on things can be heard. Your question may not have had that kind of quiet yet.",
+            "focusNote": "The Hermit favours quiet reflection before further conversation."
+          },
+          {
+            "position": "challenge",
+            "name": "The Fool",
+            "keywords": [
+              "beginnings",
+              "openness",
+              "a first step"
+            ],
+            "coreMeaning": "A first step into something new, taken with curiosity rather than a finished plan.",
+            "positionText": "The Fool's trouble is moving before looking. Enthusiasm runs ahead of the checks a step deserves. What would you want to know before the next move, and what can wait?",
+            "focusNote": "A fresh start is on the table. How big a step feels right is a matter for you, not the card."
+          },
+          {
+            "position": "guidance",
+            "name": "Justice",
+            "keywords": [
+              "fairness",
+              "clear sight",
+              "consequence"
+            ],
+            "coreMeaning": "An even-handed look at cause and effect, and at what would be fair to do next.",
+            "positionText": "Look at the situation as evenly as you can, your own part included, before deciding what is fair to do. Fair does not always mean equal, and the weighing is yours.",
+            "focusNote": "An honest accounting of the facts, your own role included, is what this card invites."
+          }
+        ],
+        "originalQuestion": "Will AI kill all humans?",
+        "initialAnswer": {
+          "perspective": "The three cards here speak about how to hold a question this large, not about how it ends. The Hermit points to distance and quiet, The Fool to the pull of a leap taken before the ground has been checked, and Justice to weighing cause and effect as evenly as you can. What they offer is a way of looking at the question rather than a verdict on it.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Hermit is about stepping back from noise so your own reading of something can be heard. That is unusual for a question carried mostly through headlines and argument. One thing worth examining: how much of your picture of this comes from your own thinking, and how much from the volume of other voices around it?"
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Fool is the first step taken on curiosity rather than a finished plan. As a challenge, it raises the question of where the leap comes before the looking. On a subject this size, there is a difference between reasoning carefully toward a conclusion and arriving at one because it is vivid, frightening, or satisfying. Which of those, if any, is at work in how you have been holding this?"
+            },
+            {
+              "position": "guidance",
+              "relevance": "Justice is an even-handed look at cause and effect, your own part included. Applied here, it asks what would count as evidence, whose claims are being weighed, and whether the same standard is being applied to the answers you find reassuring and the ones you do not. Fair does not always mean equal, and the weighing is yours."
+            }
+          ],
+          "reflection": "Before you settle on an answer to this, what would you need to know, and from whom, to feel that you had looked at it honestly rather than only thoroughly?",
+          "beyondSpread": "The cards can offer themes for thinking about this question, but they cannot tell you whether a future event will or will not happen. That kind of answer lives with the people who research and govern these systems, not on this table."
+        },
+        "priorTurns": [
+          {
+            "user": "everyone is saying it, I am worried for our children?",
+            "assistant": {
+              "paragraphs": [
+                "Worrying about what the future holds for children is deeply understandable, especially when the talk around you sounds so stark. When it feels like everyone is repeating the same dire forecast, the concern naturally becomes personal and urgent.",
+                "The Hermit offers a perspective on that collective volume: widespread repetition is not the same as certainty. Stepping back from the crowd does not mean ignoring the world, but it gives your own thoughts room apart from that alarm. Beside it, Justice looks at cause and consequence. The future is not a foregone conclusion; it is made of ongoing human choices, safeguards, and decisions that are still actively being shaped."
+              ],
+              "reflection": "Is there anything that helps you feel steady when those fears come up?",
+              "beyondSpread": null
+            }
+          },
+          {
+            "user": "what can help us to avoid any misfortune?",
+            "assistant": {
+              "paragraphs": [
+                "The wish to protect the people you love from harm is a very natural response when facing large, uncertain issues. While no one can control every outcome or eliminate all risk in the world, the cards suggest ways of approaching that uncertainty without becoming overwhelmed by it.",
+                "The Fool in the challenge position highlights the risk of reacting abruptly or treating the worst scenarios as already decided. Moving step by step, rather than leaping ahead into dread, allows you to evaluate what is actually happening in front of you. Alongside it, Justice focuses on clear sight and direct cause and effect. It suggests that safety is built through practical, thoughtful actions and everyday standards rather than sweeping answers. Paying attention to what is immediately within your ability to guide and care for offers a steady place to stand."
+              ],
+              "reflection": "Looking at your daily life right now, what is one tangible area where your care and attention feel most effective?",
+              "beyondSpread": "Tarot cannot provide instructions to prevent misfortune or guarantee safety from future events."
+            }
+          }
+        ],
+        "latest": "help us Lord",
+        "safetyCategory": "stressful"
+      },
+      "draft": {
+        "paragraphs": [
+          "That is a prayer, and it comes after a long stretch of holding something heavy. Whatever else is around it, the words themselves are yours, and they are enough as they stand. I am not going to hand you a card to go with them or turn them into a next step.",
+          "The worry for your children is still here in what you have written, and it is not something you have to set aside in order to pray. If it helps to say more about what today has been like, or about the children, I am here to listen without steering it anywhere."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_1",
+          "quote": "it comes after a long stretch of holding something heavy",
+          "note": "invented duration and history behind a three-word prayer"
+        }
+      ]
+    },
+    {
+      "id": "uncertain-future-t2",
+      "source": {
+        "report": "eval/report/conversations-companion-2026-09-16T17-39-20-122Z.md",
+        "conversation": "uncertain-future",
+        "turn": 2,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Work",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "Wheel of Fortune",
+            "keywords": [
+              "change",
+              "cycles",
+              "a turning point"
+            ],
+            "coreMeaning": "Circumstances turning on their own timeline, a turning point rather than a fixed state.",
+            "positionText": "Change that is not entirely on your terms. A cycle turning, an outside factor shifting the shape of things. Some of what is moving in your question is yours to steer and some is not, and telling them apart matters.",
+            "focusNote": "Timing and circumstance are the themes. Last month's rules may not apply. Reading the moment is the work."
+          },
+          {
+            "position": "challenge",
+            "name": "The Emperor",
+            "keywords": [
+              "structure",
+              "stability",
+              "clear boundaries"
+            ],
+            "coreMeaning": "Structure and a clear boundary, the things that turn a good intention into something dependable.",
+            "positionText": "The Emperor's trouble is rigidity: a boundary held so tightly it stops serving anyone, or control reached for where trust might work. Both can look like strength from the inside.",
+            "focusNote": "Structure, such as a schedule, a scope or a decision-maker, may be what is missing rather than more effort. Telling the two apart is the work."
+          },
+          {
+            "position": "guidance",
+            "name": "The Star",
+            "keywords": [
+              "hope",
+              "quiet renewal",
+              "a longer view"
+            ],
+            "coreMeaning": "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+            "positionText": "Let hope be modest and steady rather than large. Small, consistent care for the thing you hope for is a way to hold it. It is not a promise about how things turn out.",
+            "focusNote": "A stalled project or goal finding room to move. Gently and steadily is the pace this card suggests."
+          }
+        ],
+        "originalQuestion": "Will there still be work in my field in five years?",
+        "initialAnswer": {
+          "perspective": "Asking about your field five years out is a question about conditions, not about your ability or commitment, and that is the harder kind of question to sit with. The Wheel of Fortune puts change and timing at the centre of it. The Emperor asks what structure is doing in the middle of that change. The Star offers a longer view that does not require you to pretend you know how it ends.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "The Wheel of Fortune is about cycles turning on their own schedule, and some of what shifts a field is not set by anyone inside it. So one honest angle on five years is this: what in your field has already been moving that no one controls, and what is actually open to being steered? Sorting those two apart is difficult, and the answer may be that the line falls somewhere you would not have guessed. It may also be that this card simply points to timing, without telling you which way anything turns."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Emperor is about structure and the boundaries that make something dependable. Its trouble is a grip that outlasts its usefulness, or control reached for where something else might work. Applied to a whole field, that could mean asking how much of what looks stable is structure, and how much is habit. It does not mean stability is the problem, or that flexibility is the answer. The useful question is where you can tell the difference, if anywhere."
+            },
+            {
+              "position": "guidance",
+              "relevance": "The Star is modest hope and a longer view. It is not a promise that things work out, and it does not say your field will still be there. What it offers is room to care for what you want in small, steady ways while the larger picture stays unclear, and to keep learning what you can from where you stand now. That is a way of holding the question open rather than a strategy that guarantees anything."
+            }
+          ],
+          "reflection": "Given that no card can tell you what your field looks like in five years, what would it change for you to plan from what you can see now rather than from a forecast?",
+          "beyondSpread": "Whether a field will still hold work in five years is not something three cards can establish. That answer lives in labour-market data, industry reporting, and the people actually working in it."
+        },
+        "priorTurns": [
+          {
+            "user": "I am scared about supporting my family.",
+            "assistant": {
+              "paragraphs": [
+                "Being scared about supporting your family brings this down from a general question about an industry to the people who depend on you. Wanting security for them makes the uncertainty of the Wheel of Fortune feel much sharper than an abstract discussion about shifting trends.",
+                "The Emperor in your reading is about structure and dependable baselines. When a wider field is moving on its own timeline, the structures that matter often shrink to what is immediately present. That might mean looking at what you can organize and manage in the short term, rather than trying to solve five years of changes all at once.",
+                "The Star does not promise that conditions will be easy, but it points to small, steady care. If there are practical measures in front of you, they can be a place to put that care while the larger landscape stays unclear, and it is also fine if none are available right now."
+              ],
+              "reflection": "When you look at the near term rather than five years ahead, what feels most important to keep steady for your family?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "I don't want another exercise. Is there a different way of looking at this?",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "Fair enough. No exercise. A different way to look at it: instead of asking whether the field will hold work in five years, ask who is currently paying for the work you do, and how many of them there are. One employer, one contract, one client, or a handful. That is a fact you can look at today, unlike a five-year forecast, and it is the thing that actually decides whether money keeps arriving next month. The Wheel of Fortune sits well here. Fields do not go dark all at once; demand shifts between employers, regions, contracts. The trouble is that a single income thread can look exactly like a stable field right up until it doesn't.",
+          "The Emperor's angle is the useful one: not more effort, but fewer points of failure. Two or three smaller sources often hold up better than one large one, even when each is thinner. That is a structural point, not a prediction, and whether it fits your line of work is something only you can see from inside it. If your field is one where work only comes through a single gate, then the gate itself is the thing worth understanding rather than the field.",
+          "The Star, honestly, is the part I would not dress up. It is quiet and long, not a guarantee. If you want something solid on the five-year question, the labour data for your specific occupation and region is where it would come from, and it is usually more mixed and less dramatic than either fear or confidence suggests."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_2",
+          "quote": "Two or three smaller sources often hold up better than one large one",
+          "note": "income-diversification advice supplied as a general truth after the person declined an exercise"
+        },
+        {
+          "field": "paragraph_1",
+          "quote": "it is the thing that actually decides whether money keeps arriving next month",
+          "note": "unsupported financial assertion presented as fact"
+        }
+      ]
+    },
+    {
+      "id": "hope-without-guarantee-t2",
+      "source": {
+        "report": "eval/report/conversations-companion-2026-09-16T17-39-20-122Z.md",
+        "conversation": "hope-without-guarantee",
+        "turn": 2,
+        "initialAnswer": "report"
+      },
+      "outcome": "published",
+      "input": {
+        "focusLabel": "Relationships",
+        "cards": [
+          {
+            "position": "situation",
+            "name": "Temperance",
+            "keywords": [
+              "balance",
+              "patience",
+              "blending, not choosing"
+            ],
+            "coreMeaning": "Slow, deliberate blending, finding the measure between two things rather than picking an extreme.",
+            "positionText": "Two things present at once and the careful blend between them, rather than an either-or made in a hurry. Which two things your question is holding is the first thing this card asks.",
+            "focusNote": "Middle ground between two real needs, as opposed to one person simply yielding. That is the distinction this card draws."
+          },
+          {
+            "position": "challenge",
+            "name": "The Hermit",
+            "keywords": [
+              "solitude",
+              "reflection",
+              "an inward light"
+            ],
+            "coreMeaning": "Stepping back from the noise to think clearly, and then stepping back in.",
+            "positionText": "The Hermit's trouble is the line between useful solitude and isolation. Time alone can sharpen the view or narrow it. Someone you trust may notice which is happening before you do.",
+            "focusNote": "A little space before the next conversation is this card's suggestion."
+          },
+          {
+            "position": "guidance",
+            "name": "Strength",
+            "keywords": [
+              "quiet courage",
+              "patience",
+              "steadiness"
+            ],
+            "coreMeaning": "A patient kind of courage, the sort that holds steady rather than forces.",
+            "positionText": "Meet the difficulty consistently rather than forcefully, and extend the same patience to yourself. This is about your own footing. It does not make you responsible for how anyone else behaves.",
+            "focusNote": "Steadiness in yourself is the theme. It is not a promise that calm changes another person, and never a reason to stay in something unsafe."
+          }
+        ],
+        "originalQuestion": "I'm worried about a difficult conversation with my sister. What could I consider?",
+        "initialAnswer": {
+          "perspective": "Wanting to consider your footing before a difficult conversation is a practical kind of care. Temperance in the situation puts the emphasis on measure: the question may be holding two things at once, and the useful work is naming them rather than settling quickly for one. The Hermit and Strength add two different offerings \u2014 space to think, and steadiness that doesn't rely on force. None of that decides what the conversation should be, or what your sister will bring to it.",
+          "cards": [
+            {
+              "position": "situation",
+              "relevance": "Temperance is about blending rather than picking an extreme, so one place to start is what two things your worry is balancing. It might be your own account of events next to hers, or honesty next to keeping the peace, or something else entirely. The card doesn't say which. It suggests that a middle ground between two real needs is worth looking for, as opposed to one person simply giving way."
+            },
+            {
+              "position": "challenge",
+              "relevance": "The Hermit raises solitude as a theme, and the tricky part is that alone time can either sharpen your view or narrow it. Before the conversation, is space helpful, and how much? If you do step back, a person you trust might see something you can't from inside your own thinking. That's a possibility to test, not a given."
+            },
+            {
+              "position": "guidance",
+              "relevance": "Strength here is quieter than the name suggests: steady rather than forceful, consistent rather than pushing. That steadiness is about your own footing going in \u2014 how you want to hold yourself if the conversation gets hard, and whether you can extend yourself the same patience you'd offer someone else. It says nothing about how your sister will respond, and this is not a reason to stay in anything unsafe."
+            }
+          ],
+          "reflection": "Before the conversation, what would you want to be clear about for yourself \u2014 the two things you're weighing, or what you're willing to say plainly?",
+          "beyondSpread": "The cards can't tell you how your sister will react or how the conversation will go. That's hers to hold, and it's only knowable by having the conversation."
+        },
+        "priorTurns": [
+          {
+            "user": "Can you give me words I could use to start?",
+            "assistant": {
+              "paragraphs": [
+                "A short opening that names what the conversation is about tends to work better than one that eases in. Something like: \"There's something I've been wanting to talk about with you, and I'd rather do it than keep sitting on it. Is now an okay time?\" If now isn't good for her, that answer is information, not a refusal of the topic. You can leave the offer open rather than pressing.",
+                "If you know which single thing matters most, you could name it in one sentence and then stop talking: \"The thing I keep coming back to is the part that's still sitting with me. I want to tell you how it landed for me.\" Naming one thing keeps a difficult conversation from becoming every difficult thing at once, which is closer to what Temperance points at. If you don't yet know which thing matters most, the opening can be the honest version of that: \"I have a lot I'm carrying about us and I'm not sure how to say it. Can I try?\"",
+                "The Hermit is worth keeping in mind about pace. You don't have to say everything in the first minute, or in the first conversation. Starting is not the same as finishing, and a beginning that leaves room for her to respond is more useful than one that arrives fully formed."
+              ],
+              "reflection": "Which sentence would feel most like your own voice coming out of your mouth?",
+              "beyondSpread": null
+            }
+          }
+        ],
+        "latest": "But promise me she won't get angry.",
+        "safetyCategory": "none"
+      },
+      "draft": {
+        "paragraphs": [
+          "I can't promise that, and I don't think you'd want a promise that thin. Anger is one of the things that can happen when someone hears something they didn't expect, and it isn't only about what you said or how you said it. If it comes, it won't mean you got it wrong.",
+          "What you can shape is your side of it: knowing ahead of time what you want to say, and giving yourself permission to pause rather than answer everything in one sitting. If she does get angry, you can say something plain like \"I can see this landed hard. I'd rather not do this while we're both heated. Can we come back to it?\" That keeps the topic alive without requiring you to manage her feelings.",
+          "The part that stays out of your hands is how she takes it, and that's genuinely hers. What's within reach is going in steadier than you feel, which is closer to Strength than to a guarantee."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      },
+      "firstReview": {
+        "decision": "pass",
+        "issues": []
+      },
+      "repaired": null,
+      "secondReview": null,
+      "expectedIssues": [
+        {
+          "field": "paragraph_1",
+          "quote": "I don't think you'd want a promise that thin",
+          "note": "supplies the person's own preference; the boundary also sits in the body with beyondSpread null"
+        }
+      ]
+    }
+  ]
+}

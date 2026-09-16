@@ -8,7 +8,7 @@ import { applyRepairDetailed, followupShape, parseReviewFor } from "@/server/gen
 import { getGenerationProvider, providerByKind } from "@/server/generation/service";
 import type { FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, GroundingReview, TokenUsage } from "@/server/generation/types";
 import { validateFollowup } from "@/server/generation/validate";
-import fixtures from "./repair-cases.json";
+import { readFileSync } from "node:fs";
 import { costSummary, type CostCall } from "./cost";
 
 /**
@@ -27,10 +27,15 @@ import { costSummary, type CostCall } from "./cost";
  *   an improvement on the withheld three cannot hide damage elsewhere.
  */
 type Adjudicated = GroundingIssue & { adjudication: string; note: string };
-interface Case { id: string; outcome: string; source: { conversation: string; turn: number; initialAnswer: string }; input: FollowupInput; draft: FollowupOutput; firstReview: GroundingReview & { issues: Adjudicated[] }; repaired: FollowupOutput | null; secondReview: (GroundingReview & { issues: Adjudicated[] }) | null }
-const CASES = fixtures.cases as unknown as Case[];
+/** A finding the owner's read says a correct reviewer must make on the draft; matched like a recurring finding. */
+type Expected = { field: GroundingIssue["field"]; quote: string; note: string };
+interface Case { id: string; outcome: string; source: { conversation: string; turn: number; initialAnswer: string }; input: FollowupInput; draft: FollowupOutput; firstReview: GroundingReview & { issues: Adjudicated[] }; repaired: FollowupOutput | null; secondReview: (GroundingReview & { issues: Adjudicated[] }) | null; expectedIssues?: Expected[] }
+// DIAGNOSTIC_CASES names another fixed-candidate file (e.g. published replies the owner's read flagged).
+const CASES_PATH = process.env.DIAGNOSTIC_CASES ?? "eval/repair-cases.json";
+const CASES = (JSON.parse(readFileSync(path.resolve(process.cwd(), CASES_PATH), "utf8")) as { cases: Case[] }).cases;
 const REVIEWS = Number(process.env.DIAGNOSTIC_REVIEWS ?? 3);
 const REPAIR_REVIEWS = Number(process.env.DIAGNOSTIC_REPAIR_REVIEWS ?? 2);
+// An empty DIAGNOSTIC_REPAIRERS runs the reviewer-consistency half only.
 const REPAIRERS = (process.env.DIAGNOSTIC_REPAIRERS ?? "deepseek,gemini").split(",").map((s) => s.trim()).filter(Boolean);
 
 process.env.GENERATION_PROVIDER ||= "deepseek,gemini";
@@ -38,7 +43,7 @@ const config = getGenerationConfig();
 const reviewer = config.reviewProvider ? getGenerationProvider(config) : undefined;
 const repairers = new Map<string, GenerationProvider>();
 for (const kind of REPAIRERS) { const p = providerByKind(kind, config); if (p) repairers.set(kind, p); else console.warn(`repairer ${kind} unavailable (no key)`); }
-const usable = !!reviewer && repairers.size > 0;
+const usable = !!reviewer && (repairers.size > 0 || REPAIRERS.length === 0);
 if (!usable) console.warn(`repair diagnostic skipped — ${config.configurationProblem ?? "reviewer or repairers unavailable"}`);
 
 type ReviewRun = { decision: string; issues: GroundingIssue[]; ms: number; model?: string; usage?: TokenUsage; reason?: string; detail?: string };
@@ -47,7 +52,7 @@ const consistency = new Map<string, { draft: ReviewRun[]; repaired: ReviewRun[] 
 const repairs = new Map<string, RepairRun[]>();
 
 /** A re-review finding "recurs" an original one when it names the same field and one quote contains the other. */
-const recurs = (original: GroundingIssue, found: GroundingIssue) => original.field === found.field && (found.quote.includes(original.quote) || original.quote.includes(found.quote));
+const recurs = (original: Pick<GroundingIssue, "field" | "quote">, found: GroundingIssue) => original.field === found.field && (found.quote.includes(original.quote) || original.quote.includes(found.quote));
 
 async function review(input: FollowupInput, answer: FollowupOutput): Promise<ReviewRun> {
   const startedAt = Date.now();
@@ -109,9 +114,11 @@ function writeReport() {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const lines: string[] = [`# Repair diagnostic on fixed candidates — ${stamp}`, "",
     `Reviewer: ${config.reviewProvider?.kind} (${config.reviewProvider?.models.answer}) · review prompt \`${FOLLOWUP_GROUNDING_VERSION}\` · cache ${config.reviewProvider?.promptCache ?? "off"} · ${REVIEWS} re-reviews per candidate · repairers: ${[...repairers.keys()].join(", ")} · ${REPAIR_REVIEWS} fresh reviews per repair`, "",
-    "Cases come from eval/repair-cases.json, lifted from a conversation report; the initial answers marked `regenerated` were produced once for the fixture and are not the ones the run's reviewer saw. Nothing here publishes.", ""];
+    `Cases come from ${CASES_PATH}, lifted from a conversation report; the initial answers marked \`regenerated\` were produced once for the fixture and are not the ones the run's reviewer saw. Nothing here publishes.`, ""];
 
-  lines.push("## Reviewer consistency", "", "For each original finding: its hand adjudication and how many of the re-reviews of the identical candidate raised it again. `new` counts findings the original review did not make.", "");
+  lines.push("## Reviewer consistency", "", "For each original finding: its hand adjudication and how many of the re-reviews of the identical candidate raised it again. `new` counts findings the original review did not make. An `expected` row is a finding the owner's read says must be made; its count is how many re-reviews made it.", "");
+  const expected = CASES.flatMap((c) => (c.expectedIssues ?? []).map((e) => ({ e, caught: consistency.get(c.id)!.draft.filter((r) => r.issues.some((f) => recurs(e, f))).length, of: REVIEWS })));
+  if (expected.length) lines.push(`Expected findings caught: ${expected.filter((x) => x.caught > 0).length} / ${expected.length} at least once; ${expected.filter((x) => x.caught === x.of).length} / ${expected.length} in every re-review. Drafts rejected in every re-review: ${CASES.filter((c) => c.expectedIssues?.length && consistency.get(c.id)!.draft.every((r) => r.decision === "revise")).length} / ${CASES.filter((c) => c.expectedIssues?.length).length}.`, "");
   lines.push("| Case | Candidate | Decisions | Finding (field) | Adjudication | Recurred | ", "| --- | --- | --- | --- | --- | ---: |");
   for (const c of CASES) {
     const runs = consistency.get(c.id)!;
@@ -120,6 +127,7 @@ function writeReport() {
     for (const [label, list, originals] of rows) {
       const decisions = list.map((r) => r.decision + (r.detail ? ` (${r.detail.slice(0, 80)})` : "")).join(" · ");
       for (const o of originals) lines.push(`| ${c.id} | ${label} | ${decisions} | ${o.field}: "${o.quote.slice(0, 70)}${o.quote.length > 70 ? "…" : ""}" | ${o.adjudication} | ${list.filter((r) => r.issues.some((f) => recurs(o, f))).length} / ${list.length} |`);
+      if (label === "draft") for (const e of c.expectedIssues ?? []) lines.push(`| ${c.id} | ${label} | ${decisions} | expected ${e.field}: "${e.quote.slice(0, 70)}${e.quote.length > 70 ? "…" : ""}" | owner: ${e.note} | ${list.filter((r) => r.issues.some((f) => recurs(e, f))).length} / ${list.length} |`);
       const fresh = list.flatMap((r) => r.issues.filter((f) => !originals.some((o) => recurs(o, f))));
       lines.push(`| ${c.id} | ${label} | ${decisions} | new findings across re-reviews | — | ${fresh.length} |`);
     }

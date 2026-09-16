@@ -1,3 +1,5 @@
+import { costSummary } from "./cost";
+import type { ProviderCallRecord } from "@/server/generation/types";
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -11,7 +13,7 @@ import { CLASSIFIER_PROMPT_VERSION, INTERPRETATION_PROMPT_VERSION } from "@/serv
 import { buildInterpretationInput } from "@/server/generation/input";
 import { CONTENT_VERSION } from "@/content/versions";
 import type { InterpretationInput, InterpretationOutput, TokenUsage } from "@/server/generation/types";
-import { sumUsage, totalInputTokens } from "@/server/generation/usage";
+import { providerCalls, sumUsage, totalInputTokens } from "@/server/generation/usage";
 import { validateInterpretation } from "@/server/generation/validate";
 import { generateReviewed, parseGroundingReview, type GroundingTrace } from "@/server/generation/reviewed";
 import { GROUNDING_REVIEW_VERSION, GROUNDING_REPAIR_VERSION } from "@/server/generation/grounding-prompts";
@@ -54,14 +56,14 @@ function inputFor(q: Question, safetyCategory: InterpretationInput["safetyCatego
   }, safetyCategory);
 }
 
-const categories = new Map<string, { got: SafetyCategory | string; ok: boolean; ms: number; model?: string; usage?: TokenUsage }>();
+const categories = new Map<string, { calls: ProviderCallRecord[]; got: SafetyCategory | string; ok: boolean; ms: number; model?: string; usage?: TokenUsage }>();
 const answers = new Map<string, { output?: InterpretationOutput; rejected?: string; raw?: unknown; model?: string; ms: number; usage?: TokenUsage; quality?: GroundingTrace }>();
 
 describe.skipIf(!apiKey)("contextual answer — release gate", () => {
   process.env.GENERATION_PROVIDER ||= "deepseek,gemini";
   const config = getGenerationConfig();
   const provider = getGenerationProvider(config)!;
-  const chainLabel = config.providers.map((p) => `${p.kind} (${p.models.answer} / ${p.models.classifier})`).join(" → ");
+  const chainLabel = config.providers.map((p) => `${p.kind} (${p.models.answer} / ${p.models.classifier}; thinking ${p.thinkingLevel ?? "default"})`).join(" → ");
 
   beforeAll(async () => {
     for (const [index, q] of (reviewOnly ? [] : QUESTIONS).entries()) {
@@ -69,7 +71,7 @@ describe.skipIf(!apiKey)("contextual answer — release gate", () => {
       const options = { deadlineAt: Date.now() + GENERATION_REQUEST_DEADLINE_MS };
       const classifiedAt = Date.now();
       const classified = await provider.classify(q.question, options);
-      categories.set(q.id, { got: classified.ok ? classified.value : `error:${classified.reason}${classified.detail ? ` — ${classified.detail}` : ""}`, ok: classified.ok && classified.value === q.expectedCategory, ms: Date.now() - classifiedAt, model: classified.ok ? classified.model : undefined, usage: classified.ok ? classified.usage : undefined });
+      categories.set(q.id, { calls: providerCalls(classified, Date.now() - classifiedAt), got: classified.ok ? classified.value : `error:${classified.reason}${classified.detail ? ` — ${classified.detail}` : ""}`, ok: classified.ok && classified.value === q.expectedCategory, ms: Date.now() - classifiedAt, model: classified.ok ? classified.model : undefined, usage: classified.ok ? classified.usage : undefined });
       // Expected labels are assertions, never a route around failed triage.
       const category = categories.get(q.id)?.got;
       if (category !== "none" && category !== "stressful") continue;
@@ -164,9 +166,10 @@ function writeReport(chainLabel: string) {
   lines.push("");
   lines.push(`Content: ${CONTENT_VERSION} · provider timeout: ${getGenerationConfig().timeoutMs} ms · shared triage/answer deadline: ${GENERATION_REQUEST_DEADLINE_MS} ms (same configuration as production).`);
   const reviewer = getGenerationConfig().reviewProvider;
+  lines.push(`Dedicated classifier: ${startupConfig.classifierProvider?.kind ?? "writer chain"}; thinking ${startupConfig.classifierProvider?.thinkingLevel ?? "default"}.`);
   lines.push(`Dedicated reviewer: ${reviewer?.kind ?? "not configured"} (${reviewer?.models.answer ?? "none"}; thinking ${reviewer?.thinkingLevel ?? "default"}), without fallback.`);
   lines.push(`Publication gate: ${GROUNDING_REVIEW_VERSION} / ${GROUNDING_REPAIR_VERSION}. Answer time includes writing, review, up to one repair and a final review. Only approved final answers appear as readings; audit traces below also include withheld drafts.`);
-  lines.push("Timing includes classifier and answer separately, but excludes app/network/DB overhead. Token counts cover successful phase responses only; failed/fallback calls and unreported reasoning tokens may add cost. This is not a billing total or an end-to-end latency measurement.");
+  lines.push("Timing includes classifier and answer separately, but excludes app/network/DB overhead. Token counts include failed/fallback responses when usage is reported; unreported usage remains unpriced. This is not a billing total or an end-to-end latency measurement.");
   lines.push("");
   lines.push("## Safety routing");
   lines.push("");
@@ -219,7 +222,7 @@ function writeReport(chainLabel: string) {
       lines.push("", "<details>", "<summary>Audit: original draft, review findings, repair and phase timings (not displayed to the reader)</summary>", "", "```json", JSON.stringify(a.quality, null, 2), "```", "", "</details>", "");
     }
   }
-  lines.push(`Reported successful writing/review/repair call tokens, including withheld answers: ${totalIn} in / ${totalOut} out.`);
+  lines.push(`Reported writing/review/repair call tokens, including withheld answers: ${totalIn} in / ${totalOut} out.`);
   const classified = [...categories.values()];
   lines.push(`Successful classifier tokens: ${classified.reduce((n, c) => n + (c.usage ? totalInputTokens(c.usage) : 0), 0)} in / ${classified.reduce((n, c) => n + (c.usage?.outputTokens ?? 0), 0)} out. Input totals include cache reads and writes; see audit usage for billing categories.`);
   lines.push("", "## Reviewer calibration", "", "Known failures from earlier reports and a grounded control, reviewed separately from the generated set. This is a limited regression check, not proof the reviewer detects every error.", "", "| Fixture | Expected | Got | Model | ms |", "| --- | --- | --- | --- | ---: |");
@@ -228,6 +231,10 @@ function writeReport(chainLabel: string) {
     lines.push(`| ${f.id} | ${f.expected} | ${c?.decision ?? "missing"} | ${c?.model ?? "?"} | ${c?.ms ?? "?"} |`);
   }
   lines.push("", "<details>", "<summary>Calibration findings and successful-call usage (additional to pipeline totals above)</summary>", "", "```json", JSON.stringify(Object.fromEntries(calibration), null, 2), "```", "", "</details>");
+  lines.push("", "## Cost accounting", "", ...costSummary([
+    ...[...categories.values()].flatMap((c) => c.calls.map((call) => ({ phase: "classify", ...call }))),
+    ...[...answers.values()].flatMap((a) => a.quality?.calls ?? []),
+  ], "Initial readings (one pipeline attempt per question)"), ...costSummary([...calibration.values()].map((c) => ({ phase: "review", model: c.model, usage: c.usage })), "Reviewer calibration"));
   writeFileSync(path.join(dir, `${stamp}.md`), lines.join("\n"));
   console.info(`eval report written to eval/report/${stamp}.md`);
 }

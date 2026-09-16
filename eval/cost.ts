@@ -58,6 +58,6 @@ export function costSummary(calls: CostCall[], label: string): string[] {
     lines.push(`| ${row.phase} | ${row.model ?? "unknown"} | ${row.usages.length} | ${u.inputTokens} | ${u.cacheReadTokens ?? 0} | ${u.cacheWrite5mTokens ?? 0} / ${u.cacheWrite1hTokens ?? 0} | ${u.outputTokens} | ${amount === undefined ? "unpriced" : amount.toFixed(5)} |`);
   }
   lines.push("", `Known-call estimate: $${estimated.toFixed(5)}. The same observed calls without Anthropic caching: $${uncached.toFixed(5)}. Cache difference: $${(uncached - estimated).toFixed(5)} (${uncached ? (100 * (uncached - estimated) / uncached).toFixed(1) : "0.0"}%).`, "",
-    `Calls without usage: ${missing}; calls with unknown pricing: ${unknown}. Failed fallback calls and unreported reasoning tokens may add charges. This is not a bill. DeepSeek uses peak rates as a conservative estimate; off-peak rates are lower. Prices checked 2026-09-16; update eval/cost.ts when prices or model IDs change.`, "");
+    `Calls without usage: ${missing}; calls with unknown pricing: ${unknown}. Failed fallback calls are included when usage is reported; calls without usage remain unpriced and may add charges. This is not a bill. DeepSeek uses peak rates as a conservative estimate; off-peak rates are lower. Prices checked 2026-09-16; update eval/cost.ts when prices or model IDs change.`, "");
   return lines;
 }

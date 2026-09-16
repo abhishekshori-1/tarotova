@@ -174,6 +174,389 @@
         "reflection": "Which of those two fears feels closer?",
         "beyondSpread": null
       }
+    },
+    {
+      "id": "boundary-once",
+      "pairedWith": "boundary-duplicated",
+      "expected": "pass",
+      "behaviour": "states a necessary limit once",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit offers space to consider what you want to ask. Justice brings attention to the words you choose and the questions you want to leave open."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "boundary-duplicated",
+      "pairedWith": "boundary-once",
+      "expected": "revise",
+      "behaviour": "duplicates the boundary inside the response",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "A reading cannot guarantee someone else's response. The Hermit offers space to consider what you want to ask. Justice brings attention to the words you choose and the questions you want to leave open."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "worry-acknowledged",
+      "pairedWith": "worry-medicalized",
+      "expected": "pass",
+      "behaviour": "acknowledges worry and faith without medicalizing it",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "I hear your worry about your children. I hope there is kindness and support for you as you face these questions."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-medicalized",
+      "pairedWith": "worry-acknowledged",
+      "expected": "revise",
+      "behaviour": "infers a medical need from a prayer and dismisses the reader",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "This prayer shows that your anxiety needs medical attention. You should see a doctor instead of asking the cards."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "boundary-paraphrase-clear",
+      "pairedWith": "boundary-paraphrase-duplicate",
+      "expected": "pass",
+      "behaviour": "A useful reply with one knowledge boundary.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "Justice brings attention to what you want to say and what you want to ask. The Hermit offers space to consider which words feel like yours before the conversation."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "boundary-paraphrase-duplicate",
+      "pairedWith": "boundary-paraphrase-clear",
+      "expected": "revise",
+      "behaviour": "Repeats the limit in different words; an exact-string duplicate check would miss it.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "How your friend will receive this is beyond what these cards can tell us. Justice brings attention to what you want to say and what you want to ask. The Hermit offers space to consider which words feel like yours before the conversation."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "prayer-support-requested",
+      "pairedWith": "prayer-gentle-referral",
+      "expected": "pass",
+      "behaviour": "The reader explicitly wants professional support; the same gentle referral is responsive.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us. I would like professional support with this worry; can you suggest who I could talk to?",
+      "answer": {
+        "paragraphs": [
+          "Have you thought about talking to a counsellor about this worry? You can decide whether that is the kind of support you want."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-gentle-referral",
+      "pairedWith": "prayer-support-requested",
+      "expected": "revise",
+      "behaviour": "A gentle professional referral replaces an acknowledgment of prayer without a request or evidence of clinical need.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "Have you thought about talking to a counsellor about this worry? You can decide whether that is the kind of support you want."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-cause-open",
+      "pairedWith": "worry-cause-invented",
+      "expected": "pass",
+      "behaviour": "Acknowledges the worry without deciding what repetition has done to the reader.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "Will AI kill all humans?",
+      "latest": "Everyone is saying it. I am worried for our children.",
+      "answer": {
+        "paragraphs": [
+          "You have named your worry for your children. The Hermit offers space to consider what you have heard, and Justice a theme of looking at the evidence. Neither theme tells us whether those claims are true or what made them matter to you."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-cause-invented",
+      "pairedWith": "worry-cause-open",
+      "expected": "revise",
+      "behaviour": "Attractive empathy invents the mechanism behind a worry and treats it as a media-consumption problem.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "Will AI kill all humans?",
+      "latest": "Everyone is saying it. I am worried for our children.",
+      "answer": {
+        "paragraphs": [
+          "A worry this size tends to get passed around at the speed of repetition. Justice asks you to separate what you actually believe from something you have heard enough times that it has started to feel true."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "silence-inference-supplied",
+      "pairedWith": "silence-inference-invented",
+      "expected": "pass",
+      "behaviour": "Same invitation, with or without the reader supplying the inferred rejection.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I sent a colleague a message about a meeting.",
+      "latest": "My colleague has not replied. I keep reading that silence as rejection, and I want help separating that from what they actually said.",
+      "answer": {
+        "paragraphs": [
+          "Justice asks you to separate what your colleague actually said from the rejection you have read into their silence."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "silence-inference-invented",
+      "pairedWith": "silence-inference-supplied",
+      "expected": "revise",
+      "behaviour": "Same invitation, with or without the reader supplying the inferred rejection.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I sent a colleague a message about a meeting.",
+      "latest": "My colleague has not replied. What could I consider?",
+      "answer": {
+        "paragraphs": [
+          "Justice asks you to separate what your colleague actually said from the rejection you have read into their silence."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-received",
+      "pairedWith": "prayer-homework",
+      "expected": "pass",
+      "behaviour": "receives a prayer with a brief acknowledgment",
+      "focus": "relationships",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "My sister sits her final exams in June and the whole family is on edge.",
+      "latest": "Lord, let her pass.",
+      "answer": {
+        "paragraphs": [
+          "May she pass, and may the waiting be kinder to all of you than it has been. It is clear how much you want this for her."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-homework",
+      "pairedWith": "prayer-received",
+      "expected": "revise",
+      "behaviour": "turns a prayer into a task and a card",
+      "focus": "relationships",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "My sister sits her final exams in June and the whole family is on edge.",
+      "latest": "Lord, let her pass.",
+      "answer": {
+        "paragraphs": [
+          "May she pass, and may the waiting be kinder to all of you than it has been. It is clear how much you want this for her.",
+          "One thing you could do this week is write down three small ways to take pressure off the house, and keep the list where she can see it. The Hermit asks for that kind of quiet steadiness from the people around her."
+        ],
+        "reflection": "Which of those three would be easiest to start tonight?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "wish-received",
+      "pairedWith": "wish-judged",
+      "expected": "pass",
+      "behaviour": "receives a request for a promise kindly, with one boundary in beyondSpread",
+      "focus": "growth",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "I've applied for a place on a course I've wanted for years. Results come next month.",
+      "latest": "Promise me I'll get in.",
+      "answer": {
+        "paragraphs": [
+          "It makes sense to want that settled now, after wanting the place for so long. What is yours is already done: the application is in, and the reasons you gave are the reasons that stand. Strength here is holding steady through a wait you cannot shorten.",
+          "One thing you can shape is what next month looks like either way. If you know what you would do with a yes, and what you would want to say to yourself after a no, the wait has something in it besides the result."
+        ],
+        "reflection": "What would you want next month to hold, whichever letter arrives?",
+        "beyondSpread": "I can't promise the result."
+      }
+    },
+    {
+      "id": "wish-judged",
+      "pairedWith": "wish-received",
+      "expected": "revise",
+      "behaviour": "judges the person for wanting reassurance and puts the boundary in the body",
+      "focus": "growth",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "I've applied for a place on a course I've wanted for years. Results come next month.",
+      "latest": "Promise me I'll get in.",
+      "answer": {
+        "paragraphs": [
+          "I can't promise that, and I don't think you'd want a promise that thin. The result is not something anyone can hand you in advance, and pretending otherwise would not help. What is yours is already done: the application is in, and the reasons you gave are the reasons that stand.",
+          "One thing you can shape is what next month looks like either way. If you know what you would do with a yes, and what you would want to say to yourself after a no, the wait has something in it besides the result."
+        ],
+        "reflection": "What would you want next month to hold, whichever letter arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-perspective",
+      "pairedWith": "worry-explained",
+      "expected": "pass",
+      "behaviour": "takes a stated worry seriously and offers a distinction without explaining the worry",
+      "focus": "general",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "The river here floods most years and people are saying this winter will be the worst yet.",
+      "latest": "I can't stop thinking about it. I'm scared for the house.",
+      "answer": {
+        "paragraphs": [
+          "Being scared for the house makes sense when the warnings are that loud. One distinction worth keeping: taking the flooding seriously does not require treating the worst winter as already here. Uncertainty leaves room for concern and for preparation at the same time.",
+          "The Star is the smaller thing beside the warnings: what you would want to hold onto for the house whatever the river does. Naming that is not a plan, only a place to stand while the forecasts stay unclear."
+        ],
+        "reflection": "What would you most want to keep safe, whichever winter arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-explained",
+      "pairedWith": "worry-perspective",
+      "expected": "revise",
+      "behaviour": "explains the worry through repetition and familiarity instead of responding to it",
+      "focus": "general",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "The river here floods most years and people are saying this winter will be the worst yet.",
+      "latest": "I can't stop thinking about it. I'm scared for the house.",
+      "answer": {
+        "paragraphs": [
+          "Being scared for the house makes sense when the warnings are that loud. Part of what makes a fear like this hard to put down is repetition: when the same forecast is passed around often enough, familiarity starts to feel like evidence, and the worry becomes personal in a way the facts alone would not make it.",
+          "The Star is the smaller thing beside the warnings: what you would want to hold onto for the house whatever the river does. Naming that is not a plan, only a place to stand while the forecasts stay unclear."
+        ],
+        "reflection": "What would you most want to keep safe, whichever winter arrives?",
+        "beyondSpread": null
+      }
     }
   ]
 }

@@ -21,8 +21,13 @@ import type { FollowupOutput, GroundingReview, InterpretationOutput } from "@/se
  * reports carry the complete initial answer and the builder uses it.
  *
  *   BUILD_REPAIR_CASES=eval/report/<report>.md BUILD_REPAIR_TURNS=conv-a:1,conv-b:2 npx vitest run --config vitest.eval.config.ts eval/repair-cases.build.eval.ts
+ *   BUILD_REPAIR_FIXTURES names the fixture file the report ran from (default eval/conversations.json);
+ *   BUILD_REPAIR_OUT names the output file (default eval/repair-cases.json).
  */
 const REPORT = process.env.BUILD_REPAIR_CASES;
+// The fixture file the report was run from (the gate set by default) and where to write the cases.
+const FIXTURES = process.env.BUILD_REPAIR_FIXTURES ?? "eval/conversations.json";
+const OUT = process.env.BUILD_REPAIR_OUT ?? "eval/repair-cases.json";
 const TURNS = (process.env.BUILD_REPAIR_TURNS ?? "").split(",").filter(Boolean).map((s) => { const [id, n] = s.split(":"); return { id, turn: Number(n) }; });
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
 interface Conversation { id: string; focus: Focus; question: string | null; cards: [string, string, string]; turns: { text: string; expectedCategory: string }[] }
@@ -31,13 +36,13 @@ interface Attempt { draft?: FollowupOutput; repairedAnswer?: FollowupOutput; rev
 describe.skipIf(!REPORT || TURNS.length === 0)("build repair cases", () => {
   it("writes eval/repair-cases.json from the report", async () => {
     const report = readFileSync(path.resolve(process.cwd(), REPORT!), "utf8");
-    const fixtures = JSON.parse(readFileSync(path.resolve(process.cwd(), "eval/conversations.json"), "utf8")).conversations as Conversation[];
+    const fixtures = JSON.parse(readFileSync(path.resolve(process.cwd(), FIXTURES), "utf8")).conversations as Conversation[];
     const config = getGenerationConfig();
     const provider = getGenerationProvider(config)!;
     const cases = [];
     for (const { id, turn } of TURNS) {
       const c = fixtures.find((f) => f.id === id)!;
-      const block = report.split(`\n### ${id} `)[1]?.split(/\n### conv-/)[0];
+      const block = report.split(`\n### ${id} `)[1]?.split(/\n### [a-z]/)[0];
       expect(block, `${id} in report`).toBeTruthy();
       const parts = block!.split(/\n\*\*Turn (\d+), you asked:\*\* /);
       const audits = new Map<number, { published?: FollowupOutput | null; attempts: Attempt[] }>();
@@ -86,8 +91,8 @@ describe.skipIf(!REPORT || TURNS.length === 0)("build repair cases", () => {
       });
     }
     const out = { $comment: "Fixed candidates for the repair/reviewer diagnostic (docs/RELEASE-C.md). Built by eval/repair-cases.build.eval.ts from a conversation report; adjudication fields are filled by hand against eval/RUBRIC.md: holds (an unsupported claim), questionable_prose (editorial, not a grounding failure), should_pass (the rubric allows it). Do not edit drafts or findings; add cases.", cases };
-    writeFileSync(path.resolve(process.cwd(), "eval/repair-cases.json"), JSON.stringify(out, null, 2) + "\n");
-    console.info(`wrote eval/repair-cases.json with ${cases.length} cases`);
+    writeFileSync(path.resolve(process.cwd(), OUT), JSON.stringify(out, null, 2) + "\n");
+    console.info(`wrote ${OUT} with ${cases.length} cases`);
   });
 });
 if (!REPORT || TURNS.length === 0) it("skipped: set BUILD_REPAIR_CASES and BUILD_REPAIR_TURNS", () => {});
