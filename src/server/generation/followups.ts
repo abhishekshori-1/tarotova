@@ -6,7 +6,8 @@ import { loadGrantedReading, type ResultSnapshot } from "../readingService";
 import { FollowupStateError, ValidationError } from "../errors";
 import { FOCUS_META } from "@/content/focuses";
 import { SAFETY_RESPONSES, isRefusalCategory, type SafetyCategory, type SafetyResponse } from "@/content/safety";
-import { FOLLOWUP_ALLOWANCE, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig } from "./config";
+import { attemptPolicy, mayAttempt } from "./attempts";
+import { FOLLOWUP_ALLOWANCE, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig } from "./config";
 import { FOLLOWUP_GROUNDING_VERSION } from "./grounding-prompts";
 import { FOLLOWUP_PROMPT_VERSION } from "./prompts";
 import { generateReviewedFollowup } from "./reviewed";
@@ -40,13 +41,17 @@ export interface FollowupsView {
   turns: FollowupTurnView[];
 }
 
-const DISABLED: FollowupsView = { status: "disabled", available: false, remaining: 0, turns: [] };
+/** Off switch: no new turns, but what was already shown stays readable. */
+function disabledView(rows: FollowupRow[], now: number): FollowupsView {
+  return { status: "disabled", available: false, remaining: 0, turns: turnViews(rows, now, false) };
+}
 
 function log(event: string, fields: Record<string, unknown>) {
   // Never the message, the answer or the key: ids, states and timings only.
   console.info("[followup]", { event, ...fields });
 }
 
+/** The per-row view; `retryable` here means attempts remain. Whether a retry is actually possible depends on the conversation: see turnViews. */
 function turnView(row: FollowupRow, now: number): FollowupTurnView {
   const base = { submissionId: row.submissionId, sequence: row.sequence, text: row.text };
   if (row.status === "succeeded" && row.output) return { ...base, status: "succeeded", answer: JSON.parse(row.output) as FollowupOutput };
@@ -59,12 +64,29 @@ function turnView(row: FollowupRow, now: number): FollowupTurnView {
   return { ...base, status: "failed", reason: row.errorReason ?? (row.status === "provider_called" ? "lease_expired" : "unknown"), retryable: row.attempts < GENERATION_MAX_ATTEMPTS };
 }
 
+/**
+ * Views with retry eligibility derived from the whole conversation, matching
+ * what requestFollowup will accept: attempts remain, the gate is open (flags,
+ * configuration, guest pause, the initial answer), no support response has
+ * closed the conversation, no other turn is in flight,
+ * and nothing was sent after the failed turn. A retry of the last turn stays
+ * possible when all three slots are used.
+ */
+function turnViews(rows: FollowupRow[], now: number, enabled = true): FollowupTurnView[] {
+  const views = rows.map((r) => turnView(r, now));
+  const closed = views.some((v) => v.status === "refused");
+  const inFlight = views.some((v) => v.status === "pending");
+  const last = Math.max(0, ...rows.map((r) => r.sequence));
+  return views.map((v) => (v.status === "failed" && v.retryable ? { ...v, retryable: enabled && !closed && !inFlight && v.sequence === last } : v));
+}
+
 async function rowsFor(readingId: string, ex: Pick<typeof db, "select"> = db): Promise<FollowupRow[]> {
   return ex.select().from(readingFollowups).where(eq(readingFollowups.readingId, readingId)).orderBy(asc(readingFollowups.sequence));
 }
 
 function assemble(rows: FollowupRow[], now: number, gate: { available: boolean; reason?: FollowupsView["reason"] }): FollowupsView {
-  const turns = rows.map((r) => turnView(r, now));
+  // The gate (flags, configuration, guest pause, initial answer) decides retries too; slot exhaustion does not.
+  const turns = turnViews(rows, now, gate.available);
   const remaining = Math.max(0, FOLLOWUP_ALLOWANCE - rows.length);
   if (!gate.available) return { status: "ready", available: false, reason: gate.reason, remaining, turns };
   if (turns.some((t) => t.status === "refused")) return { status: "ready", available: false, reason: "conversation_closed", remaining, turns };
@@ -90,8 +112,10 @@ async function gateFor(readingId: string, sessionId: string) {
 
 export async function listFollowups(readingId: string, sessionId: string): Promise<FollowupsView> {
   const g = await gateFor(readingId, sessionId);
-  if (g.disabled) return DISABLED;
-  return assemble(await rowsFor(readingId), Date.now(), g.gate);
+  const now = Date.now();
+  const rows = await rowsFor(readingId);
+  if (g.disabled) return disabledView(rows, now);
+  return assemble(rows, now, g.gate);
 }
 
 /**
@@ -99,8 +123,15 @@ export async function listFollowups(readingId: string, sessionId: string): Promi
  * The slot is reserved under a row lock on the reading so a count-then-insert
  * cannot double-allocate; a repeat POST with the same submission id and text
  * returns or resumes the existing turn; a different text under the same id
- * conflicts. Budget is reserved before the slot, so a denied request spends
- * no allowance.
+ * conflicts. The daily budget is charged per paid attempt: the claim
+ * transaction pays for the first attempt, so a denied request rolls the claim
+ * back and spends no allowance and a duplicate that merely reads an existing
+ * turn pays nothing; a further attempt under the same claim pays again before
+ * it starts, and stops with `budget_exhausted` if it cannot.
+ *
+ * Each claim carries a lease token; every later write on the row is
+ * conditioned on it, so a worker that outlives its lease cannot overwrite a
+ * result written by the request that reclaimed the turn.
  */
 export async function requestFollowup(
   readingId: string,
@@ -117,34 +148,40 @@ export async function requestFollowup(
   const { snapshot, grant, config } = g;
   const provider = getGenerationProvider(config)!;
 
-  // Idempotency first: a retry must never be charged a second budget unit.
-  const before = await rowsFor(readingId);
-  const same = before.find((r) => r.submissionId === submissionId);
-  if (same && same.text !== text) throw new FollowupStateError("submission_conflict");
-  if (!same) {
-    const budget = await reserveBudget(sessionId, ip, config);
-    if (!budget.allowed) throw new FollowupStateError("busy", Math.max(1, Math.ceil(budget.retryAfterMs / 1000)));
-  }
-
-  // Reserve or resume the slot under a lock on the reading.
+  // Reserve or resume the slot under a lock on the reading; count the budget
+  // in the same transaction so a denial rolls the claim back.
+  const leaseToken = randomId();
   const claimed = await db.transaction(async (tx) => {
     await tx.execute(sql`select id from ${readings} where ${readings.id} = ${readingId} for update`);
     const rows = await rowsFor(readingId, tx);
     const t = Date.now();
     const existing = rows.find((r) => r.submissionId === submissionId);
+    const charge = async () => {
+      const budget = await reserveBudget(sessionId, ip, config, tx);
+      if (!budget.allowed) throw new FollowupStateError("busy", Math.max(1, Math.ceil(budget.retryAfterMs / 1000)));
+    };
     if (existing) {
       if (existing.text !== text) throw new FollowupStateError("submission_conflict");
       const view = turnView(existing, t);
       if (view.status !== "failed" || !view.retryable) return { row: existing, run: false };
+      // A retry is new paid work: it needs the conversation still open, no
+      // other turn in flight, and nothing sent after it. A later message (a
+      // disclosure, a correction) would otherwise be missing from its context.
+      const others = assemble(rows.filter((r) => r.id !== existing.id), t, g.gate);
+      if (!others.available && (others.reason === "conversation_closed" || others.reason === "turn_in_flight")) throw new FollowupStateError(others.reason);
+      if (rows.some((r) => r.sequence > existing.sequence)) throw new FollowupStateError("retry_superseded");
+      await charge();
       const [reclaimed] = await tx
         .update(readingFollowups)
-        .set({ status: "pending", leaseExpiresAt: t + GENERATION_LEASE_MS, errorReason: null, updatedAt: t })
+        .set({ status: "pending", leaseExpiresAt: t + GENERATION_LEASE_MS, leaseToken, errorReason: null, updatedAt: t })
         .where(and(eq(readingFollowups.id, existing.id), sql`${readingFollowups.attempts} < ${GENERATION_MAX_ATTEMPTS}`))
         .returning();
-      return { row: reclaimed ?? existing, run: !!reclaimed };
+      if (!reclaimed) throw new FollowupStateError("turn_in_flight");
+      return { row: reclaimed, run: true };
     }
     const state = assemble(rows, t, g.gate);
     if (!state.available) throw new FollowupStateError(state.reason ?? "conversation_closed");
+    await charge();
     const [inserted] = await tx
       .insert(readingFollowups)
       .values({
@@ -156,6 +193,7 @@ export async function requestFollowup(
         status: "pending",
         attempts: 0,
         leaseExpiresAt: t + GENERATION_LEASE_MS,
+        leaseToken,
         promptVersion: FOLLOWUP_PROMPT_VERSION,
         reviewVersion: FOLLOWUP_GROUNDING_VERSION,
         contentVersion: snapshot.contentVersion,
@@ -169,6 +207,15 @@ export async function requestFollowup(
   const row = claimed.row;
   log("claimed", { readingId, followupId: row.id, sequence: row.sequence, attempts: row.attempts, basis: grant.basis });
 
+  // Every write from here on belongs to this claim. Zero rows means another
+  // request reclaimed the turn after our lease lapsed: stop without writing.
+  const owned = and(eq(readingFollowups.id, row.id), eq(readingFollowups.leaseToken, leaseToken));
+  const write = async (values: Partial<typeof readingFollowups.$inferInsert>): Promise<boolean> => {
+    const updated = await db.update(readingFollowups).set(values).where(owned).returning({ id: readingFollowups.id });
+    if (updated.length === 0) log("lease_lost", { readingId, followupId: row.id, attempts });
+    return updated.length > 0;
+  };
+
   const priorRows = (await rowsFor(readingId)).filter((r) => r.sequence < row.sequence);
   const context = { originalQuestion: g.reading.question, priorUserMessages: priorRows.map((r) => r.text) };
   const drawnCardIds = snapshot.cards.map((c) => c.id);
@@ -176,13 +223,20 @@ export async function requestFollowup(
   let safetyCategory = (row.safetyCategory as SafetyCategory | null) ?? null;
   let lastReason = "request_deadline";
 
-  while (attempts < GENERATION_MAX_ATTEMPTS && Date.now() < options.deadlineAt && (attempts === row.attempts || Date.now() - requestStartedAt < GENERATION_REQUEST_BUDGET_MS)) {
+  const policy = attemptPolicy(options.deadlineAt, requestStartedAt);
+  while (mayAttempt(attempts, row.attempts, policy)) {
+    if (attempts > row.attempts) {
+      // A further paid attempt under this claim; the claim itself paid for the first.
+      const budget = await reserveBudget(sessionId, ip, config);
+      if (!budget.allowed) {
+        lastReason = "budget_exhausted";
+        log("budget_exhausted", { readingId, followupId: row.id, attempts, scope: budget.scope });
+        break;
+      }
+    }
     attempts += 1;
     const startedAt = Date.now();
-    await db
-      .update(readingFollowups)
-      .set({ status: "provider_called", attempts, leaseExpiresAt: startedAt + GENERATION_LEASE_MS, model: config.providers[0].models.answer, updatedAt: startedAt })
-      .where(eq(readingFollowups.id, row.id));
+    if (!(await write({ status: "provider_called", attempts, leaseExpiresAt: startedAt + GENERATION_LEASE_MS, model: config.providers[0].models.answer, updatedAt: startedAt }))) return assemble(await rowsFor(readingId), Date.now(), g.gate);
 
     if (safetyCategory === null) {
       const classified = await provider.classify(text, options, context);
@@ -193,11 +247,11 @@ export async function requestFollowup(
         break;
       }
       safetyCategory = classified.value;
-      await db.update(readingFollowups).set({ safetyCategory, updatedAt: Date.now() }).where(eq(readingFollowups.id, row.id));
+      if (!(await write({ safetyCategory, updatedAt: Date.now() }))) return assemble(await rowsFor(readingId), Date.now(), g.gate);
     }
     if (isRefusalCategory(safetyCategory)) {
       const t = Date.now();
-      await db.update(readingFollowups).set({ status: "refused", completedAt: t, updatedAt: t, leaseExpiresAt: t }).where(eq(readingFollowups.id, row.id));
+      if (!(await write({ status: "refused", completedAt: t, updatedAt: t, leaseExpiresAt: t }))) return assemble(await rowsFor(readingId), t, g.gate);
       log("refused", { readingId, followupId: row.id, category: safetyCategory, attempts, durationMs: t - startedAt });
       return assemble(await rowsFor(readingId), t, g.gate);
     }
@@ -211,16 +265,13 @@ export async function requestFollowup(
       break;
     }
     const t = Date.now();
-    await db
-      .update(readingFollowups)
-      .set({ status: "succeeded", output: JSON.stringify(outcome.value), model: outcome.model, completedAt: t, updatedAt: t, leaseExpiresAt: t })
-      .where(eq(readingFollowups.id, row.id));
+    if (!(await write({ status: "succeeded", output: JSON.stringify(outcome.value), model: outcome.model, completedAt: t, updatedAt: t, leaseExpiresAt: t }))) return assemble(await rowsFor(readingId), t, g.gate);
     log("succeeded", { readingId, followupId: row.id, sequence: row.sequence, attempts, provider: provider.name, model: outcome.model, usage: outcome.usage, qualityCalls: outcome.quality.calls, repaired: outcome.quality.repairAttempted, durationMs: t - startedAt });
     return assemble(await rowsFor(readingId), t, g.gate);
   }
 
   const t = Date.now();
-  await db.update(readingFollowups).set({ status: "failed", errorReason: lastReason, attempts, updatedAt: t, leaseExpiresAt: t }).where(eq(readingFollowups.id, row.id));
+  if (!(await write({ status: "failed", errorReason: lastReason, attempts, updatedAt: t, leaseExpiresAt: t }))) return assemble(await rowsFor(readingId), t, g.gate);
   log("failed", { readingId, followupId: row.id, attempts, reason: lastReason });
   return assemble(await rowsFor(readingId), t, g.gate);
 }

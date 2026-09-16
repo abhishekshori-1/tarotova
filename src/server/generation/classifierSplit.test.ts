@@ -43,3 +43,37 @@ describe("independent classifier", () => {
     expect(config.configurationProblem).toContain("classifier unavailable");
   });
 });
+
+describe("independent repairer", () => {
+  it("keeps the writer chain for repairs when unset, and routes only the repair calls when set", async () => {
+    vi.stubEnv("GENERATION_PROVIDER", "deepseek,gemini");
+    vi.stubEnv("DEEPSEEK_API_KEY", "d");
+    vi.stubEnv("GEMINI_API_KEY", "g");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "gemini");
+    expect(getGenerationConfig().repairProvider).toBeUndefined();
+    vi.stubEnv("GENERATION_REPAIR_PROVIDER", "gemini");
+    const config = getGenerationConfig();
+    expect(config.repairProvider?.kind).toBe("gemini");
+    const deepseekWrite = vi.spyOn(DeepSeekProvider.prototype, "followup").mockResolvedValue({ ok: true, value: {}, model: "deepseek-flash" });
+    const deepseekRepair = vi.spyOn(DeepSeekProvider.prototype, "repairFollowup").mockResolvedValue({ ok: true, value: {}, model: "deepseek-flash" });
+    const geminiRepair = vi.spyOn(GeminiProvider.prototype, "repairFollowup").mockResolvedValue({ ok: true, value: {}, model: "gemini-3.8-flash" });
+    const provider = getGenerationProvider(config)!;
+    const input = {} as never;
+    await provider.followup(input);
+    await provider.repairFollowup(input, {} as never, []);
+    expect(deepseekWrite).toHaveBeenCalledTimes(1);
+    expect(geminiRepair).toHaveBeenCalledTimes(1);
+    expect(deepseekRepair).not.toHaveBeenCalled();
+  });
+
+  it("names a repairer whose key is missing and falls back to the chain", () => {
+    vi.stubEnv("GENERATION_PROVIDER", "deepseek");
+    vi.stubEnv("DEEPSEEK_API_KEY", "d");
+    vi.stubEnv("GENERATION_REVIEW_PROVIDER", "deepseek");
+    vi.stubEnv("GENERATION_REPAIR_PROVIDER", "gemini");
+    vi.stubEnv("GEMINI_API_KEY", "");
+    const config = getGenerationConfig();
+    expect(config.repairProvider).toBeUndefined();
+    expect(config.configurationProblem).toContain("repairer unavailable");
+  });
+});

@@ -8,6 +8,8 @@ import { createReading, updateSelection, OwnershipError } from "@/server/reading
 import { confirmSessionCode, requestSessionCode } from "@/server/sessionVerification";
 import { requestInterpretation } from "@/server/generation/service";
 import { listFollowups, requestFollowup } from "@/server/generation/followups";
+import { FOLLOWUP_PROMPT_VERSION } from "@/server/generation/prompts";
+import { FOLLOWUP_GROUNDING_VERSION } from "@/server/generation/grounding-prompts";
 import { FOLLOWUP_ALLOWANCE, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS } from "@/server/generation/config";
 import { StubProvider } from "@/server/generation/stub";
 import { ValidationError } from "@/server/errors";
@@ -193,7 +195,7 @@ describe("turns", () => {
     const t = Date.now();
     await db.insert(readingFollowups).values({
       id: randomId(), readingId: id, submissionId: "sub_lost0001", sequence: 1, text: "A lost turn", status: "provider_called",
-      attempts: 1, leaseExpiresAt: t + GENERATION_LEASE_MS, promptVersion: "followup.v1", reviewVersion: "grounding-followup.v1", contentVersion: "content.v8-draft", createdAt: t, updatedAt: t,
+      attempts: 1, leaseExpiresAt: t + GENERATION_LEASE_MS, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t,
     });
     expect((await listFollowups(id, session)).turns[0].status).toBe("pending");
     vi.useFakeTimers();
@@ -202,6 +204,139 @@ describe("turns", () => {
     const view = await requestFollowup(id, session, "1.1.1.1", "sub_lost0001", "A lost turn");
     expect(view.turns[0].status).toBe("succeeded");
     expect((await rows(id))[0].attempts).toBe(2);
+  });
+
+  it("refuses to retry a failed turn once a support response has closed the conversation", async () => {
+    const session = await createSession();
+    const id = await readyReading(session, "I've been feeling flat since winter.");
+    const t = Date.now();
+    await db.insert(readingFollowups).values({
+      id: randomId(), readingId: id, submissionId: "sub_closed001", sequence: 1, text: "How do these connect?", status: "failed", errorReason: "provider_timeout",
+      attempts: 1, leaseExpiresAt: t, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t,
+    });
+    expect((await listFollowups(id, session)).turns[0]).toMatchObject({ status: "failed", retryable: true });
+    const closed = await requestFollowup(id, session, "1.1.1.1", sid(), "Honestly I don't want to be here any more.");
+    expect(closed.turns[1]).toMatchObject({ status: "refused", category: "crisis" });
+    const followup = vi.spyOn(StubProvider.prototype, "followup");
+    await expect(requestFollowup(id, session, "1.1.1.1", "sub_closed001", "How do these connect?")).rejects.toMatchObject({ code: "conversation_closed" });
+    expect(followup).not.toHaveBeenCalled();
+    expect((await rows(id)).find((r) => r.submissionId === "sub_closed001")).toMatchObject({ status: "failed", attempts: 1 });
+  });
+
+  it("refuses to retry a failed turn that a later message has superseded, or while another turn is in flight", async () => {
+    const session = await createSession();
+    const id = await readyReading(session);
+    const t = Date.now();
+    const failedRow = { id: randomId(), readingId: id, submissionId: "sub_super0001", sequence: 1, text: "First", status: "failed", errorReason: "provider_timeout",
+      attempts: 1, leaseExpiresAt: t, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t };
+    await db.insert(readingFollowups).values(failedRow);
+    // Another turn in flight (live lease) blocks the retry.
+    await db.insert(readingFollowups).values({ ...failedRow, id: randomId(), submissionId: "sub_inflight01", sequence: 2, text: "Second", status: "provider_called", errorReason: null, leaseExpiresAt: t + GENERATION_LEASE_MS });
+    await expect(requestFollowup(id, session, "1.1.1.1", "sub_super0001", "First")).rejects.toMatchObject({ code: "turn_in_flight" });
+    // A completed later turn supersedes it: its context would miss that message.
+    await db.update(readingFollowups).set({ status: "succeeded", output: JSON.stringify({ paragraphs: ["Done."], reflection: null, beyondSpread: null }), leaseExpiresAt: t }).where(eq(readingFollowups.submissionId, "sub_inflight01"));
+    await expect(requestFollowup(id, session, "1.1.1.1", "sub_super0001", "First")).rejects.toMatchObject({ code: "retry_superseded" });
+    expect((await rows(id)).find((r) => r.submissionId === "sub_super0001")).toMatchObject({ status: "failed", attempts: 1 });
+  });
+
+  it("never lets a worker that lost its lease overwrite the result written by the reclaim", async () => {
+    const session = await createSession();
+    const id = await readyReading(session);
+    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const slow = requestFollowup(id, session, "1.1.1.1", "sub_lease00001", "Take your time [stub:slow]");
+    await new Promise((r) => setTimeout(r, 50));
+    // Simulate a later request reclaiming the turn after this lease lapsed: new token, its own result.
+    const takeover = { paragraphs: ["Written by the request that reclaimed the turn."], reflection: null, beyondSpread: null };
+    await db.update(readingFollowups).set({ leaseToken: "another-claim", status: "succeeded", output: JSON.stringify(takeover), attempts: 2 }).where(eq(readingFollowups.submissionId, "sub_lease00001"));
+    const view = await slow;
+    expect(view.turns[0]).toMatchObject({ status: "succeeded", answer: takeover });
+    expect((await rows(id))[0]).toMatchObject({ output: JSON.stringify(takeover), leaseToken: "another-claim", attempts: 2 });
+    expect(info.mock.calls.some(([, fields]) => (fields as { event?: string })?.event === "lease_lost")).toBe(true);
+  });
+
+  it("charges the daily budget for a retry and nothing for a duplicate read", async () => {
+    vi.stubEnv("GENERATION_LIMIT_SESSION_DAY", "2");
+    const session = await createSession();
+    await verifySession(session);
+    const id = await readyReading(session); // one unit spent by the reading's own answer
+    const t = Date.now();
+    await db.insert(readingFollowups).values({
+      id: randomId(), readingId: id, submissionId: "sub_budget0001", sequence: 1, text: "Retry me", status: "failed", errorReason: "provider_timeout",
+      attempts: 1, leaseExpiresAt: t, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t,
+    });
+    const retried = await requestFollowup(id, session, "1.1.1.1", "sub_budget0001", "Retry me"); // the second and last unit
+    expect(retried.turns[0].status).toBe("succeeded");
+    const followup = vi.spyOn(StubProvider.prototype, "followup");
+    const again = await requestFollowup(id, session, "1.1.1.1", "sub_budget0001", "Retry me"); // a free read
+    expect(again).toEqual(retried);
+    expect(followup).not.toHaveBeenCalled();
+    await expect(requestFollowup(id, session, "1.1.1.1", sid(), "A new turn")).rejects.toMatchObject({ code: "busy" });
+    expect(await rows(id)).toHaveLength(1);
+  });
+
+  it("keeps the history readable when follow-ups are switched off", async () => {
+    const session = await createSession();
+    const id = await readyReading(session);
+    await requestFollowup(id, session, "1.1.1.1", sid(), "How do these cards connect?");
+    vi.stubEnv("FOLLOWUPS_ENABLED", "false");
+    const view = await listFollowups(id, session);
+    expect(view).toMatchObject({ status: "disabled", available: false, remaining: 0 });
+    expect(view.turns).toHaveLength(1);
+    expect(view.turns[0].status).toBe("succeeded");
+    await expect(requestFollowup(id, session, "1.1.1.1", sid(), "Another")).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("shows Retry only where the server would accept one, including the last turn when every slot is used", async () => {
+    const session = await createSession();
+    const id = await readyReading(session, "I've been feeling flat since winter.");
+    const t = Date.now();
+    const failed = (submissionId: string, sequence: number) => ({ id: randomId(), readingId: id, submissionId, sequence, text: `Turn ${sequence}`, status: "failed", errorReason: "provider_timeout",
+      attempts: 1, leaseExpiresAt: t, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t });
+    await db.insert(readingFollowups).values(failed("sub_view000001", 1));
+    expect((await listFollowups(id, session)).turns[0]).toMatchObject({ status: "failed", retryable: true });
+    // Superseded by a later turn: not retryable, even though attempts remain.
+    await db.insert(readingFollowups).values({ ...failed("sub_view000002", 2), status: "succeeded", errorReason: null, output: JSON.stringify({ paragraphs: ["Done."], reflection: null, beyondSpread: null }) });
+    expect((await listFollowups(id, session)).turns.map((v) => v.status === "failed" && v.retryable)).toEqual([false, false]);
+    // The last slot fails: retryable although the allowance is spent, and the retry is accepted.
+    await db.insert(readingFollowups).values(failed("sub_view000003", 3));
+    const full = await listFollowups(id, session);
+    expect(full).toMatchObject({ available: false, reason: "allowance_exhausted", remaining: 0 });
+    expect(full.turns[2]).toMatchObject({ status: "failed", retryable: true });
+    expect((await requestFollowup(id, session, "1.1.1.1", "sub_view000003", "Turn 3")).turns[2].status).toBe("succeeded");
+    // Switched off: history stays, nothing is retryable.
+    await db.update(readingFollowups).set({ status: "failed", errorReason: "provider_timeout", attempts: 1 }).where(eq(readingFollowups.submissionId, "sub_view000003"));
+    vi.stubEnv("FOLLOWUPS_ENABLED", "false");
+    expect((await listFollowups(id, session)).turns[2]).toMatchObject({ status: "failed", retryable: false });
+    vi.stubEnv("FOLLOWUPS_ENABLED", "true");
+    // After a support response nothing is retryable.
+    await db.update(readingFollowups).set({ status: "refused", safetyCategory: "crisis" }).where(eq(readingFollowups.submissionId, "sub_view000002"));
+    expect((await listFollowups(id, session)).turns[2]).toMatchObject({ status: "failed", retryable: false });
+  });
+
+  it("offers no retry while the gate is closed, for instance during a guest pause", async () => {
+    const session = await createSession();
+    const id = await readyReading(session);
+    const t = Date.now();
+    await db.insert(readingFollowups).values({ id: randomId(), readingId: id, submissionId: "sub_gate000001", sequence: 1, text: "Turn 1", status: "failed", errorReason: "provider_timeout",
+      attempts: 1, leaseExpiresAt: t, promptVersion: FOLLOWUP_PROMPT_VERSION, reviewVersion: FOLLOWUP_GROUNDING_VERSION, contentVersion: "content.v8-draft", createdAt: t, updatedAt: t });
+    expect((await listFollowups(id, session)).turns[0]).toMatchObject({ status: "failed", retryable: true });
+    vi.stubEnv("GUEST_GENERATION_ENABLED", "false");
+    expect(await listFollowups(id, session)).toMatchObject({ available: false, reason: "guest_paused", turns: [{ status: "failed", retryable: false }] });
+    await expect(requestFollowup(id, session, "1.1.1.1", "sub_gate000001", "Turn 1")).rejects.toMatchObject({ code: "guest_paused" });
+    vi.stubEnv("GUEST_GENERATION_ENABLED", "true");
+    expect((await listFollowups(id, session)).turns[0]).toMatchObject({ status: "failed", retryable: true });
+  });
+
+  it("charges each further attempt under a claim and stops when the budget runs out", async () => {
+    vi.stubEnv("GENERATION_LIMIT_SESSION_DAY", "2");
+    const session = await createSession();
+    await verifySession(session);
+    const id = await readyReading(session); // unit 1: the reading's answer
+    const followup = vi.spyOn(StubProvider.prototype, "followup");
+    const view = await requestFollowup(id, session, "1.1.1.1", sid(), "What now? [stub:fail]"); // unit 2: the claim; a second attempt would need unit 3
+    expect(view.turns[0]).toMatchObject({ status: "failed", reason: "budget_exhausted", retryable: true });
+    expect((await rows(id))[0].attempts).toBe(1);
+    expect(followup).toHaveBeenCalledTimes(1);
   });
 
   it("never stores a follow-up that fails validation", async () => {

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyGroundingRepair, generateReviewed, parseGroundingReview } from "./reviewed";
-import type { GenerationProvider, GroundingReview, InterpretationInput, InterpretationOutput } from "./types";
+import { applyGroundingRepair, applyRepairDetailed, generateReviewed, parseGroundingReview, readingShape } from "./reviewed";
+import type { GenerationProvider, GroundingIssue, GroundingReview, InterpretationInput, InterpretationOutput } from "./types";
+import { REPAIR_TOOL, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
 const ids = ["major-00-fool", "major-14-temperance", "major-09-hermit"];
 const input: InterpretationInput = { question: "I stop projects after a week. I want to understand, not get a routine.", focusLabel: "Personal growth", safetyCategory: "none", cards: [
@@ -37,6 +38,14 @@ function fake() {
 afterEach(() => vi.restoreAllMocks());
 
 describe("reviewed publication", () => {
+  it("retains cache reads and TTL-specific writes in the published usage total", async () => {
+    const p = fake();
+    p.review.mockResolvedValue({ ...ok(pass), usage: { inputTokens: 20, outputTokens: 5, cacheReadTokens: 1000, cacheWriteTokens: 500, cacheWrite5mTokens: 500 } });
+    expect(await generateReviewed(p, input, ids)).toMatchObject({
+      ok: true, usage: { inputTokens: 30, outputTokens: 10, cacheReadTokens: 1000, cacheWriteTokens: 500, cacheWrite5mTokens: 500 },
+    });
+  });
+
   it("publishes only after the review completes, with review usage included", async () => {
     const p = fake();
     let finish!: (v: unknown) => void;
@@ -154,6 +163,31 @@ describe("reviewed publication", () => {
   it("ignores incidental issue annotations without changing the verdict or finding", () => {
     expect(parseGroundingReview({ ...revise, issues: [{ ...revise.issues[0], relevance_note: "n/a" }] }, draft)).toEqual(revise);
     expect(parseGroundingReview({ decision: "revise", issues: [{ field: "challenge", relevance_note: "pass", reason: "No quote supplied." }] }, draft)).toBeUndefined();
+  });
+
+  it("says why a repair could not be applied, and puts it in the trace", async () => {
+    const shape = readingShape(input);
+    expect(applyRepairDetailed(shape, "not an object", draft, revise)).toMatchObject({ ok: false, detail: expect.stringContaining("repair_shape") });
+    expect(applyRepairDetailed(shape, { edits: [{ field: "guidance", replacement }] }, draft, revise)).toMatchObject({ ok: false, detail: "repair_fields: edited guidance; flagged challenge" });
+    expect(applyRepairDetailed(shape, { edits: [{ field: "challenge", replacement }, { field: "challenge", replacement }] }, draft, revise)).toMatchObject({ ok: false, detail: expect.stringContaining("duplicate") });
+    expect(applyRepairDetailed(shape, { edits: [{ field: "challenge", replacement }] }, draft, revise)).toMatchObject({ ok: true });
+
+    const provider = fake();
+    provider.review.mockResolvedValueOnce(ok(revise, "reviewer"));
+    provider.repair.mockResolvedValueOnce(ok({ edits: [{ field: "guidance", replacement }] }, "writer"));
+    const outcome = await generateReviewed(provider as unknown as GenerationProvider, input, ids);
+    expect(outcome).toMatchObject({ ok: false, reason: "grounding_repair_invalid" });
+    expect(outcome.quality.calls.find((c) => c.phase === "validate")).toMatchObject({ reason: "repair_fields: edited guidance; flagged challenge" });
+  });
+
+  it("narrows the repair tool to the flagged fields, one replacement each", () => {
+    const issues = [{ field: "challenge", quote: "q", reason: "r" }, { field: "challenge", quote: "q2", reason: "r2" }, { field: "reflection", quote: "q3", reason: "r3" }] as GroundingIssue[];
+    expect(repairFields(issues)).toEqual(["challenge", "reflection"]);
+    const tool = repairToolFor(REPAIR_TOOL, repairFields(issues));
+    expect(tool.name).toBe("repair_reading");
+    expect(tool.input_schema.properties.edits).toMatchObject({ minItems: 2, maxItems: 2, items: { properties: { field: { enum: ["challenge", "reflection"] } } } });
+    expect(REPAIR_TOOL.input_schema.properties.edits.items.properties.field.enum.length).toBeGreaterThan(2); // the shared constant is untouched
+    expect(JSON.parse(groundingUserMessage(input, draft, issues)).repair).toEqual({ fields: ["challenge", "reflection"], rule: "Return exactly one replacement for each of these 2 field(s): challenge, reflection. Return no other field." });
   });
 
   it("rejects a repair missing a flagged field", () => {

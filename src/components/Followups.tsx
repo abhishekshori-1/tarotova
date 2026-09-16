@@ -62,10 +62,12 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
       setText("");
     } catch (e) {
       const err = e as ApiError;
-      if (err.status === 409 && err.body?.error === "turn_in_flight") await load();
-      else if (err.status === 409 && err.body?.error === "busy") setError("The table's full right now. Try again in a little while.");
-      else if (err.status === 409) await load();
-      else {
+      if (err.status === 409) {
+        // The server said no: show its view again (the optimistic slot goes), keep the typed text, and explain outside the form.
+        await load();
+        if (err.body?.error === "busy") setError("The table's full right now. Try again in a little while.");
+        else if (err.body?.error === "retry_superseded") setError("That one can't be retried now that the conversation has moved on.");
+      } else {
         // Network or server trouble: keep the text and offer the same submission again.
         setView((v) => v && { ...v, turns: v.turns.map((t) => (t.submissionId === submissionId ? { submissionId, sequence: t.sequence, text: body, status: "failed", reason: "request_failed", retryable: true } : t)) });
       }
@@ -75,7 +77,9 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
     }
   }
 
-  if (!view || view.status === "disabled") return null;
+  if (!view) return null;
+  // Nothing to show until there is history or a way to start one. When the
+  // feature is switched off, what was already shown stays readable.
   if (view.turns.length === 0 && !view.available && view.reason !== "turn_in_flight") return null;
 
   const remaining = view.remaining;
@@ -130,12 +134,12 @@ export function FollowupPanel({ readingId, focus }: { readingId: string; focus: 
               {busy ? FOLLOWUP_COPY.pending : FOLLOWUP_COPY.send}
             </button>
           </div>
-          {error && (
-            <p role="alert" className="mt-2 text-sm text-red-700">
-              {error}
-            </p>
-          )}
         </form>
+      )}
+      {error && (
+        <p role="alert" className="mt-4 text-sm text-red-700">
+          {error}
+        </p>
       )}
 
       {!view.available && view.reason === "allowance_exhausted" && <p className="prose-measure mt-6 text-sm text-[var(--fg-soft)]">{FOLLOWUP_COPY.ended}</p>}

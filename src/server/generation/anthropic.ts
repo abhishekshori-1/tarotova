@@ -1,12 +1,14 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierSystem, classifierUserMessage, followupUserMessage, interpretationUserMessage } from "./prompts";
-import type { ConversationContext, FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
-import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage } from "./grounding-prompts";
+import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
+import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
 import { callTimeout, deadlineExceeded } from "./deadline";
 
 const DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
+
+type CacheControl = { type: "ephemeral"; ttl?: "1h" };
 
 interface ToolCall {
   name: string;
@@ -58,7 +60,7 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), REPAIR_TOOL, 1800, options);
+    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)), 1800, options);
   }
 
   followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -70,10 +72,20 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), FOLLOWUP_REPAIR_TOOL, 1200, options);
+    return this.callTool(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)), 1200, options);
   }
 
-  private async callTool(model: string, system: string, user: string, tool: ToolCall, maxTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+  /** With caching on, a two-part message becomes two text blocks with the breakpoint after the stable one; otherwise the parts are joined. */
+  private userContent(user: UserMessage): string | { type: "text"; text: string; cache_control?: CacheControl }[] {
+    if (typeof user === "string" || !this.promptCache) return userMessageText(user);
+    return [{ type: "text", text: user.stable, cache_control: this.cacheControl() }, { type: "text", text: user.rest }];
+  }
+
+  private cacheControl(): CacheControl {
+    return this.promptCache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" };
+  }
+
+  private async callTool(model: string, system: string, user: UserMessage, tool: ToolCall, maxTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     const timeoutMs = callTimeout(this.timeoutMs, options);
     if (timeoutMs <= 0) return deadlineExceeded();
     const signal = AbortSignal.timeout(timeoutMs);
@@ -94,10 +106,8 @@ export class AnthropicProvider implements GenerationProvider {
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system: this.promptCache
-            ? [{ type: "text", text: system, cache_control: this.promptCache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" } }]
-            : system,
-          messages: [{ role: "user", content: user }],
+          system: this.promptCache ? [{ type: "text", text: system, cache_control: this.cacheControl() }] : system,
+          messages: [{ role: "user", content: this.userContent(user) }],
           tools: [tool],
           tool_choice: { type: "tool", name: tool.name },
         }),
@@ -127,7 +137,7 @@ export class AnthropicProvider implements GenerationProvider {
     let body: {
       stop_reason?: string;
       content?: { type: string; name?: string; input?: unknown }[];
-      usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number };
+      usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number; cache_creation?: { ephemeral_5m_input_tokens?: number; ephemeral_1h_input_tokens?: number } };
       model?: string;
     };
     try {
@@ -149,6 +159,12 @@ export class AnthropicProvider implements GenerationProvider {
             outputTokens: body.usage.output_tokens ?? 0,
             ...(body.usage.cache_creation_input_tokens ? { cacheWriteTokens: body.usage.cache_creation_input_tokens } : {}),
             ...(body.usage.cache_read_input_tokens ? { cacheReadTokens: body.usage.cache_read_input_tokens } : {}),
+            ...(body.usage.cache_creation ? {
+              cacheWrite5mTokens: body.usage.cache_creation.ephemeral_5m_input_tokens ?? 0,
+              cacheWrite1hTokens: body.usage.cache_creation.ephemeral_1h_input_tokens ?? 0,
+            } : body.usage.cache_creation_input_tokens && this.promptCache ? {
+              [this.promptCache === "1h" ? "cacheWrite1hTokens" : "cacheWrite5mTokens"]: body.usage.cache_creation_input_tokens,
+            } : {}),
           }
         : undefined,
     };

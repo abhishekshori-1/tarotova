@@ -1,7 +1,7 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
 import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierSystem, classifierUserMessage, followupUserMessage, interpretationUserMessage } from "./prompts";
-import type { ConversationContext, FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
-import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage } from "./grounding-prompts";
+import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
+import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
 import { callTimeout, deadlineExceeded } from "./deadline";
 
@@ -42,6 +42,7 @@ export class GeminiProvider implements GenerationProvider {
     private readonly timeoutMs: number,
     /** Tests only: a local server that stalls, to prove the timeout ends the call. */
     private readonly endpoint: string = DEFAULT_ENDPOINT,
+    private readonly thinkingLevel?: "low" | "medium" | "high",
   ) {}
 
   async classify(question: string, options?: ProviderCallOptions, context?: ConversationContext): Promise<ProviderOutcome<SafetyCategory>> {
@@ -63,7 +64,7 @@ export class GeminiProvider implements GenerationProvider {
   }
 
   repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callJson(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), REPAIR_TOOL.input_schema, 8192, options);
+    return this.callJson(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)).input_schema, 8192, options);
   }
 
   followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -75,10 +76,10 @@ export class GeminiProvider implements GenerationProvider {
   }
 
   repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callJson(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), FOLLOWUP_REPAIR_TOOL.input_schema, 4096, options);
+    return this.callJson(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)).input_schema, 4096, options);
   }
 
-  private async callJson(model: string, system: string, user: string, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+  private async callJson(model: string, system: string, user: UserMessage, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     const timeoutMs = callTimeout(this.timeoutMs, options);
     if (timeoutMs <= 0) return deadlineExceeded();
     const signal = AbortSignal.timeout(timeoutMs);
@@ -90,8 +91,11 @@ export class GeminiProvider implements GenerationProvider {
         signal,
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: "user", parts: [{ text: user }] }],
-          generationConfig: { responseMimeType: "application/json", responseSchema: toGeminiSchema(schema), maxOutputTokens },
+          contents: [{ role: "user", parts: [{ text: userMessageText(user) }] }],
+          generationConfig: {
+            responseMimeType: "application/json", responseSchema: toGeminiSchema(schema), maxOutputTokens,
+            ...(this.thinkingLevel ? { thinkingConfig: { thinkingLevel: this.thinkingLevel } } : {}),
+          },
         }),
       });
     } catch (err) {
@@ -114,7 +118,7 @@ export class GeminiProvider implements GenerationProvider {
     let body: {
       candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
       promptFeedback?: { blockReason?: string };
-      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; cachedContentTokenCount?: number; thoughtsTokenCount?: number };
       modelVersion?: string;
     };
     try {
@@ -142,7 +146,12 @@ export class GeminiProvider implements GenerationProvider {
       ok: true,
       value,
       model: body.modelVersion ?? model,
-      usage: body.usageMetadata ? { inputTokens: body.usageMetadata.promptTokenCount ?? 0, outputTokens: body.usageMetadata.candidatesTokenCount ?? 0 } : undefined,
+      usage: body.usageMetadata ? {
+        inputTokens: Math.max(0, (body.usageMetadata.promptTokenCount ?? 0) - (body.usageMetadata.cachedContentTokenCount ?? 0)),
+        // Gemini bills thinking as output; promptTokenCount includes cache hits.
+        outputTokens: (body.usageMetadata.candidatesTokenCount ?? 0) + (body.usageMetadata.thoughtsTokenCount ?? 0),
+        ...(body.usageMetadata.cachedContentTokenCount !== undefined ? { cacheReadTokens: body.usageMetadata.cachedContentTokenCount } : {}),
+      } : undefined,
     };
   }
 }

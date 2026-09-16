@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AnthropicProvider } from "./anthropic";
 import { INTERPRETATION_SYSTEM } from "./prompts";
-import type { InterpretationInput } from "./types";
+import type { FollowupInput, InterpretationInput } from "./types";
 
 const INPUT: InterpretationInput = {
   question: "What should I consider before changing jobs?",
@@ -55,12 +55,38 @@ describe("AnthropicProvider", () => {
     vi.stubGlobal("fetch", fetchMock);
     const cached = new AnthropicProvider("sk-test", { answer: "claude-sonnet-5", classifier: "claude-haiku-4-5-20251001" }, 5_000, undefined, undefined, "1h");
     const outcome = await cached.classify("hello");
-    expect(outcome).toMatchObject({ ok: true, usage: { inputTokens: 120, outputTokens: 5, cacheWriteTokens: 1100 } });
+    expect(outcome).toMatchObject({ ok: true, usage: { inputTokens: 120, outputTokens: 5, cacheWriteTokens: 1100, cacheWrite1hTokens: 1100 } });
     const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
     expect(body.system).toEqual([{ type: "text", text: expect.any(String), cache_control: { type: "ephemeral", ttl: "1h" } }]);
 
     await provider().classify("hello");
     expect(typeof JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string).system).toBe("string");
+  });
+
+  it("sends the frozen reading as its own cacheable block on follow-up reviews, and joins the parts when caching is off", async () => {
+    const reply = { content: [{ type: "tool_use", name: "review_followup", input: { decision: "pass", issues: [] } }], usage: { input_tokens: 80, output_tokens: 9, cache_creation_input_tokens: 0, cache_read_input_tokens: 2400 } };
+    const fetchMock = vi.fn().mockResolvedValue(response(200, reply));
+    vi.stubGlobal("fetch", fetchMock);
+    const followup: FollowupInput = { focusLabel: "Work", cards: INPUT.cards, originalQuestion: INPUT.question, initialAnswer: null, priorTurns: [], latest: "How do these cards connect?", safetyCategory: "none" };
+    const answer = { paragraphs: ["The Fool and the Chariot pull in different directions."], reflection: null, beyondSpread: null };
+
+    const cached = new AnthropicProvider("sk-test", { answer: "claude-sonnet-5", classifier: "claude-haiku-4-5-20251001" }, 5_000, undefined, undefined, "5m");
+    await cached.reviewFollowup(followup, answer);
+    const body = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
+    expect(body.messages[0].content).toHaveLength(2);
+    expect(body.messages[0].content[0]).toMatchObject({ type: "text", cache_control: { type: "ephemeral" } });
+    expect(body.messages[0].content[0].text).toContain("\"reading\"");
+    expect(body.messages[0].content[0].text).toContain("What should I consider before changing jobs?");
+    expect(body.messages[0].content[0].text).not.toContain("How do these cards connect?");
+    expect(body.messages[0].content[1]).not.toHaveProperty("cache_control");
+    expect(body.messages[0].content[1].text).toContain("How do these cards connect?");
+    expect(body.messages[0].content[1].text).toContain("\"candidate\"");
+
+    await provider().reviewFollowup(followup, answer);
+    const plain = JSON.parse((fetchMock.mock.calls[1][1] as RequestInit).body as string);
+    expect(typeof plain.messages[0].content).toBe("string");
+    expect(plain.messages[0].content).toContain("\"reading\"");
+    expect(plain.messages[0].content).toContain("\"candidate\"");
   });
 
   it("names the workspace when the key is organization-level", async () => {

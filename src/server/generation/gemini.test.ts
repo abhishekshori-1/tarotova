@@ -43,6 +43,25 @@ describe("toGeminiSchema", () => {
 });
 
 describe("GeminiProvider", () => {
+  it("sends explicitly selected thinking effort while leaving other instances at the model default", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}')));
+    vi.stubGlobal("fetch", fetchMock);
+    const reviewer = new GeminiProvider("test", { answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" }, 5000, undefined, "low");
+    await reviewer.review(INPUT, { perspective: "", cards: [], reflection: "", beyondSpread: null });
+    await provider().interpret(INPUT);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).generationConfig.thinkingConfig).toBeUndefined();
+  });
+
+  it("prices cached input separately and includes billed thinking in output", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}', {
+      usageMetadata: { promptTokenCount: 400, cachedContentTokenCount: 300, candidatesTokenCount: 50, thoughtsTokenCount: 120 },
+    }))));
+    expect(await provider().review(INPUT, { perspective: "", cards: [], reflection: "", beyondSpread: null })).toMatchObject({
+      usage: { inputTokens: 100, cacheReadTokens: 300, outputTokens: 170 },
+    });
+  });
+
   it("asks for JSON against the converted schema and parses the reply", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response(200, candidate(JSON.stringify({ perspective: "..." }))));
     vi.stubGlobal("fetch", fetchMock);

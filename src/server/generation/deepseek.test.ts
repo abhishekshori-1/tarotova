@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { DeepSeekProvider } from "./deepseek";
+import { DeepSeekProvider, unwrapArguments } from "./deepseek";
 import type { InterpretationInput } from "./types";
 
 const INPUT: InterpretationInput = {
@@ -26,6 +26,14 @@ function toolReply(name: string, args: unknown, extra: Record<string, unknown> =
 afterEach(() => vi.unstubAllGlobals());
 
 describe("DeepSeekProvider", () => {
+  it("separates automatically cached tokens from uncached input", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response(200, toolReply("deliver_reading", {}, {
+      usage: { prompt_tokens: 300, prompt_cache_hit_tokens: 240, prompt_cache_miss_tokens: 60, completion_tokens: 40 },
+    })));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await provider().interpret(INPUT)).toMatchObject({ usage: { inputTokens: 60, outputTokens: 40, cacheReadTokens: 240 } });
+  });
+
   it("forces the tool with thinking disabled and parses the arguments", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response(200, toolReply("deliver_reading", { perspective: "..." })));
     vi.stubGlobal("fetch", fetchMock);
@@ -39,6 +47,16 @@ describe("DeepSeekProvider", () => {
     expect(body.tools[0].function.parameters.required).toContain("perspective");
     expect(body.messages[0].role).toBe("system");
     expect(body.messages[1].content).toContain("<question>\nWhat should I consider before changing jobs?\n</question>");
+  });
+
+  it("unwraps arguments DeepSeek wraps under a single parameters key, and nothing else", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(response(200, toolReply("deliver_reading", { parameters: { perspective: "..." } }))).mockResolvedValueOnce(response(200, toolReply("deliver_reading", { parameters: "..." , perspective: "x" })));
+    vi.stubGlobal("fetch", fetchMock);
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: true, value: { perspective: "..." } });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: true, value: { parameters: "...", perspective: "x" } });
+    expect(unwrapArguments({ arguments: { a: 1 } })).toEqual({ a: 1 });
+    expect(unwrapArguments({ paragraphs: ["p"] })).toEqual({ paragraphs: ["p"] });
+    expect(unwrapArguments({ parameters: ["not", "an", "object"] })).toEqual({ parameters: ["not", "an", "object"] });
   });
 
   it("classifies and rejects a category outside the taxonomy", async () => {

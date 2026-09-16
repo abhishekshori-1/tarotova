@@ -191,6 +191,7 @@ export const readingFollowups = pgTable(
     errorReason: text("error_reason"),
     attempts: integer("attempts").notNull().default(0),
     leaseExpiresAt: epochMs("lease_expires_at").notNull(),
+    leaseToken: text("lease_token"), // set by the claim; every later write on the row is conditioned on it
     promptVersion: text("prompt_version").notNull(),
     reviewVersion: text("review_version").notNull(),
     contentVersion: text("content_version").notNull(),

@@ -2,11 +2,12 @@ import { and, eq, inArray, lte, or, sql } from "drizzle-orm";
 import { db } from "../db/client";
 import { readingGenerations } from "../db/schema";
 import { randomId } from "../ids";
-import { checkAndIncrement } from "../rateLimit";
+import { checkAndIncrement, type RateLimitExecutor } from "../rateLimit";
 import { loadGrantedReading } from "../readingService";
 import { isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { AnthropicProvider } from "./anthropic";
-import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_BUDGET_MS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig, type GenerationConfig, type ProviderSpec } from "./config";
+import { attemptPolicy, mayAttempt } from "./attempts";
+import { GENERATION_KIND, GENERATION_LEASE_MS, GENERATION_MAX_ATTEMPTS, GENERATION_REQUEST_DEADLINE_MS, getGenerationConfig, specFor, type GenerationConfig, type ProviderSpec } from "./config";
 import { FallbackProvider } from "./fallback";
 import { GeminiProvider } from "./gemini";
 import { DeepSeekProvider } from "./deepseek";
@@ -22,10 +23,16 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 let stub: StubProvider | undefined;
 
+/** One vendor by name, for the evaluation harnesses; undefined when its key is missing. Production composes through getGenerationProvider. */
+export function providerByKind(kind: string, config: GenerationConfig): GenerationProvider | undefined {
+  const resolved = specFor(kind.toLowerCase(), process.env.NODE_ENV === "production");
+  return resolved.spec ? buildProvider(resolved.spec, config.timeoutMs) : undefined;
+}
+
 function buildProvider(spec: ProviderSpec, timeoutMs: number): GenerationProvider {
   switch (spec.kind) {
     case "gemini":
-      return new GeminiProvider(spec.apiKey!, spec.models, timeoutMs);
+      return new GeminiProvider(spec.apiKey!, spec.models, timeoutMs, undefined, spec.thinkingLevel);
     case "anthropic":
       return new AnthropicProvider(spec.apiKey!, spec.models, timeoutMs, spec.workspaceId, undefined, spec.promptCache);
     case "deepseek":
@@ -42,14 +49,15 @@ export function getGenerationProvider(config: GenerationConfig): GenerationProvi
   const writer = chain.length === 1 ? chain[0] : new FallbackProvider(chain, (from, to, reason, detail) => log("fallback", { from, to, reason, detail }));
   const reviewer = config.reviewProvider ? buildProvider(config.reviewProvider, config.timeoutMs) : undefined;
   const classifier = config.classifierProvider ? buildProvider(config.classifierProvider, config.timeoutMs) : writer;
+  const repairer = config.repairProvider ? buildProvider(config.repairProvider, config.timeoutMs) : writer;
   return {
     name: writer.name,
     classify: (question, options, context) => classifier.classify(question, options, context),
     interpret: (input, options) => writer.interpret(input, options),
-    repair: (input, answer, issues, options) => writer.repair(input, answer, issues, options),
+    repair: (input, answer, issues, options) => repairer.repair(input, answer, issues, options),
     review: (input, answer, options) => reviewer ? reviewer.review(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),
     followup: (input, options) => writer.followup(input, options),
-    repairFollowup: (input, answer, issues, options) => writer.repairFollowup(input, answer, issues, options),
+    repairFollowup: (input, answer, issues, options) => repairer.repairFollowup(input, answer, issues, options),
     reviewFollowup: (input, answer, options) => reviewer ? reviewer.reviewFollowup(input, answer, options) : Promise.resolve({ ok: false, reason: "reviewer_not_configured", retryable: false, uncertain: false }),
   };
 }
@@ -111,7 +119,8 @@ export async function requestInterpretation(readingId: string, sessionId: string
 
   // A second attempt only starts while the request still has time for it;
   // otherwise the row's lease lapses and a later request picks it up.
-  while (attempts < GENERATION_MAX_ATTEMPTS && Date.now() < options.deadlineAt && (attempts === claimed.attempts || Date.now() - requestStartedAt < GENERATION_REQUEST_BUDGET_MS)) {
+  const policy = attemptPolicy(options.deadlineAt, requestStartedAt);
+  while (mayAttempt(attempts, claimed.attempts, policy)) {
     attempts += 1;
     const startedAt = Date.now();
     // Recorded before the await: a lost response still counts as a paid attempt.
@@ -221,14 +230,14 @@ async function claim(existing: GenerationRow | undefined, readingId: string, con
   return reclaimed;
 }
 
-export async function reserveBudget(sessionId: string, ip: string, config: GenerationConfig) {
+export async function reserveBudget(sessionId: string, ip: string, config: GenerationConfig, ex?: RateLimitExecutor) {
   const scopes = [
     { scope: "session", identifier: `session:${sessionId}`, limit: config.limits.sessionPerDay },
     { scope: "ip", identifier: `ip:${ip}`, limit: config.limits.ipPerDay },
     { scope: "global", identifier: "global", limit: config.limits.globalPerDay },
   ];
   for (const { scope, identifier, limit } of scopes) {
-    const result = await checkAndIncrement(identifier, { action: "generation_day", windowMs: DAY_MS, limit });
+    const result = await checkAndIncrement(identifier, { action: "generation_day", windowMs: DAY_MS, limit }, ex);
     if (!result.allowed) return { allowed: false as const, scope, retryAfterMs: result.retryAfterMs };
   }
   return { allowed: true as const };

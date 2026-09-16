@@ -7,8 +7,8 @@
  *   personalized section at all (Release A behaviour).
  * - GUEST_GENERATION_ENABLED: the guest-only kill switch — verified sessions
  *   keep generating while anonymous spend is paused.
- * - GENERATION_PROVIDER: an ordered, comma-separated chain. "gemini,anthropic"
- *   (the production default) prefers Gemini and falls back to Anthropic when
+ * - GENERATION_PROVIDER: an ordered, comma-separated chain. "gemini,deepseek"
+ *   (the production default) prefers Gemini and falls back to DeepSeek when
  *   Gemini fails; "stub" is the free offline provider for dev/tests. An entry
  *   whose key is missing is skipped and named in `configurationProblem`;
  *   production never falls back to the stub — with no usable provider the
@@ -17,12 +17,16 @@
  *   chain's first (its <VENDOR>_CLASSIFIER_MODEL applies). Unset keeps the
  *   chain's first provider. No fallback: an explicit classifier that fails
  *   fails the attempt, like the reviewer.
+ * - GENERATION_REPAIR_PROVIDER: repairs by a vendor other than the writer
+ *   chain (its <VENDOR>_ANSWER_MODEL applies). Unset keeps the writer chain.
+ *   It replaces the repair call; the pipeline still makes at most one repair
+ *   and one fresh review under the same deadline and budget.
  * - GENERATION_REVIEW_PROVIDER / GENERATION_REVIEW_MODEL: the grounding
  *   reviewer, configured independently of the writer chain. No vendor is
  *   assumed; unset means every generated answer is withheld after triage
- *   and the problem is logged. The evaluated configuration is Anthropic
- *   (claude-sonnet-5) reviewing Gemini 3.8 Flash; another reviewer needs
- *   its own calibration run before the flag goes on (docs/RELEASE-B.md).
+ *   and the problem is logged. Release C's cost configuration uses Gemini
+ *   review and triage, DeepSeek writing and repair, and Gemini writer fallback.
+ *   Calibration and release results are recorded in docs/RELEASE-C.md.
  */
 export const GENERATION_MAX_ATTEMPTS = 2; // bounded pipelines per reading; each may write, review, repair once, review again
 export const GENERATION_LEASE_MS = 90_000; // a request holds the row this long
@@ -45,6 +49,8 @@ export interface ProviderSpec {
   workspaceId?: string;
   /** Anthropic only: opt-in prompt caching of the system prompt, ANTHROPIC_PROMPT_CACHE=5m|1h. */
   promptCache?: "5m" | "1h";
+  /** Gemini only; explicitly calibrated reviewer effort, unset preserves the model default. */
+  thinkingLevel?: "low" | "medium" | "high";
   models: { answer: string; classifier: string };
 }
 
@@ -66,6 +72,8 @@ export interface GenerationConfig {
   providers: ProviderSpec[];
   /** Dedicated reviewer: no fallback to a weaker model after a review failure. */
   reviewProvider?: ProviderSpec;
+  /** Repairs flagged fields when set; otherwise the writer chain repairs its own drafts. */
+  repairProvider?: ProviderSpec;
   /** Dedicated classifier; unset means the writer chain's first provider triages. */
   classifierProvider?: ProviderSpec;
   /** What was skipped or wrong, for the log line. */
@@ -96,7 +104,8 @@ function env(...names: string[]): string | undefined {
 type Resolved = { spec: ProviderSpec; problem?: undefined } | { spec?: undefined; problem: string };
 
 /** One provider kind → its spec from the environment, or the reason it cannot be used. */
-function specFor(kind: string, production: boolean): Resolved {
+/** Exported for the evaluation harnesses that build a single vendor on purpose (a repairer to compare, say). */
+export function specFor(kind: string, production: boolean): Resolved {
   if (kind === "gemini") {
     const apiKey = env("GEMINI_API_KEY");
     if (!apiKey) return { problem: "gemini skipped: GEMINI_API_KEY is not set." };
@@ -129,7 +138,7 @@ function specFor(kind: string, production: boolean): Resolved {
 
 export function getGenerationConfig(): GenerationConfig {
   const production = process.env.NODE_ENV === "production";
-  const requested = (env("GENERATION_PROVIDER") ?? (production ? "gemini,anthropic" : "stub"))
+  const requested = (env("GENERATION_PROVIDER") ?? (production ? "gemini,deepseek" : "stub"))
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -153,7 +162,11 @@ export function getGenerationConfig(): GenerationConfig {
     problems.push("GENERATION_REVIEW_PROVIDER is not set; generated answers will be withheld after triage.");
   } else {
     const resolved = specFor(reviewKind, production);
-    if (resolved.spec) reviewProvider = { ...resolved.spec, models: { ...resolved.spec.models, answer: env("GENERATION_REVIEW_MODEL") ?? resolved.spec.models.answer } };
+    if (resolved.spec) reviewProvider = {
+      ...resolved.spec,
+      ...(resolved.spec.kind === "gemini" ? { thinkingLevel: (["low", "medium", "high"] as const).find((v) => v === env("GEMINI_REVIEW_THINKING_LEVEL")) } : {}),
+      models: { ...resolved.spec.models, answer: env("GENERATION_REVIEW_MODEL") ?? resolved.spec.models.answer },
+    };
     else problems.push(`reviewer unavailable (${resolved.problem}); generated answers will be withheld after triage.`);
   }
 
@@ -167,6 +180,16 @@ export function getGenerationConfig(): GenerationConfig {
     else problems.push(`classifier unavailable (${resolved.problem}); the writer chain will triage instead.`);
   }
 
+  // The repairer can be split from the writer chain too (Gemini repairing a
+  // DeepSeek draft, say). Unset keeps the writer chain.
+  let repairProvider: ProviderSpec | undefined;
+  const repairKind = env("GENERATION_REPAIR_PROVIDER")?.toLowerCase();
+  if (repairKind) {
+    const resolved = specFor(repairKind, production);
+    if (resolved.spec) repairProvider = resolved.spec;
+    else problems.push(`repairer unavailable (${resolved.problem}); the writer chain will repair instead.`);
+  }
+
   return {
     enabled: flag("GENERATION_ENABLED", false),
     guestEnabled: flag("GUEST_GENERATION_ENABLED", true),
@@ -174,6 +197,7 @@ export function getGenerationConfig(): GenerationConfig {
     providers,
     reviewProvider,
     classifierProvider,
+    repairProvider,
     configurationProblem: problems.length ? problems.join(" ") : undefined,
     timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 30_000),
     limits: {

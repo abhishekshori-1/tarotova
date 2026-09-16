@@ -48,12 +48,29 @@ export type ProviderOutcome<T> =
       uncertain: boolean;
     };
 
+/**
+ * A user message in two parts: a prefix that repeats across calls in the
+ * same conversation (cards, original question, initial answer) and the part
+ * that changes (history, latest message, candidate). Anthropic caches the
+ * prefix as its own block; DeepSeek caches matching prefixes on its own;
+ * adapters without prefix caching join the two.
+ */
+export type UserMessage = string | { stable: string; rest: string };
+
+export function userMessageText(message: UserMessage): string {
+  return typeof message === "string" ? message : `${message.stable}\n${message.rest}`;
+}
+
 export interface TokenUsage {
+  /** Uncached input only. Add cache reads/writes to recover total input. */
   inputTokens: number;
   outputTokens: number;
-  /** Prompt-cache accounting where the vendor reports it (Anthropic): billed at 1.25x/2x and 0.1x respectively. */
+  /** Cache writes are separate on Anthropic; DeepSeek has no write surcharge. */
   cacheWriteTokens?: number;
   cacheReadTokens?: number;
+  /** Breakdown avoids treating a one-hour write as a five-minute write. */
+  cacheWrite5mTokens?: number;
+  cacheWrite1hTokens?: number;
 }
 
 /**

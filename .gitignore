@@ -51,3 +51,6 @@ next-env.d.ts
 
 # Evaluation reports contain generated answers for human review; never committed
 eval/report/
+
+# throwaway copy used to run the browser suite beside a running dev server
+/.e2e-copy/

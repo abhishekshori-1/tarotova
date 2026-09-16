@@ -30,13 +30,16 @@ export interface RateLimitResult {
  * replaced (PLAN.md section 6 calls for exactly this kind of atomic
  * counter).
  */
-export async function checkAndIncrement(identifier: string, policy: RateLimitPolicy): Promise<RateLimitResult> {
+/** The executor defaults to the shared client; a transaction can be passed so the count is atomic with the caller's own writes. */
+export type RateLimitExecutor = Pick<typeof db, "insert">;
+
+export async function checkAndIncrement(identifier: string, policy: RateLimitPolicy, ex: RateLimitExecutor = db): Promise<RateLimitResult> {
   const digest = identifierDigest(identifier);
   const now = Date.now();
   const windowStart = Math.floor(now / policy.windowMs) * policy.windowMs;
   const expiresAt = windowStart + policy.windowMs;
 
-  const [row] = await db
+  const [row] = await ex
     .insert(rateLimitBuckets)
     .values({ id: randomId(), identifierDigest: digest, action: policy.action, windowStart, count: 1, expiresAt })
     .onConflictDoUpdate({

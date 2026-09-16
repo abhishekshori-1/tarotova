@@ -18,6 +18,7 @@ import {
 } from "./types";
 import { validateFollowup, validateInterpretation } from "./validate";
 import { isProviderRefusal } from "./refusal";
+import { sumUsage } from "./usage";
 
 // Ignore incidental annotations inside a finding; only these required,
 // validated fields can affect publication or repair. The verdict stays strict.
@@ -34,7 +35,7 @@ export interface GroundingTrace<T = InterpretationOutput> {
   draft?: T;
   repaired?: T;
   repairAttempted: boolean;
-  calls: { phase: "write" | "review" | "repair"; ms: number; model?: string; reason?: string; usage?: TokenUsage }[];
+  calls: { phase: "write" | "validate" | "review" | "repair"; ms: number; model?: string; reason?: string; usage?: TokenUsage }[];
   reviews: GroundingReview[];
 }
 export type ReviewedOutcome<T = InterpretationOutput> = ProviderOutcome<T> & { quality: GroundingTrace<T> };
@@ -125,18 +126,29 @@ export function parseReviewFor<T>(shape: AnswerShape<T>, raw: unknown, answer: T
   return { ...result.data, issues };
 }
 
-export function applyRepairFor<T>(shape: AnswerShape<T>, raw: unknown, answer: T, review: GroundingReview): T | undefined {
+/**
+ * Applies a repair, or says why it cannot be: the shape did not parse, the
+ * edited fields are not exactly the flagged ones, or an edit names a field
+ * the answer does not have. The detail goes to the trace, not the reader.
+ */
+export function applyRepairDetailed<T>(shape: AnswerShape<T>, raw: unknown, answer: T, review: GroundingReview): { ok: true; value: T } | { ok: false; detail: string } {
   const parsed = repairSchema.safeParse(raw);
-  if (!parsed.success) return;
+  if (!parsed.success) return { ok: false, detail: `repair_shape: ${parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; ")}` };
   const allowed = new Set<string>(review.issues.map((i) => i.field));
   const fields = new Set(parsed.data.edits.map((e) => e.field));
-  if (fields.size !== parsed.data.edits.length || fields.size !== allowed.size || [...fields].some((f) => !allowed.has(f))) return;
+  if (fields.size !== parsed.data.edits.length) return { ok: false, detail: `repair_fields: duplicate edits for ${[...fields].join(", ")}` };
+  if (fields.size !== allowed.size || [...fields].some((f) => !allowed.has(f))) return { ok: false, detail: `repair_fields: edited ${[...fields].join(", ") || "nothing"}; flagged ${[...allowed].join(", ")}` };
   let result: T | undefined = answer;
   for (const { field, replacement } of parsed.data.edits) {
     result = shape.applyEdit(result, field, replacement);
-    if (!result) return;
+    if (!result) return { ok: false, detail: `repair_edit: ${field} is not a field of this answer` };
   }
-  return result;
+  return { ok: true, value: result };
+}
+
+export function applyRepairFor<T>(shape: AnswerShape<T>, raw: unknown, answer: T, review: GroundingReview): T | undefined {
+  const applied = applyRepairDetailed(shape, raw, answer, review);
+  return applied.ok ? applied.value : undefined;
 }
 
 /** Reading-shaped helpers kept for the existing tests and the eval harness. */
@@ -167,7 +179,11 @@ export async function runReviewed<T>(shape: AnswerShape<T>, provider: Generation
   if (!written.ok) return { ...written, quality };
   if (expired()) return fail("request_deadline");
   const validated = shape.validate(written.value, drawnCardIds);
-  if (!validated.ok) return { ok: false, reason: `output_invalid:${validated.reason}`, retryable: true, uncertain: false, quality };
+  if (!validated.ok) {
+    // Keep the validator's detail in the trace so an eval report says which limit the draft broke.
+    quality.calls.push({ phase: "validate", ms: 0, reason: `draft_validate: ${validated.reason}${validated.detail ? `: ${validated.detail}` : ""}` });
+    return { ok: false, reason: `output_invalid:${validated.reason}`, retryable: true, uncertain: false, quality };
+  }
   let answer = validated.output;
   let model = written.model;
   quality.draft = answer;
@@ -182,7 +198,7 @@ export async function runReviewed<T>(shape: AnswerShape<T>, provider: Generation
     quality.reviews.push(review);
     if (review.decision === "pass") {
       const usages = quality.calls.flatMap((c) => (c.usage ? [c.usage] : []));
-      const usage = usages.length ? usages.reduce((a, b) => ({ inputTokens: a.inputTokens + b.inputTokens, outputTokens: a.outputTokens + b.outputTokens }), { inputTokens: 0, outputTokens: 0 }) : undefined;
+      const usage = usages.length ? sumUsage(usages) : undefined;
       return { ok: true, value: answer, model, usage, quality };
     }
     if (pass === 1) return fail("grounding_rejected");
@@ -191,10 +207,16 @@ export async function runReviewed<T>(shape: AnswerShape<T>, provider: Generation
     const repaired = await call("repair", () => shape.repair(provider, answer, review.issues, options));
     if (!repaired.ok) return fail(isProviderRefusal(repaired.reason) ? repaired.reason : `grounding_repair:${repaired.reason}`, repaired.uncertain);
     if (expired()) return fail("request_deadline");
-    const patched = applyRepairFor(shape, repaired.value, answer, review);
-    if (!patched) return fail("grounding_repair_invalid");
-    const revalidated = shape.validate(patched, drawnCardIds);
-    if (!revalidated.ok) return fail(`grounding_repair_invalid:${revalidated.reason}`);
+    const patched = applyRepairDetailed(shape, repaired.value, answer, review);
+    if (!patched.ok) {
+      quality.calls.push({ phase: "validate", ms: 0, reason: patched.detail });
+      return fail("grounding_repair_invalid");
+    }
+    const revalidated = shape.validate(patched.value, drawnCardIds);
+    if (!revalidated.ok) {
+      quality.calls.push({ phase: "validate", ms: 0, reason: `repair_validate: ${revalidated.reason}${revalidated.detail ? `: ${revalidated.detail}` : ""}` });
+      return fail(`grounding_repair_invalid:${revalidated.reason}`);
+    }
     answer = revalidated.output;
     model = repaired.model;
     quality.repaired = answer;
