@@ -22,6 +22,7 @@ as a working product with draft content.
 | [`docs/REVIEW-V2.md`](./docs/REVIEW-V2.md) | Pre-implementation review of that plan and the adjustments adopted |
 | [`docs/RELEASE-B.md`](./docs/RELEASE-B.md) | Release B from the product owner's side: what changed, what the model does and doesn't, cost, protections, the gate |
 | [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) | What is actually built, what isn't, and known limitations |
+| [`docs/RELEASE-C-READINESS.md`](./docs/RELEASE-C-READINESS.md) | Current uncommitted C1/C2 verification, cost evidence and remaining release blockers |
 | [`docs/INFRA.md`](./docs/INFRA.md) | The live deployment: domain, DNS, Vercel, Supabase, Resend, Turnstile, cron |
 | [`docs/VERSIONING.md`](./docs/VERSIONING.md) | v1→v2 transition, backups, rollback procedure, release checklist |
 | [`docs/ISSUES.md`](./docs/ISSUES.md) | Production issues found and how they were resolved |
@@ -41,9 +42,9 @@ production.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | 313 Vitest unit/integration tests in 34 files against an in-memory Postgres; no network, no keys |
-| `npm run test:e2e` | 14 Playwright browser tests at 320, 390 and 1440 px (4 full flows, 10 result-page presentation states) (starts its own dev server on 47102 with a throwaway database and the stub answer provider; first run needs `npx playwright install chromium`) |
-| `npm run eval` | Release B's gate: runs `eval/questions.json` through the real Anthropic provider and writes a report to `eval/report/` for scoring against `eval/RUBRIC.md`. Needs `ANTHROPIC_API_KEY`; makes paid calls |
+| `npm test` | 347 tests in 38 files; in-memory Postgres, no provider keys or paid calls. Includes local HTTP timeout tests. Release evidence: [readiness record](docs/RELEASE-C-READINESS.md) |
+| `npm run test:e2e` | 88 browser checks at 320, 390, 820 and 1440 px, using a throwaway database and stub models. Four additional disabled-discovery checks: `E2E_JOURNEYS_ENABLED=false npm run test:e2e -- e2e/journeyAvailability.spec.ts` |
+| `npm run eval` | Initial-reading gate against the configured writer, classifier and reviewer; writes reports for `eval/RUBRIC.md`. The cost configuration uses DeepSeek and Gemini keys; calls are paid. Follow-ups use `npm run eval:conversations` |
 | `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
 | `npm run db:generate` | Generate a migration after editing `src/server/db/schema.ts` |
 | `npm run cards:gen` | Regenerate the placeholder card SVGs |
@@ -104,10 +105,10 @@ skipped bot check — configured by absence, see `.env.example`.
   gold frame (`scripts/generate-card-svgs.mjs`). Coherent, not the
   recognizable RWS scenes the plan wants; a public-domain 1909 Rider–Waite–Smith
   restyle is the chosen next step.
-- **The personalized reflection is off until its evaluation passes.** The
-  code, prompts, safety routing, budgets and tests exist; `GENERATION_ENABLED`
-  stays false in production until `npm run eval` and the human pass clear
-  the rubric. Follow-ups and guided journeys (Release C) are not built.
+- **Release C is built but not cleared for production.** Follow-ups and guided
+  journeys are in the working tree behind flags. The latest conversation gate
+  passes at 19/21 (90.5%); editorial findings and hosted preview checks remain. Release B's earlier
+  production status is recorded separately in `docs/RELEASE-B.md`.
 - **Content is unreviewed** (`CONTENT_VERSION` ends in `-draft`).
 - **The webhook** at `src/app/api/webhooks/email/route.ts` does not verify
   Resend's signature yet; don't rely on it until it does.
@@ -117,8 +118,9 @@ skipped bot check — configured by absence, see `.env.example`.
 `src/app/(night)` — home and card selection; `src/app/(parchment)` —
 verification, result, privacy, terms; `src/app/api` — route handlers;
 `src/server` — access grants, sessions, OTP, rate limits, email, cleanup;
-`src/server/generation` — Release B: config, lease service, Anthropic and
-stub providers, prompts, validation; `src/content` — the 22-card deck, copy
+`src/server/generation` — readings and follow-ups: config, lease service,
+DeepSeek/Gemini/opt-in Anthropic and stub providers, prompts, validation;
+`src/content` — the 22-card deck, copy
 and the authored safety responses; `eval/` — the question set, rubric and
 runner; `src/components`; `src/lib` — zod
 schemas, client API, save queue; `drizzle/` — SQL migrations; `tests/` —

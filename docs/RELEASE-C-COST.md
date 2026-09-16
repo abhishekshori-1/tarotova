@@ -1,5 +1,9 @@
 # Release C without Sonnet — 16 September 2026
 
+Historical cost pass. See [the latest readiness record](RELEASE-C-READINESS.md)
+for current verification, candidate effort settings and remaining gate failures.
+The passing runs below do not approve subsequent prompt/configuration changes.
+
 The user requested removal of Sonnet to reduce cost. The local configuration
 now uses these explicit roles:
 

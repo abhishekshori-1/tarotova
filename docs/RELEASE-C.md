@@ -1,5 +1,9 @@
 # Release C — follow-ups and guided journeys
 
+Latest combined C1/C2 implementation: [companion and journeys review](RELEASE-C-COMPANION-JOURNEYS.md).
+Latest verification and release blockers: [readiness and cost pass](RELEASE-C-READINESS.md).
+Earlier evaluation results below describe their named prompt versions; they do not approve the new draft templates or prompts.
+
 Implementation plan, 16 September 2026. Proposed defaults for the implementer;
 this document does not enable a flag, approve content or authorize deployment.
 The product owner will implement the code.

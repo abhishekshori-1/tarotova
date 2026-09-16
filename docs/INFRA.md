@@ -214,3 +214,45 @@ database in Tokyo — fixed by the `hnd1` pin; ~2.2 s → ~0.3 s) and missing
 emails (Resend domain verification had never been started, then an empty
 API-key value — fixed operationally; the code changes made both failures
 visible instead of silent).
+
+
+## Guided journeys (C2, not enabled by this change)
+
+Migration `0006_guided_journeys.sql` follows `0005`; deploy both SQL and Drizzle
+metadata. `JOURNEYS_ENABLED=true` exposes new starts. Setting it false stops new
+runs but retains owned resume/completion, subject to reading expiry and safety
+state. Follow-ups and generation retain their independent existing switches.
+Template previews are `/journeys` and `/journeys/[slug]` (both 404 while disabled); private runs are
+`/journey/[id]`. Templates are frozen per run. Run expiry is derived from the
+reading's grant/draft TTL; cleanup removes runs and their transition ledger.
+The same browser and existing verification continuation are required.
+
+No provider call is made by journey creation, GET, stage transition or completion.
+Keep the DeepSeek/Gemini configuration from RELEASE-C-COST.md; do not add Sonnet.
+The new prompt versions need their own editorial review; older approvals do not
+transfer automatically. See RELEASE-C-COMPANION-JOURNEYS.md for actual evidence.
+
+### C1/C2 readiness verification
+
+The current working-tree evidence and cost profile are in RELEASE-C-READINESS.md.
+New Gemini effort settings are role-specific: `GEMINI_WRITER_THINKING_LEVEL` and
+`GEMINI_CLASSIFIER_THINKING_LEVEL`; the latter applies to the explicit Gemini
+classifier. `GEMINI_REVIEW_THINKING_LEVEL` remains independent. Unset preserves
+the model default. Never infer production values from a local eval.
+
+After committing the reviewed tree to `feat/release-c`, verify its immutable
+Preview deployment URL and source commit before using `preview.tarotova.com`.
+The branch-domain assignment was previously documented as `feat/release-b`;
+check the Vercel project's domain branch assignment and set it to the intended
+release branch. The alias must resolve to the same tested deployment. This is
+an account setting, not something `vercel.json` proves.
+
+On Preview, verify `GENERATION_ENABLED=true`, `GUEST_GENERATION_ENABLED=true`,
+`FOLLOWUPS_ENABLED=true` and `JOURNEYS_ENABLED=true` with the evaluated provider
+roles. Cold-start a private API route and confirm migration 0006 applied; no
+migration error should appear. Check one guest reading, one follow-up, refresh
+persistence and a support response that remains closed after refresh. Complete
+one whole journey and confirm it keeps the same draw. Then test journeys off:
+both template routes must be unavailable, home must make no discovery API
+request, and an owned unfinished journey must still resume. Keep new production
+journeys off until the owner chooses to enable them; the three templates carry their recorded review (journeys.v1, 17 September 2026).
