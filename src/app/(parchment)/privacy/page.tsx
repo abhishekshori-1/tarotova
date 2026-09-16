@@ -22,8 +22,10 @@ export default function PrivacyPage() {
         that responds to it. To do that, the question, the focus you chose and the meanings of your three
         cards are processed by third-party service providers on our behalf, under terms that do not allow
         it to be used for any other purpose. Your email address, your session and your other readings are
-        never sent with it. Some questions, such as those describing a crisis or asking for medical or
-        legal instruction, are not read against the cards; you see a written note and resources instead.
+        never sent with it. Follow-up messages you send about a reading are stored with it and processed the
+        same way, together with your earlier messages about that reading. Some questions, such as those
+        describing a crisis or asking for medical or legal instruction, are not read against the cards; you
+        see a written note and resources instead.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Cookies</h2>

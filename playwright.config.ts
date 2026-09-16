@@ -34,8 +34,16 @@ export default defineConfig({
       TURNSTILE_SECRET_KEY: "",
       NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
       GENERATION_ENABLED: "true",
+      FOLLOWUPS_ENABLED: "true",
+      // Every generation role on the offline stub, and every vendor key blank:
+      // Next.js lets an existing process variable win over .env.local, so the
+      // suite can never reach a real provider whatever the developer has set.
       GENERATION_PROVIDER: "stub",
+      GENERATION_REVIEW_PROVIDER: "stub",
+      GENERATION_CLASSIFIER_PROVIDER: "",
       ANTHROPIC_API_KEY: "",
+      GEMINI_API_KEY: "",
+      DEEPSEEK_API_KEY: "",
     },
   },
 });

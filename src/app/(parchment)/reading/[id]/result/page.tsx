@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import { InterpretationPanel } from "@/components/Interpretation";
+import { FollowupPanel } from "@/components/Followups";
 import { getResult, getStatus, requestInterpretation, type ApiError, type InterpretationView, type ReadingResult } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { canShowCardReading, watchInterpretation } from "@/lib/interpretationProgress";
@@ -170,6 +171,8 @@ export default function ResultPage({ params }: { params: Promise<{ id: string }>
             <p className="eyebrow">One to take with you</p>
             <p className="prose-measure mt-2 text-lg">{result.reflection}</p>
           </section>}
+
+          {(interpretation?.status === "succeeded" || interpretation?.status === "not_applicable") && <FollowupPanel readingId={id} focus={result.focus} />}
         </>
       )}
 

@@ -56,6 +56,18 @@ test("first reading needs no email and keeps the question", async ({ page }) => 
   // Refresh shows the same stored answer without another request cycle.
   await page.reload();
   await expect(page.getByText(/Here's the short of it for what you asked/)).toBeVisible();
+
+  // Release C1: one follow-up under the reading (stub provider), the sent text
+  // visible at once, the answer in place, the allowance counting down.
+  await expect(page.getByText("Explore this reading")).toBeVisible();
+  await page.getByRole("button", { name: "How do these three cards connect?" }).click();
+  await expect(page.getByLabel("Your follow-up")).toHaveValue("How do these three cards connect?");
+  await page.getByRole("button", { name: "Send" }).click();
+  await expect(page.getByText(/is the card to look at/)).toBeVisible();
+  await expect(page.getByText("2 follow-ups left")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  await page.reload();
+  await expect(page.getByText(/is the card to look at/)).toBeVisible();
 });
 
 test("a general reading has no personalized section; a crisis question gets the authored response", async ({ page }) => {

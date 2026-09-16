@@ -2,6 +2,8 @@ import type { Focus } from "@/content/types";
 import type { InterpretationView } from "@/server/generation/types";
 
 export type { InterpretationOutput, InterpretationView } from "@/server/generation/types";
+export type { FollowupTurnView, FollowupsView } from "@/server/generation/followups";
+import type { FollowupsView } from "@/server/generation/followups";
 
 export type Entitlement = "granted" | "eligible" | "verification_required";
 export type SendStatus = "pending" | "accepted" | "failed";
@@ -127,4 +129,19 @@ export function getResult(id: string, signal?: AbortSignal) {
 /** Idempotent: claims or reports the reading's contextual answer (202 while it is being written). */
 export function requestInterpretation(id: string, signal?: AbortSignal) {
   return fetch(`/api/readings/${id}/interpretation`, { ...json("POST"), signal }).then((r) => asJson<InterpretationView>(r));
+}
+
+/** The conversation under a reading and whether a new turn can be sent. No paid work. */
+export function listFollowups(id: string, signal?: AbortSignal) {
+  return fetch(`/api/readings/${id}/followups`, { cache: "no-store", signal }).then((r) => asJson<FollowupsView>(r));
+}
+
+/** Sends one turn. Idempotent on `submissionId`: a retry with the same id and text returns or resumes the stored turn. */
+export function sendFollowup(id: string, submissionId: string, text: string, signal?: AbortSignal) {
+  return fetch(`/api/readings/${id}/followups`, { ...json("POST", { submissionId, text }), signal }).then((r) => asJson<FollowupsView>(r));
+}
+
+/** A client-side id that survives a retry; the server's pattern is [A-Za-z0-9_-]{8,64}. */
+export function newSubmissionId(): string {
+  return crypto.randomUUID().replace(/-/g, "");
 }
