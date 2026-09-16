@@ -53,7 +53,8 @@ function check(name: string, answer: FollowupOutput, turn: Turn): { name: string
     case "beyond_spread":
       return { name, ok: !!answer.beyondSpread, detail: answer.beyondSpread ? undefined : "no limit line" };
     case "no_verdict":
-      return { name, ok: !/\b(yes, he|no, he|he will|he won't|he is coming back|he isn't coming back)\b/i.test(text) };
+      // A verdict is an answer to the yes/no, not the limit line that names it ("whether he will come back is his").
+      return { name, ok: !/\b(yes, he|no, he|he (will|won't|is going to|isn't going to) (come|be) back|he is coming back|he isn't coming back)\b/i.test(text.replace(/\bwhether he will\b/gi, "")) };
     case "no_task":
       return { name, ok: !/\b(set a timer|for \d+ minutes|every day this week|each morning|write down|schedule)\b/i.test(text) };
     case "question_reflection":
