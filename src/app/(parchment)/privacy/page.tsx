@@ -5,8 +5,7 @@ export default function PrivacyPage() {
     <div className="prose-measure mx-auto px-6 py-10">
       <h1 className="text-2xl font-semibold">Privacy</h1>
       <p className="mt-4 text-sm text-[var(--color-plum-soft)]">
-        Draft placeholder — PLAN.md section 7. Replace before any public launch with the operator&apos;s
-        actual name, jurisdiction, and a real support contact.
+        Questions about your privacy? Contact <a className="underline" href="mailto:support@tarotova.com">support@tarotova.com</a>.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">What we collect</h2>
@@ -22,8 +21,19 @@ export default function PrivacyPage() {
         that responds to it. To do that, the question, the focus you chose and the meanings of your three
         cards are processed by third-party service providers on our behalf, under terms that do not allow
         it to be used for any other purpose. Your email address, your session and your other readings are
-        never sent with it. Some questions, such as those describing a crisis or asking for medical or
-        legal instruction, are not read against the cards; you see a written note and resources instead.
+        never sent with it. Follow-up messages you send about a reading are stored with it and processed the
+        same way, together with your earlier messages about that reading. Some questions, such as those
+        describing a crisis or asking for medical or legal instruction, are not read against the cards; you
+        see a written note and resources instead.
+      </p>
+
+      <h2 className="mt-8 text-lg font-semibold">Guided journeys</h2>
+      <p className="mt-2">
+        A guided journey saves its starting question, its chosen reading, the journey text and your
+        progress so you can return in this browser. The starting question is also kept with the journey
+        if you edit the reading question later. Journey progress expires with the reading, and its records
+        are deleted with it. Closing reflections are for you to consider privately; we do not collect
+        a written answer. Moving between journey stages does not send anything to a service provider.
       </p>
 
       <h2 className="mt-8 text-lg font-semibold">Cookies</h2>

@@ -1,13 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="Card back">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#211b30" stroke="#d5b47a" stroke-width="3"/>
-  <rect x="14" y="14" width="212" height="356" rx="8" fill="none" stroke="#d5b47a" stroke-width="1" opacity="0.7"/>
-  <circle cx="120" cy="190" r="58" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.5"/>
-  <circle cx="120" cy="190" r="42" fill="none" stroke="#d5b47a" stroke-width="1.5"/>
-  <circle cx="120" cy="190" r="22" fill="none" stroke="#d5b47a" stroke-width="1.5"/>
-  <circle cx="120" cy="190" r="4" fill="#d5b47a"/>
-  <path d="M 120 116 l 0 148 M 46 190 l 148 0" stroke="#f6f0e7" stroke-width="1" opacity="0.35"/>
-  <g fill="#f6f0e7" opacity="0.7">
-    <circle cx="42" cy="58" r="1.5"/><circle cx="196" cy="84" r="1.2"/><circle cx="64" cy="318" r="1.2"/>
-    <circle cx="184" cy="300" r="1.5"/><circle cx="120" cy="40" r="1"/><circle cx="120" cy="344" r="1"/>
+  <defs>
+    <radialGradient id="bk-halo" cx="50%" cy="46%" r="62%">
+      <stop offset="0" stop-color="#3a2d52"/>
+      <stop offset="0.55" stop-color="#211b30"/>
+      <stop offset="1" stop-color="#14111f"/>
+    </radialGradient>
+    <linearGradient id="bk-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3c68e"/>
+      <stop offset="1" stop-color="#b8955a"/>
+    </linearGradient>
+    <pattern id="bk-weave" width="12" height="12" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <path d="M0 6h12" stroke="#f5ebdd" stroke-width="0.4" opacity="0.08"/>
+    </pattern>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="url(#bk-halo)" stroke="url(#bk-gold)" stroke-width="3"/>
+  <rect x="9" y="9" width="222" height="366" rx="10" fill="url(#bk-weave)"/>
+  <rect x="14" y="14" width="212" height="356" rx="8" fill="none" stroke="#d5b47a" stroke-width="1" opacity="0.75"/>
+  <rect x="20" y="20" width="200" height="344" rx="6" fill="none" stroke="#ac9bcb" stroke-width="0.6" opacity="0.5"/>
+  <!-- corner ornaments -->
+  <g fill="none" stroke="#d5b47a" stroke-width="1" opacity="0.8">
+    <path d="M22 44 q0 -22 22 -22 M218 44 q0 -22 -22 -22 M22 340 q0 22 22 22 M218 340 q0 22 -22 22"/>
+    <path d="M30 30 l8 8 M210 30 l-8 8 M30 354 l8 -8 M210 354 l-8 -8"/>
+  </g>
+  <!-- observatory rings -->
+  <g fill="none" stroke-linecap="round">
+    <circle cx="120" cy="192" r="78" stroke="#ac9bcb" stroke-width="0.8" opacity="0.45" stroke-dasharray="2 6"/>
+    <circle cx="120" cy="192" r="62" stroke="#d5b47a" stroke-width="1.2" opacity="0.9"/>
+    <circle cx="120" cy="192" r="46" stroke="#d5b47a" stroke-width="0.8" opacity="0.7"/>
+    <circle cx="120" cy="192" r="24" stroke="#d5b47a" stroke-width="1.4"/>
+    <ellipse cx="120" cy="192" rx="62" ry="20" stroke="#ac9bcb" stroke-width="0.8" opacity="0.6" transform="rotate(-24 120 192)"/>
+    <ellipse cx="120" cy="192" rx="46" ry="14" stroke="#f5ebdd" stroke-width="0.6" opacity="0.35" transform="rotate(32 120 192)"/>
+    <path d="M120 110 v164 M38 192 h164" stroke="#f5ebdd" stroke-width="0.7" opacity="0.28"/>
+    <path d="M62 134 l116 116 M178 134 l-116 116" stroke="#f5ebdd" stroke-width="0.5" opacity="0.18"/>
+  </g>
+  <!-- central star -->
+  <g fill="#d5b47a">
+    <path d="M120 176 l4.2 11.8 l11.8 4.2 l-11.8 4.2 l-4.2 11.8 l-4.2 -11.8 l-11.8 -4.2 l11.8 -4.2 z"/>
+    <circle cx="120" cy="192" r="2.4" fill="#f5ebdd"/>
+  </g>
+  <!-- small stars in the field -->
+  <g fill="#f5ebdd">
+    <circle cx="48" cy="72" r="1.6" opacity="0.8"/><circle cx="190" cy="92" r="1.2" opacity="0.7"/><circle cx="70" cy="312" r="1.3" opacity="0.7"/>
+    <circle cx="176" cy="300" r="1.6" opacity="0.8"/><circle cx="120" cy="52" r="1.1" opacity="0.6"/><circle cx="120" cy="332" r="1.1" opacity="0.6"/>
+    <circle cx="160" cy="146" r="1" opacity="0.6"/><circle cx="82" cy="240" r="1" opacity="0.6"/><circle cx="196" cy="214" r="0.9" opacity="0.5"/><circle cx="44" cy="176" r="0.9" opacity="0.5"/>
+  </g>
+  <g fill="#d5b47a" opacity="0.9">
+    <path d="M48 66 l1.2 3.4 l3.4 1.2 l-3.4 1.2 l-1.2 3.4 l-1.2 -3.4 l-3.4 -1.2 l3.4 -1.2 z"/>
+    <path d="M176 294 l1.2 3.4 l3.4 1.2 l-3.4 1.2 l-1.2 3.4 l-1.2 -3.4 l-3.4 -1.2 l3.4 -1.2 z"/>
   </g>
 </svg>

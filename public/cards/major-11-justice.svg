@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="Justice">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XI</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="120" y1="135" x2="120" y2="220"/>
-    <line x1="70" y1="160" x2="170" y2="160"/>
-    <path d="M 70 160 l -14 30 h 28 z" stroke="#b8955a"/>
-    <path d="M 170 160 l -14 30 h 28 z" stroke="#b8955a"/>
+  <title>Justice</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">XI</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><rect x="69" y="118" width="104" height="161" fill="#745771" /><rect x="39" y="117" width="24" height="154" fill="#ded4c8" /><rect x="36" y="109" width="30" height="9" fill="#d5b47a" /><rect x="36" y="271" width="30" height="10" fill="#d5b47a" /><path d="M46 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><rect x="177" y="117" width="24" height="154" fill="#ded4c8" /><rect x="174" y="109" width="30" height="9" fill="#d5b47a" /><rect x="174" y="271" width="30" height="10" fill="#d5b47a" /><path d="M184 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><path d="M105 189 Q94 216 91 261 Q120 271 149 261 Q146 216 135 189 Z" fill="#a66d7b" /><path d="M114 200 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M110 173 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="120" cy="170" r="10" fill="#f5ebdd" /><path d="M115 168 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M108 157 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><path d="M83 181 v72" fill="none" stroke="#f5ebdd" stroke-width="5"/><path d="M73 233 h20" fill="none" stroke="#d5b47a" stroke-width="3"/><path d="M133 202 L158 203 L159 193 L169 193 L169 214 L130 215 Z" fill="#f5ebdd" /><path d="M162 184 v37 m-24-7 h48 m-45 0 l-9 26 h19 l-10-26 m42 0 l-9 26 h19 l-10-26" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M125 266 l12 23 l-2 14 h-21 l5-35 Z" fill="#f5ebdd" /><rect x="116" y="148" width="8" height="8" fill="#8b9bb8" />
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">Justice</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">Justice</text>
 </svg>

@@ -1,15 +1,21 @@
 import { z } from "zod";
 import { CARDS } from "@/content/cards";
 import { POSITIONS } from "@/content/types";
-import type { InterpretationOutput } from "./types";
+import type { FollowupOutput, InterpretationOutput } from "./types";
+import { FOLLOWUP_LENGTHS, READING_LIMITS } from "./lengths";
 
 /**
  * The automated gates from eval/RUBRIC.md. Anything that fails here is
  * never stored or shown; the caller decides whether a second paid attempt
- * is worth it.
+ * is worth it. Every limit comes from lengths.ts.
  */
-export const LIMITS = { perspective: 900, relevance: 600, reflection: 320, beyondSpread: 480 } as const;
-const MINIMUMS = { perspective: 80, relevance: 40, reflection: 20 } as const;
+export const LIMITS = { perspective: READING_LIMITS.perspective.max, relevance: READING_LIMITS.relevance.max, synthesis: READING_LIMITS.synthesis.max, reflection: READING_LIMITS.reflection.max, beyondSpread: READING_LIMITS.beyondSpread.max, total: READING_LIMITS.total } as const;
+const MINIMUMS = { perspective: READING_LIMITS.perspective.min, relevance: READING_LIMITS.relevance.min, synthesis: READING_LIMITS.synthesis.min, reflection: READING_LIMITS.reflection.min } as const;
+
+// Providers sometimes serialize the absent optional value as the literal
+// string "null". Canonicalize only that exact token (and existing empty text)
+// before review, never a sentence containing it or a substantive boundary.
+const optionalText = (limit: number) => z.string().trim().max(limit).nullable().transform((v) => (!v || v === "null" ? null : v));
 
 const outputSchema = z.strictObject({
   perspective: z.string().trim().min(MINIMUMS.perspective).max(LIMITS.perspective),
@@ -17,9 +23,27 @@ const outputSchema = z.strictObject({
     .array(z.strictObject({ position: z.enum(POSITIONS), relevance: z.string().trim().min(MINIMUMS.relevance).max(LIMITS.relevance) }))
     .length(3)
     .refine((cards) => cards.every((c, i) => c.position === POSITIONS[i]), "cards must be in Situation, Challenge, Guidance order"),
+  synthesis: z.string().trim().min(MINIMUMS.synthesis).max(LIMITS.synthesis),
   reflection: z.string().trim().min(MINIMUMS.reflection).max(LIMITS.reflection),
-  beyondSpread: z.string().trim().max(LIMITS.beyondSpread).nullable().transform((v) => (v ? v : null)),
+  beyondSpread: optionalText(LIMITS.beyondSpread),
 });
+
+/**
+ * A stored answer, as written by any prompt version. Answers stored before
+ * interpretation.v14 have no synthesis; they are read with synthesis null and
+ * never regenerated to fit the newer shape (docs/PLAN-READING-EXPERIENCE.md
+ * section 4). Nothing here validates; the row was validated when written.
+ */
+export function normalizeStoredAnswer(raw: unknown): InterpretationOutput {
+  const stored = (typeof raw === "string" ? JSON.parse(raw) : raw) as Partial<InterpretationOutput>;
+  return {
+    perspective: stored.perspective ?? "",
+    cards: stored.cards ?? [],
+    synthesis: typeof stored.synthesis === "string" && stored.synthesis.trim() ? stored.synthesis : null,
+    reflection: stored.reflection ?? "",
+    beyondSpread: stored.beyondSpread ?? null,
+  };
+}
 
 /** Always rejected, whatever surrounds them. */
 export const BANNED_PHRASES: readonly RegExp[] = [
@@ -75,7 +99,11 @@ export function findAssertedCertainty(text: string): string | undefined {
 export type ValidationResult = { ok: true; output: InterpretationOutput } | { ok: false; reason: string; detail?: string };
 
 function allText(output: InterpretationOutput): string {
-  return [output.perspective, ...output.cards.map((c) => c.relevance), output.reflection, output.beyondSpread ?? ""].join("\n");
+  return answerFields(output).join("\n");
+}
+
+function answerFields(output: InterpretationOutput): string[] {
+  return [output.perspective, ...output.cards.map((c) => c.relevance), output.synthesis ?? "", output.reflection, output.beyondSpread ?? ""];
 }
 
 /**
@@ -98,19 +126,50 @@ export function findForeignCardName(text: string, drawnCardIds: string[]): strin
   return undefined;
 }
 
+/** The text gates shared by every generated shape: banned phrasing, asserted certainty, cards not drawn. */
+export function checkAnswerText(text: string, drawnCardIds: string[]): { reason: string; detail?: string } | undefined {
+  const banned = BANNED_PHRASES.find((p) => p.test(text));
+  if (banned) return { reason: "banned_phrase", detail: banned.source };
+  const asserted = findAssertedCertainty(text);
+  if (asserted) return { reason: "asserted_certainty", detail: asserted };
+  const foreign = findForeignCardName(text, drawnCardIds);
+  if (foreign) return { reason: "foreign_card", detail: foreign };
+  return undefined;
+}
+
 export function validateInterpretation(raw: unknown, drawnCardIds: string[]): ValidationResult {
   const parsed = outputSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, reason: "output_shape", detail: parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; ") };
   const output: InterpretationOutput = parsed.data;
   const text = allText(output);
+  // Paragraph breaks inside a field count toward its length; only our joining separators are excluded.
+  const total = answerFields(output).reduce((sum, field) => sum + field.length, 0);
+  if (total > LIMITS.total) return { ok: false, reason: "output_shape", detail: `total ${total} > ${LIMITS.total}` };
+  const failed = checkAnswerText(text, drawnCardIds);
+  if (failed) return { ok: false, ...failed };
+  return { ok: true, output };
+}
 
-  const banned = BANNED_PHRASES.find((p) => p.test(text));
-  if (banned) return { ok: false, reason: "banned_phrase", detail: banned.source };
-  const asserted = findAssertedCertainty(text);
-  if (asserted) return { ok: false, reason: "asserted_certainty", detail: asserted };
+/** Follow-up turns: one to five paragraphs, an optional question, an optional limit line (docs/RELEASE-C.md section 3; lengths.ts). */
+export const FOLLOWUP_LIMITS = { paragraph: FOLLOWUP_LENGTHS.paragraph.max, paragraphs: FOLLOWUP_LENGTHS.paragraphs.max, total: FOLLOWUP_LENGTHS.total, reflection: FOLLOWUP_LENGTHS.reflection.max, beyondSpread: FOLLOWUP_LENGTHS.beyondSpread.max } as const;
+const FOLLOWUP_MINIMUMS = { paragraph: FOLLOWUP_LENGTHS.paragraph.min, reflection: FOLLOWUP_LENGTHS.reflection.min } as const;
 
-  const foreign = findForeignCardName(text, drawnCardIds);
-  if (foreign) return { ok: false, reason: "foreign_card", detail: foreign };
+const followupSchema = z.strictObject({
+  paragraphs: z.array(z.string().trim().min(FOLLOWUP_MINIMUMS.paragraph).max(FOLLOWUP_LIMITS.paragraph)).min(FOLLOWUP_LENGTHS.paragraphs.min).max(FOLLOWUP_LIMITS.paragraphs),
+  reflection: optionalText(FOLLOWUP_LIMITS.reflection),
+  beyondSpread: optionalText(FOLLOWUP_LIMITS.beyondSpread),
+});
 
+export type FollowupValidationResult = { ok: true; output: FollowupOutput } | { ok: false; reason: string; detail?: string };
+
+export function validateFollowup(raw: unknown, drawnCardIds: string[]): FollowupValidationResult {
+  const parsed = followupSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, reason: "output_shape", detail: parsed.error.issues.map((i) => i.path.join(".") + ": " + i.message).join("; ") };
+  const output: FollowupOutput = parsed.data;
+  if (output.reflection !== null && output.reflection.length < FOLLOWUP_MINIMUMS.reflection) return { ok: false, reason: "output_shape", detail: "reflection too short" };
+  const total = output.paragraphs.join("\n").length + (output.reflection?.length ?? 0) + (output.beyondSpread?.length ?? 0);
+  if (total > FOLLOWUP_LIMITS.total) return { ok: false, reason: "output_shape", detail: `total ${total} > ${FOLLOWUP_LIMITS.total}` };
+  const failed = checkAnswerText([...output.paragraphs, output.reflection ?? "", output.beyondSpread ?? ""].join("\n"), drawnCardIds);
+  if (failed) return { ok: false, ...failed };
   return { ok: true, output };
 }

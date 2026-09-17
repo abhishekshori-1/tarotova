@@ -45,6 +45,7 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
@@ -277,4 +278,258 @@ h3 {
 }
 .reveal-card {
   animation: reveal-card 360ms ease-out both;
+}
+
+/* A reading becomes a conversation without changing into a chat screen. */
+.reader-message { border-left: 2px solid var(--accent); padding: 0.75rem 1rem; }
+.reflection-panel { border-radius: 1rem; background: color-mix(in srgb, var(--accent) 10%, var(--raised)); }
+.limit-note { border-left: 2px solid var(--line); padding-left: 1rem; line-height: 1.65; }
+.answer-arrival { animation: settle-in 240ms ease-out both; }
+.journey-tile { display: block; border: 1px solid var(--line); border-radius: 1.25rem; padding: 1.5rem; background: var(--raised); transition: border-color 160ms, transform 160ms; }
+.journey-tile:hover { border-color: var(--accent); transform: translateY(-3px); }
+.journey-motif { width: 5rem; height: 5rem; color: var(--accent); }
+.journey-stages { display: flex; gap: 0.75rem; }
+.journey-stages li { flex: 1; padding-top: 0.65rem; border-top: 2px solid var(--line); font-size: 0.875rem; color: var(--fg-soft); }
+.journey-stages li[aria-current="step"] { border-color: var(--accent); color: var(--fg); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .journey-tile:hover { transform: none; } }
+@media print {
+  .reader-message, .reflection-panel, .journey-stages, .limit-note { break-inside: avoid; }
+  .conversation-turn p { orphans: 3; widows: 3; }
+}
+
+/* --- Reading experience redesign (docs/PLAN-READING-EXPERIENCE.md section 3) --- */
+
+/* Long prose sits on a calm surface: 18px body, generous leading, 55–70 character measure. */
+.reading-body {
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+.reading-body p + p {
+  margin-top: 1em;
+}
+.reading-opening {
+  font-size: clamp(1.2rem, 1.05rem + 0.5vw, 1.375rem);
+  line-height: 1.6;
+}
+
+/* The three-card fan on the home stage. Visible at every width; the size scales. */
+.hero-fan {
+  --fan-w: clamp(5.5rem, 22vw, 10rem);
+  position: relative;
+  height: calc(var(--fan-w) * 1.9);
+}
+.hero-fan .hero-fan-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--fan-w);
+  transform: translate(-50%, -50%) translateX(calc(var(--fan-i) * var(--fan-w) * 0.62)) rotate(calc(var(--fan-i) * 11deg));
+  transform-origin: 50% 120%;
+  transition: transform 300ms ease-out;
+}
+.hero-fan:hover .hero-fan-card {
+  transform: translate(-50%, -50%) translateX(calc(var(--fan-i) * var(--fan-w) * 0.74)) rotate(calc(var(--fan-i) * 14deg)) translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-fan:hover .hero-fan-card { transform: translate(-50%, -50%) translateX(calc(var(--fan-i) * var(--fan-w) * 0.62)) rotate(calc(var(--fan-i) * 11deg)); }
+}
+
+/* The card table on the choose screen: a felt surface, cards laid in a soft arc. */
+.card-table {
+  border-radius: 1.5rem;
+  padding: 1.25rem;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 30%, rgba(172, 155, 203, 0.16), transparent 70%),
+    var(--night-raised);
+  box-shadow: 0 30px 60px -40px rgba(0, 0, 0, 0.9) inset, 0 1px 0 rgba(245, 235, 221, 0.06);
+}
+.card-table .card-slot {
+  transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+}
+.card-table .card-slot:hover:not(:disabled) {
+  transform: translateY(-6px);
+}
+.card-table .card-slot[aria-pressed="true"] {
+  transform: translateY(-10px);
+  box-shadow: 0 0 0 2px var(--gold), 0 18px 30px -18px rgba(213, 180, 122, 0.8);
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-table .card-slot:hover:not(:disabled),
+  .card-table .card-slot[aria-pressed="true"] { transform: none; }
+}
+
+/* The hero spread on the reading: large, labelled, a visual index into the page. */
+.hero-spread {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(0.5rem, 3vw, 1.5rem);
+  max-width: 34rem;
+}
+.hero-spread a {
+  display: block;
+  border-radius: 0.75rem;
+  transition: transform 200ms ease-out;
+}
+.hero-spread a:hover {
+  transform: translateY(-4px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-spread a:hover { transform: none; }
+}
+.spread-frame {
+  border-radius: 0.75rem;
+  box-shadow:
+    0 0 0 1px rgba(184, 149, 90, 0.35),
+    0 24px 40px -28px rgba(48, 37, 59, 0.6);
+}
+
+/* Desktop: a sticky rail keeps the question, the spread and the section index in view beside the text column. */
+.reading-layout {
+  display: grid;
+  gap: 2rem;
+}
+/* Grid items default to min-width:auto, which would let the scrollable section row widen the page. */
+.reading-layout > * {
+  min-width: 0;
+}
+/* At enlarged text sizes even a position label can exceed its card column.
+   Wrap text instead of clipping it or widening the viewport. */
+.reading-layout, .prose-measure {
+  overflow-wrap: anywhere;
+}
+.section-links {
+  max-width: 100%;
+}
+@media (min-width: 64rem) {
+  .reading-layout {
+    grid-template-columns: 17rem minmax(0, 1fr);
+    gap: 3.5rem;
+    align-items: start;
+  }
+  .reading-rail {
+    position: sticky;
+    top: 1.5rem;
+  }
+}
+.section-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 1rem;
+  font-size: 0.875rem;
+}
+.section-links a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  color: var(--fg-soft);
+  border-bottom: 1px solid transparent;
+}
+.section-links a:hover {
+  color: var(--fg);
+  border-bottom-color: var(--accent);
+}
+@media (min-width: 64rem) {
+  .section-links { flex-direction: column; gap: 0; }
+  .section-links a { min-height: 2.25rem; }
+}
+.reading-section {
+  scroll-margin-top: 1.5rem;
+  container-type: inline-size;
+}
+.reading-card-layout { display: grid; gap: 1.5rem; }
+.reading-card-art { width: min(8rem, 100%); margin-inline: auto; }
+/* Respond to the actual reading column, including enlarged text beside the rail. */
+@container (min-width: 30rem) {
+  .reading-card-layout { grid-template-columns: 9.5rem minmax(0, 1fr); gap: 2rem; }
+  .reading-card-art { width: 100%; margin-inline: 0; }
+}
+.reading-section + .reading-section {
+  margin-top: 3rem;
+  border-top: 1px solid var(--line);
+  padding-top: 2.5rem;
+}
+.card-figure {
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 1px rgba(184, 149, 90, 0.35), 0 16px 30px -22px rgba(48, 37, 59, 0.55);
+}
+
+/* Enlarged card view. */
+.card-lightbox {
+  border: none;
+  padding: 0;
+  background: transparent;
+  max-width: min(92vw, 26rem);
+  width: 100%;
+}
+.card-lightbox::backdrop {
+  background: rgba(20, 17, 31, 0.86);
+  backdrop-filter: blur(4px);
+}
+.card-lightbox .card-lightbox-body {
+  border-radius: 1rem;
+  background: var(--parchment);
+  color: var(--ink);
+  padding: 1rem;
+}
+.card-lightbox-body > div:first-child {
+  width: min(100%, calc((100svh - 9rem) * 0.625));
+  margin-inline: auto;
+}
+
+/* Journey compositions: each stage has its own shape. */
+.journey-frame {
+  border-radius: 1.5rem;
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 0%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+    var(--raised);
+  border: 1px solid var(--line);
+}
+.journey-reflect {
+  border-radius: 1.5rem;
+  padding: clamp(1.5rem, 5vw, 3rem);
+  background: color-mix(in srgb, var(--accent) 12%, var(--raised));
+  text-align: left;
+}
+.journey-keepsake {
+  border-radius: 1.5rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 50%, var(--line));
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%),
+    var(--raised);
+}
+.journey-keepsake .hero-spread { max-width: 22rem; margin-inline: auto; }
+
+/* Opacity-only entrance for elements that carry their own transform (the fan). */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+.fade-in { animation: fade-in 300ms ease-out both; }
+
+/* On narrow screens the section index is one scrollable row of pills. */
+@media (max-width: 63.98rem) {
+  .section-links {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .section-links::-webkit-scrollbar { display: none; }
+  .section-links a {
+    flex: 0 0 auto;
+    min-height: 2.5rem;
+    padding: 0 0.875rem;
+    border: 1px solid var(--line);
+    border-radius: 9999px;
+    white-space: nowrap;
+    color: var(--fg);
+  }
+  .section-links a:hover { border-color: var(--accent); }
+}
+
+/* Motion budget: state changes in 150–300 ms, the reveal under a second in total. */
+.reveal-card { animation-duration: 300ms; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal-card, .answer-arrival, .settle-in, .fade-in { animation: none !important; }
 }

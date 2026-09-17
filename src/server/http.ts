@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { AccessRequiredError, ConflictError, OwnershipError, ValidationError, RateLimitedError } from "./errors";
+import { AccessRequiredError, ConflictError, FollowupStateError, OwnershipError, ValidationError, RateLimitedError } from "./errors";
 import { EmailConfigurationError } from "./email";
 import { BotCheckConfigurationError } from "./turnstile";
 
@@ -30,6 +30,11 @@ export function handleServiceError(err: unknown): NextResponse {
   }
   if (err instanceof AccessRequiredError) {
     return privateJson({ error: "verification_required" }, { status: 403 });
+  }
+  if (err instanceof FollowupStateError) {
+    const res = privateJson({ error: err.code }, { status: 409 });
+    if (err.retryAfterSeconds) res.headers.set("Retry-After", String(err.retryAfterSeconds));
+    return res;
   }
   if (err instanceof ConflictError) {
     return privateJson({ error: "revision_conflict", currentRevision: err.currentRevision }, { status: 409 });

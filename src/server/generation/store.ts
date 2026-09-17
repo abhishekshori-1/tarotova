@@ -3,8 +3,9 @@ import { readingGenerations } from "../db/schema";
 import type { Executor } from "../access";
 import { SAFETY_RESPONSES, isRefusalCategory, type SafetyCategory } from "@/content/safety";
 import { GENERATION_KIND, GENERATION_MAX_ATTEMPTS, getGenerationConfig } from "./config";
-import type { InterpretationOutput, InterpretationView } from "./types";
+import type { InterpretationView } from "./types";
 import { isProviderRefusal } from "./refusal";
+import { normalizeStoredAnswer } from "./validate";
 
 export type GenerationRow = typeof readingGenerations.$inferSelect;
 
@@ -36,7 +37,8 @@ export function viewOf(row: GenerationRow | undefined, grantBasis: string | unde
   if (!config.enabled) return { status: "disabled" };
   if (!question) return { status: "not_applicable" };
   if (row?.status === "succeeded" && row.output) {
-    return { status: "succeeded", answer: JSON.parse(row.output) as InterpretationOutput, model: row.model ?? "unknown", promptVersion: row.promptVersion };
+    // Older rows have no synthesis; they are read as they were written, never regenerated.
+    return { status: "succeeded", answer: normalizeStoredAnswer(row.output), model: row.model ?? "unknown", promptVersion: row.promptVersion };
   }
   // Configuration and the guest switch come after stored results: an answer
   // already paid for stays readable when generation is paused later.

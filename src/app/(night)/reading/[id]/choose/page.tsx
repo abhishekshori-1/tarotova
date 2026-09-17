@@ -34,7 +34,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
   const load = useCallback(async () => {
     try {
       const s = await getStatus(id);
-      if (s.state !== "drafting") return router.replace(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
+      if (s.state !== "drafting") return router.replace(s.entitlement === "granted" ? (s.journeyId ? `/journey/${s.journeyId}` : resultHref) : verifyHref(s.journeyId ? `/journey/${s.journeyId}` : resultHref));
       // The continuation gate comes before card selection (docs/ACCESS-FLOW.md section 2).
       if (s.entitlement === "verification_required") return router.replace(verifyHref(`/reading/${id}/choose`));
       revisionRef.current = s.revision;
@@ -115,7 +115,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       setStatus(s);
       // A lost race with another tab locks the draw but grants nothing;
       // verification then unlocks this same reading.
-      router.push(s.entitlement === "granted" ? resultHref : verifyHref(resultHref));
+      router.push(s.entitlement === "granted" ? (s.journeyId ? `/journey/${s.journeyId}` : resultHref) : verifyHref(s.journeyId ? `/journey/${s.journeyId}` : resultHref));
     } catch (e) {
       if ((e as ApiError).status === 409) {
         setError("This reading changed in another tab. Your cards are shown as they are now.");
@@ -141,7 +141,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
     return (
       <div className="mx-auto max-w-md px-6 py-16 text-center">
         <p className="text-lg">{error}</p>
-        <Link href="/" className="mt-4 inline-block underline">
+        <Link href="/" prefetch={false} className="mt-4 inline-block underline">
           Start a new reading
         </Link>
       </div>
@@ -172,7 +172,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
       <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="title">Pull three cards</h1>
-          <p className="mt-1 text-sm text-[var(--fg-soft)]">Tap three, in order. Where you are, what&apos;s in the way, the way through.</p>
+          <p className="mt-1 text-[var(--fg-soft)]">Tap three, in order. Where you are, what&apos;s in the way, the way through.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" onClick={shuffle} disabled={!canShuffle || busy} className="btn-secondary px-4 text-sm">
@@ -192,7 +192,7 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
         </p>
       )}
 
-      <div className="mt-6 grid grid-cols-4 gap-3 sm:grid-cols-6 sm:gap-4 xl:grid-cols-8">
+      <div className="card-table mt-6 grid grid-cols-4 gap-3 sm:grid-cols-6 sm:gap-4 xl:grid-cols-8" role="group" aria-label="Twenty-two cards, face down">
         {Array.from({ length: SLOT_COUNT }, (_, slot) => {
           const order = selected.includes(slot) ? selected.indexOf(slot) + 1 : undefined;
           const disabled = order === undefined && selected.length >= 3;
@@ -217,12 +217,13 @@ export default function ChoosePage({ params }: { params: Promise<{ id: string }>
               return (
                 <li key={label} className="flex flex-col items-center gap-1">
                   <div
-                    className={`relative aspect-[5/8] w-10 rounded-md border ${filled ? "border-[var(--gold)]" : "border-dashed border-[var(--line)]"}`}
+                    className={`relative aspect-[5/8] w-11 rounded-md border transition-colors duration-200 sm:w-12 ${filled ? "border-[var(--gold)]" : "border-dashed border-[var(--line)]"}`}
                     aria-hidden="true"
                   >
-                    {filled && <Image src="/cards/back.svg" alt="" fill sizes="40px" className="rounded-md" />}
+                    {filled && <Image src="/cards/back.svg" alt="" fill sizes="48px" className="rounded-md" />}
+                    {filled && <span className="absolute inset-0 flex items-center justify-center font-serif text-lg text-[var(--gold)]">{i + 1}</span>}
                   </div>
-                  <span className={`text-[0.65rem] ${filled ? "text-[var(--fg)]" : "text-[var(--fg-soft)]"}`}>{label}</span>
+                  <span className={`text-[0.7rem] ${filled ? "text-[var(--fg)]" : "text-[var(--fg-soft)]"}`}>{label}</span>
                 </li>
               );
             })}

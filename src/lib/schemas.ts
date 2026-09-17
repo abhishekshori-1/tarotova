@@ -35,3 +35,11 @@ export const verifySchema = z.object({
     .trim()
     .regex(/^\d{6}$/, "Enter the 6-digit code."),
 });
+
+export const FOLLOWUP_MAX_LENGTH = 500;
+
+/** One follow-up turn: the client's idempotency id and the immutable text (docs/RELEASE-C.md section 4). */
+export const followupSchema = z.object({
+  submissionId: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/, "submission id"),
+  text: z.string().trim().min(1, "Write something first.").max(FOLLOWUP_MAX_LENGTH, "Keep it under 500 characters."),
+});

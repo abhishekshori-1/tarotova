@@ -1,9 +1,9 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
-import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
-import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, groundingUserMessage } from "./grounding-prompts";
+import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierSystem, classifierUserMessage, followupUserMessage, interpretationUserMessage } from "./prompts";
+import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
+import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
-import { callTimeout, deadlineExceeded } from "./deadline";
+import { callTimeout, deadlineExceeded, networkDetail } from "./deadline";
 
 const DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models";
 
@@ -42,14 +42,15 @@ export class GeminiProvider implements GenerationProvider {
     private readonly timeoutMs: number,
     /** Tests only: a local server that stalls, to prove the timeout ends the call. */
     private readonly endpoint: string = DEFAULT_ENDPOINT,
+    private readonly thinkingLevel?: "low" | "medium" | "high",
   ) {}
 
-  async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
-    const outcome = await this.callJson(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL.input_schema, 1024, options);
+  async classify(question: string, options?: ProviderCallOptions, context?: ConversationContext): Promise<ProviderOutcome<SafetyCategory>> {
+    const outcome = await this.callJson(this.models.classifier, classifierSystem(context), classifierUserMessage(question, context), CLASSIFY_TOOL.input_schema, 1024, options);
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown })?.category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
-      return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
+      return { ok: false, model: outcome.model, usage: outcome.usage, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
     return { ...outcome, value: category as SafetyCategory };
   }
@@ -63,10 +64,22 @@ export class GeminiProvider implements GenerationProvider {
   }
 
   repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callJson(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), REPAIR_TOOL.input_schema, 8192, options);
+    return this.callJson(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)).input_schema, 8192, options);
   }
 
-  private async callJson(model: string, system: string, user: string, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+  followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, FOLLOWUP_SYSTEM, followupUserMessage(input), FOLLOWUP_TOOL.input_schema, 4096, options);
+  }
+
+  reviewFollowup(input: FollowupInput, answer: FollowupOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, FOLLOWUP_GROUNDING_SYSTEM, followupGroundingUserMessage(input, answer), FOLLOWUP_GROUNDING_TOOL.input_schema, 4096, options);
+  }
+
+  repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callJson(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)).input_schema, 4096, options);
+  }
+
+  private async callJson(model: string, system: string, user: UserMessage, schema: unknown, maxOutputTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     const timeoutMs = callTimeout(this.timeoutMs, options);
     if (timeoutMs <= 0) return deadlineExceeded();
     const signal = AbortSignal.timeout(timeoutMs);
@@ -78,13 +91,16 @@ export class GeminiProvider implements GenerationProvider {
         signal,
         body: JSON.stringify({
           systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: "user", parts: [{ text: user }] }],
-          generationConfig: { responseMimeType: "application/json", responseSchema: toGeminiSchema(schema), maxOutputTokens },
+          contents: [{ role: "user", parts: [{ text: userMessageText(user) }] }],
+          generationConfig: {
+            responseMimeType: "application/json", responseSchema: toGeminiSchema(schema), maxOutputTokens,
+            ...(this.thinkingLevel ? { thinkingConfig: { thinkingLevel: this.thinkingLevel } } : {}),
+          },
         }),
       });
     } catch (err) {
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
-      return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
+      return { ok: false, model, reason: timedOut ? "provider_timeout" : "provider_network", detail: networkDetail(err), retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
@@ -96,41 +112,49 @@ export class GeminiProvider implements GenerationProvider {
       } catch {
         // No JSON body; the status alone will have to do.
       }
-      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
+      return { ok: false, model, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
     let body: {
       candidates?: { content?: { parts?: { text?: string }[] }; finishReason?: string }[];
       promptFeedback?: { blockReason?: string };
-      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+      usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; cachedContentTokenCount?: number; thoughtsTokenCount?: number };
       modelVersion?: string;
     };
     try {
       body = await res.json();
     } catch {
-      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      if (signal.aborted) return { ok: false, model, reason: "provider_timeout", retryable: true, uncertain: true };
+      return { ok: false, model, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
+    const metadata = {
+      model: body.modelVersion ?? model,
+      usage: body.usageMetadata ? {
+        inputTokens: Math.max(0, (body.usageMetadata.promptTokenCount ?? 0) - (body.usageMetadata.cachedContentTokenCount ?? 0)),
+        // Gemini bills thinking as output; promptTokenCount includes cache hits.
+        outputTokens: (body.usageMetadata.candidatesTokenCount ?? 0) + (body.usageMetadata.thoughtsTokenCount ?? 0),
+        ...(body.usageMetadata.cachedContentTokenCount !== undefined ? { cacheReadTokens: body.usageMetadata.cachedContentTokenCount } : {}),
+      } : undefined,
+    };
     if (body.promptFeedback?.blockReason) {
-      return { ok: false, reason: "provider_blocked", detail: body.promptFeedback.blockReason, retryable: false, uncertain: false };
+      return { ok: false, ...metadata, reason: "provider_blocked", detail: body.promptFeedback.blockReason, retryable: false, uncertain: false };
     }
     const candidate = body.candidates?.[0];
     const text = candidate?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
     if (candidate?.finishReason && candidate.finishReason !== "STOP") {
-      return { ok: false, reason: `provider_finish_${candidate.finishReason.toLowerCase()}`, retryable: candidate.finishReason === "MAX_TOKENS", uncertain: false };
+      return { ok: false, ...metadata, reason: `provider_finish_${candidate.finishReason.toLowerCase()}`, retryable: candidate.finishReason === "MAX_TOKENS", uncertain: false };
     }
-    if (!text.trim()) return { ok: false, reason: "provider_empty_response", retryable: true, uncertain: false };
+    if (!text.trim()) return { ok: false, ...metadata, reason: "provider_empty_response", retryable: true, uncertain: false };
     let value: unknown;
     try {
       value = JSON.parse(text);
     } catch {
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      return { ok: false, ...metadata, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
     return {
       ok: true,
       value,
-      model: body.modelVersion ?? model,
-      usage: body.usageMetadata ? { inputTokens: body.usageMetadata.promptTokenCount ?? 0, outputTokens: body.usageMetadata.candidatesTokenCount ?? 0 } : undefined,
+      ...metadata,
     };
   }
 }

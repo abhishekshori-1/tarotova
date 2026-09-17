@@ -71,3 +71,16 @@ function setCookie(store: Awaited<ReturnType<typeof cookies>>, token: string) {
     maxAge: SESSION_TTL_MS / 1000,
   });
 }
+
+/** A resume shortcut must not mint a competing session while the visitor starts a reading. */
+export async function readSession(): Promise<Session | null> {
+  const token = (await cookies()).get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  const [row] = await db.select().from(browserSessions).where(eq(browserSessions.tokenHash, hashToken(token))).limit(1);
+  return row && row.expiresAt > Date.now() ? { id: row.id, isNew: false } : null;
+}
+
+/** Presence only: skip migrations and queries on public visits with no existing session. */
+export async function hasSessionCookie(): Promise<boolean> {
+  return !!(await cookies()).get(COOKIE_NAME)?.value;
+}

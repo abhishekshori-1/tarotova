@@ -1,6 +1,8 @@
 import type { SafetyCategory } from "@/content/safety";
-import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
+import type { ConversationContext, FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
 import { callTimeout, deadlineExceeded } from "./deadline";
+import { providerCalls } from "./usage";
+import type { ProviderCallRecord } from "./types";
 import { isProviderRefusal } from "./refusal";
 
 /**
@@ -21,8 +23,20 @@ export class FallbackProvider implements GenerationProvider {
     this.name = chain.map((p) => p.name).join(">");
   }
 
-  classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
-    return this.run((p) => p.classify(question, options), options);
+  classify(question: string, options?: ProviderCallOptions, context?: ConversationContext): Promise<ProviderOutcome<SafetyCategory>> {
+    return this.run((p) => p.classify(question, options, context), options);
+  }
+
+  followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.followup(input, options), options);
+  }
+
+  reviewFollowup(input: FollowupInput, answer: FollowupOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.reviewFollowup(input, answer, options), options);
+  }
+
+  repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.run((p) => p.repairFollowup(input, answer, issues, options), options);
   }
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -39,18 +53,23 @@ export class FallbackProvider implements GenerationProvider {
   }
 
   private async run<T>(call: (p: GenerationProvider) => Promise<ProviderOutcome<T>>, options?: ProviderCallOptions): Promise<ProviderOutcome<T>> {
+    const calls: ProviderCallRecord[] = [];
     const failures: { name: string; outcome: Extract<ProviderOutcome<T>, { ok: false }> }[] = [];
     for (const [i, provider] of this.chain.entries()) {
-      if (callTimeout(Infinity, options) <= 0) return { ...deadlineExceeded(), uncertain: failures.some((f) => f.outcome.uncertain) };
+      if (callTimeout(Infinity, options) <= 0) return { ...deadlineExceeded(), calls, uncertain: failures.some((f) => f.outcome.uncertain) };
+      const started = Date.now();
       const outcome = await call(provider);
-      if (outcome.ok) return outcome;
-      if (isProviderRefusal(outcome.reason)) return { ...outcome, retryable: false, uncertain: outcome.uncertain || failures.some((f) => f.outcome.uncertain) };
+      calls.push(...providerCalls(outcome, Date.now() - started, provider.name));
+      if (outcome.ok) return { ...outcome, calls };
+      if (isProviderRefusal(outcome.reason)) return { ...outcome, calls, retryable: false, uncertain: outcome.uncertain || failures.some((f) => f.outcome.uncertain) };
       failures.push({ name: provider.name, outcome });
       const next = this.chain[i + 1];
       if (next) this.onFallback(provider.name, next.name, outcome.reason, outcome.detail);
     }
     const last = failures[failures.length - 1].outcome;
     return {
+      ...last,
+      calls,
       ok: false,
       reason: last.reason,
       detail: failures.map((f) => `${f.name}: ${f.outcome.reason}${f.outcome.detail ? ` (${f.outcome.detail})` : ""}`).join("; "),

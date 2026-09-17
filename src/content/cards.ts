@@ -14,7 +14,9 @@ import type { CardContent } from "./types";
  * becomes a verdict in someone's reading.
  *
  * Texture (content.v6): short declarative sentences carry each text. At
- * most one question per text. No permission language ("if it fits", "yours
+ * most one question per text. The exploration (content.v9) describes the
+ * Rider–Waite–Smith image and develops the theme in the same stance: about
+ * the picture and its symbols, never about the reader. No permission language ("if it fits", "yours
  * to weigh", "one option is"); the stance is held by keeping the subject on
  * the theme, not by hedging every line.
  */
@@ -26,6 +28,8 @@ export const CARDS: CardContent[] = [
     numeral: "0",
     keywords: ["beginnings", "openness", "a first step"],
     coreMeaning: "A first step into something new, taken with curiosity rather than a finished plan.",
+    exploration:
+      "A young figure stands at the edge of a cliff, face lifted to the sky, a small bundle on a stick over one shoulder. A white dog leaps at the heels. The sun is high and the mountains are far off. The card shows a step about to be taken with almost nothing carried: a rose in one hand, a light pack, no map. Beginnings hold both the freshness of not knowing and the risk of not looking. The dog is company and a warning at once. The Fool is numbered zero, the point before counting starts.",
     position: {
       situation:
         "A beginning. An edge, a first step, a road not mapped yet. Somewhere in what you brought, something may be only starting, and the ground there is still soft.",
@@ -48,6 +52,8 @@ export const CARDS: CardContent[] = [
     numeral: "I",
     keywords: ["resourcefulness", "focus", "making it real"],
     coreMeaning: "Turning an idea into something real by choosing what to work with and where to point it.",
+    exploration:
+      "One hand is raised to the sky, the other points to the ground. On the table lie a cup, a sword, a wand and a pentacle, the four tools of the deck. Above the figure's head is the sign of infinity. The image is about connecting an idea with the means to make it. The tools are ordinary things put to deliberate use. The raised hand and the lowered hand describe one movement: what is imagined, brought down into what can be done. Focus is the card's discipline, and the table is where it happens.",
     position: {
       situation:
         "Resources and focus. Skill, timing, tools, people, and the act of choosing which to use. The card does not know what is within your reach. Taking stock of that, including what is missing, is where it begins.",
@@ -70,6 +76,8 @@ export const CARDS: CardContent[] = [
     numeral: "II",
     keywords: ["intuition", "quiet knowing", "what is not yet said"],
     coreMeaning: "Something sensed before it can be explained, and the patience to let it surface.",
+    exploration:
+      "A seated figure rests between two pillars, one dark and one light, marked B and J. A veil of pomegranates hangs behind her. A crescent moon lies at her feet, and a scroll sits half hidden in her lap. The image is about what is known but not yet spoken. The scroll is partly rolled, so only part of it can be read. The card's theme is receptive knowing: listening before deciding, and letting something surface in its own time. Stillness is its posture. Silence is part of its method.",
     position: {
       situation:
         "The unsaid. A hunch, a sense of something not fully on the table yet. Part of your question may be felt before it can be put into words, and that is a normal place for a question to be.",
@@ -92,6 +100,8 @@ export const CARDS: CardContent[] = [
     numeral: "III",
     keywords: ["nurture", "growth", "giving things room"],
     coreMeaning: "Care and time given to something so it can grow, rather than pressure to make it hurry.",
+    exploration:
+      "A crowned figure reclines on cushions in a field of ripening wheat. A river runs through trees behind her, and a heart-shaped shield bearing the sign of Venus rests at her side. Everything in the image grows. The wheat is nearly ready. The water keeps moving. The card is about abundance that comes from tending rather than forcing, and about care given time. The Empress sits rather than works, which is part of the point. Growth has its own pace. Nurture includes rest, for the one who gives as well as for what is given.",
     position: {
       situation:
         "Growth that answers to tending rather than force. A relationship, a project, an idea. Something in your question may be growing quietly, and quiet growth is easy to miss.",
@@ -114,6 +124,8 @@ export const CARDS: CardContent[] = [
     numeral: "IV",
     keywords: ["structure", "stability", "clear boundaries"],
     coreMeaning: "Structure and a clear boundary, the things that turn a good intention into something dependable.",
+    exploration:
+      "A bearded ruler sits on a stone throne carved with rams' heads. He holds an ankh-shaped sceptre and a globe. Behind him rise bare mountains. Armour shows beneath his robe. The image is about structure held firm. The stone throne does not move. The card's theme is order: rules, boundaries and the authority that keeps them. The rams belong to Aries, the sign of initiative. The ankh is a sign of life, held by a figure of law. Structure exists to protect something living. The throne is only as good as what it serves.",
     position: {
       situation:
         "Structure. A plan, a boundary, a decision that holds. This card raises the question of whether some part of what you brought has stayed open-ended longer than it serves you, or whether a firmer shape would only feel safer.",
@@ -136,6 +148,8 @@ export const CARDS: CardContent[] = [
     numeral: "V",
     keywords: ["tradition", "shared method", "learning from others"],
     coreMeaning: "A known method, a teacher, or a shared understanding, useful when something has been worked out before.",
+    exploration:
+      "A robed figure sits between two pillars, one hand raised in blessing, the other holding a triple cross. Two crossed keys lie at his feet. Two acolytes kneel before him. The image is about teaching passed down: a tradition, an institution, a body of practice. The keys stand for what has been unlocked before and can be unlocked again. The space between the pillars is open and public. The card's theme is shared method. Learning from those who came before is one of its gifts. Knowing what to keep and what to leave is the other.",
     position: {
       situation:
         "The tried path. An established approach, a mentor, a community that has faced this before. The card points to what others have worked out about questions like this one. Finding that is different from copying it.",
@@ -158,6 +172,8 @@ export const CARDS: CardContent[] = [
     numeral: "VI",
     keywords: ["connection", "values", "a real choice"],
     coreMeaning: "A choice that asks what you value, not only what is easiest or keeps the peace.",
+    exploration:
+      "A man and a woman stand beneath a great angel whose wings fill the sky. Behind the woman grows a tree with a serpent. Behind the man stands a tree of flames. A mountain rises between them, and the sun blazes overhead. The image is about a choice made in the open, with everything visible. The two trees stand for knowing and for passion. The card's theme is a decision that reveals what someone values. Connection is part of it. So is the honesty of choosing with eyes open.",
     position: {
       situation:
         "A meaningful choice, often about connection, and the values underneath it. The card cannot tell you what anyone else feels. It can ask what matters most to you in the decision your question holds.",
@@ -180,6 +196,8 @@ export const CARDS: CardContent[] = [
     numeral: "VII",
     keywords: ["drive", "focused will", "holding two things together"],
     coreMeaning: "Forward motion held together by will, even when the pull comes from two directions.",
+    exploration:
+      "A crowned figure stands in a stone chariot beneath a starry canopy. Two sphinxes, one black and one white, rest in front, facing slightly apart. The charioteer holds no reins. A walled city lies behind. The image is about motion held together by will. The sphinxes pull in different directions, and the figure keeps them moving as one. The canopy of stars suggests a purpose larger than the road. The card's theme is drive with direction: effort that knows where it is going. The chariot protects while it moves.",
     position: {
       situation:
         "Momentum under tension. Moving with intent while different pressures pull in different ways. Where in your question there is drive, and what it is being asked to hold together, is the shape this card offers.",
@@ -202,6 +220,8 @@ export const CARDS: CardContent[] = [
     numeral: "VIII",
     keywords: ["quiet courage", "patience", "steadiness"],
     coreMeaning: "A patient kind of courage, the sort that holds steady rather than forces.",
+    exploration:
+      "A woman in a white robe closes the jaws of a lion with her bare hands. Her touch is gentle. The lion's tail curls between its legs. Above her head is the sign of infinity, and a garland of flowers circles her waist. The image is about courage without force. Nothing in it strains. The lion is not defeated, only met. The card's theme is patience that holds its ground: firmness that does not need to shout. What tames the lion is composure. The mountains behind are far off, and the sky is clear.",
     position: {
       situation:
         "Steadiness. Courage that is quiet, patience under pressure, resolve kept up over time. Somewhere in what you brought, that kind of strength may already be in use, unnoticed because it is quiet.",
@@ -224,6 +244,8 @@ export const CARDS: CardContent[] = [
     numeral: "IX",
     keywords: ["solitude", "reflection", "an inward light"],
     coreMeaning: "Stepping back from the noise to think clearly, and then stepping back in.",
+    exploration:
+      "An old figure in a grey cloak stands on a snowy peak, holding a lantern out into the dark. Inside the lantern burns a six-pointed star. In the other hand is a staff. The image is about light carried into solitude. The peak is high and empty. The card's theme is reflection: stepping away to see clearly, with a small light of one's own. The Hermit looks down the mountain, which suggests the light is also held for someone else who may be climbing.",
     position: {
       situation:
         "Distance. From advice, from noise, from other people's opinions, so that your own read on things can be heard. Your question may not have had that kind of quiet yet.",
@@ -246,6 +268,8 @@ export const CARDS: CardContent[] = [
     numeral: "X",
     keywords: ["change", "cycles", "a turning point"],
     coreMeaning: "Circumstances turning on their own timeline, a turning point rather than a fixed state.",
+    exploration:
+      "A great wheel turns in the sky, marked with letters and alchemical signs. A sphinx sits on top with a sword. A serpent descends on one side, and a jackal-headed figure rises on the other. In the corners, four winged creatures read books. The image is about cycles: what rises, what falls, and what stays at the centre. The wheel moves without a hand on it. The card's theme is change that arrives on its own timing. The readers in the corners suggest that a turn can be studied even when it cannot be steered.",
     position: {
       situation:
         "Change that is not entirely on your terms. A cycle turning, an outside factor shifting the shape of things. Some of what is moving in your question is yours to steer and some is not, and telling them apart matters.",
@@ -268,6 +292,8 @@ export const CARDS: CardContent[] = [
     numeral: "XI",
     keywords: ["fairness", "clear sight", "consequence"],
     coreMeaning: "An even-handed look at cause and effect, and at what would be fair to do next.",
+    exploration:
+      "A crowned figure sits between two pillars, holding a raised sword in one hand and a set of scales in the other. A purple veil hangs behind. One foot steps forward from beneath the red robe. The image is about weighing and deciding. The scales are level. The sword points straight up. Nothing in the composition tilts. The card's theme is fairness: looking at cause and consequence squarely and choosing what follows. The crown carries a small square, a sign of clear thought.",
     position: {
       situation:
         "Fairness and consequence. What led to what, who is responsible for which part, what a fair next step would be. Something in your question may be waiting for that kind of accounting.",
@@ -290,6 +316,8 @@ export const CARDS: CardContent[] = [
     numeral: "XII",
     keywords: ["pause", "a different angle", "letting go of urgency"],
     coreMeaning: "A deliberate pause that lets the whole situation be seen from a different angle.",
+    exploration:
+      "A young man hangs by one foot from a living tree shaped like a T. His free leg is bent behind the other. His hands are held behind his back, and his face is calm. Around his head is a bright halo. The image is about suspension chosen on purpose. The tree is green, so what holds him is alive. The card's theme is a pause that changes the angle of sight. Seen upside down, a situation shows different edges. The halo says that this stillness has its own light. Waiting, here, is a way of looking rather than a loss of time.",
     position: {
       situation:
         "The pause. Progress in the usual sense set aside so that something can be seen differently. Your question may look different from a stiller place than the one it was asked from.",
@@ -312,6 +340,8 @@ export const CARDS: CardContent[] = [
     numeral: "XIII",
     keywords: ["ending", "transformation", "making room"],
     coreMeaning: "An ending that makes room for what comes after it. A symbol of change, not a prediction of harm.",
+    exploration:
+      "A skeleton in black armour rides a white horse, carrying a black banner with a white rose. Before it, a king has fallen. A bishop, a woman and a child wait. In the distance, between two towers, the sun rises over water. The image is about an ending with something beyond it. The rose on the banner is the sign of life continuing. The card's theme is transformation: a phase that closes so another can begin. Each figure responds differently, and each response is allowed. The rising sun is small and far. It is still there.",
     position: {
       situation:
         "Something running its course. A phase, a role, a way of doing things. This is a symbolic ending, not a forecast. Something in your question may be closing, whether or not that has been said out loud.",
@@ -334,6 +364,8 @@ export const CARDS: CardContent[] = [
     numeral: "XIV",
     keywords: ["balance", "patience", "blending, not choosing"],
     coreMeaning: "Slow, deliberate blending, finding the measure between two things rather than picking an extreme.",
+    exploration:
+      "A winged angel stands with one foot on land and one in water, pouring liquid between two cups. A path leads from the pool toward distant mountains, where a crown of light shows above the peaks. The image is about mixing rather than choosing. The liquid flows at an angle that seems impossible, which is part of its meaning: balance is an art, not a formula. The card's theme is patient blending, the measure found between two things. One foot on each surface holds both at once. The path is long, and the light at the end is calm.",
     position: {
       situation:
         "Two things present at once and the careful blend between them, rather than an either-or made in a hurry. Which two things your question is holding is the first thing this card asks.",
@@ -356,6 +388,8 @@ export const CARDS: CardContent[] = [
     numeral: "XV",
     keywords: ["attachment", "restriction", "old patterns"],
     coreMeaning: "Attachment and restriction: a bond, a habit, or a circumstance that holds. A symbol, not a judgement.",
+    exploration:
+      "A horned figure sits on a black pedestal, one hand raised and the other holding a torch pointed down. Two figures stand chained at its base. Their chains are loose enough to lift off. The image is about being held. The chains are the centre of the picture, and so is their slackness. The card's theme is attachment and restriction: a habit, a bond or a circumstance that keeps something in place. The figures wear small horns of their own, a sign that a hold can become familiar. Naming the chain is where the card looks.",
     position: {
       situation:
         "Being held. By a habit, a dynamic, a way of thinking, or a circumstance. The card does not know whether what holds you is inside you or outside you, or how tight it is. Naming it plainly, whatever it is, is where this card begins.",
@@ -378,6 +412,8 @@ export const CARDS: CardContent[] = [
     numeral: "XVI",
     keywords: ["sudden change", "disruption", "what comes after"],
     coreMeaning: "A sudden disruption and what it leaves standing. A symbol of upheaval, not a forecast of disaster.",
+    exploration:
+      "Lightning strikes a tower built on a rocky peak, throwing its crown from the top. Flames burst from the windows. Two figures fall through the dark air. The image is about sudden disruption and what it reveals. The tower was built on a narrow summit with no room to widen. The crown, a sign of false authority, is the first thing to go. The card's theme is upheaval: a structure breaking that could not bend. The lightning is over in an instant. What it lit up remains to be seen by daylight. The ground beneath is still rock.",
     position: {
       situation:
         "Sudden change. Something shaken, possibly without warning. The card does not say why it happened or what it means about what stood before. How you are doing with it counts for as much as what fell.",
@@ -400,6 +436,8 @@ export const CARDS: CardContent[] = [
     numeral: "XVII",
     keywords: ["hope", "quiet renewal", "a longer view"],
     coreMeaning: "Hope of a quiet kind, the sort that can follow something hard without needing to be dramatic.",
+    exploration:
+      "A woman kneels by a pool, one knee on land and one foot on the water, pouring from two jugs. One stream feeds the pool and the other runs onto the earth. Above her burns a large star ringed by seven smaller ones. The image is about renewal after difficulty. She is unclothed, with nothing to hide and nothing to protect. The water she pours returns to its source and nourishes the ground. The card's theme is hope of a quiet kind, the sort that follows something hard. The stars are steady rather than bright.",
     position: {
       situation:
         "Renewal after difficulty. Room to breathe, and a reconnection with what is hoped for. There may or may not be such room in your question yet, and the card does not require everything to be resolved first.",
@@ -422,6 +460,8 @@ export const CARDS: CardContent[] = [
     numeral: "XVIII",
     keywords: ["uncertainty", "the unclear", "what is not visible yet"],
     coreMeaning: "A stretch where things are not clear yet, and the work of telling what is known from what is not.",
+    exploration:
+      "A full moon with a face looks down between two towers. A dog and a wolf howl toward it. A crayfish climbs out of a pool onto a winding path that leads into far hills. Drops of light fall from the sky. The image is about seeing by uncertain light. The path is there, but its distance cannot be judged. The dog and the wolf stand for what is tame and what is wild in the same instinct. The card's theme is the unclear: what is sensed, feared or imagined before it is known. Something is surfacing, slowly.",
     position: {
       situation:
         "Uncertainty. Part of the picture is not visible, and it may not be for a while. The card does not say whether your concern is founded. It asks what in your question is confirmed, what is not, and what you need to find out.",
@@ -444,6 +484,8 @@ export const CARDS: CardContent[] = [
     numeral: "XIX",
     keywords: ["clarity", "warmth", "plain good"],
     coreMeaning: "Clarity and warmth, a plain kind of good worth noticing when it is there.",
+    exploration:
+      "A naked child rides a white horse beneath a huge sun with a calm face and straight rays. Sunflowers grow over a garden wall behind. The child carries a red banner and wears a wreath of flowers. The image is about clarity and open warmth. Nothing is hidden; the child has no need for clothing or reins. The sunflowers turn toward the light. The card's theme is plain good: joy, vitality, and the simple fact of a clear day. What the sun shows is shown fully. The picture asks nothing except to be seen.",
     position: {
       situation:
         "What is clear and good. Warmth, energy, something straightforward. Something in the situation you asked about may be going well, and good things often get less attention than trouble.",
@@ -466,6 +508,8 @@ export const CARDS: CardContent[] = [
     numeral: "XX",
     keywords: ["reckoning", "a call to respond", "seeing it whole"],
     coreMeaning: "A clear look at where things stand, and the call to respond to what is seen.",
+    exploration:
+      "An angel with a trumpet appears from the clouds, a banner with a red cross hanging from the horn. Below, grey figures rise from open coffins that float on water, arms lifted. The image is about a call heard and answered. The figures rise together, adults and a child. The water lies flat and reflects the sky. The card's theme is reckoning: seeing where things stand and responding to it. The trumpet is a summons, not a verdict. The coffins open outward. The card is about waking to something whole, and the willingness to stand up when the sound comes.",
     position: {
       situation:
         "Seeing something whole. A pattern, a result, a truth that has been circled. Something in your question may be ready to be looked at directly, and looking is the first response.",
@@ -488,6 +532,8 @@ export const CARDS: CardContent[] = [
     numeral: "XXI",
     keywords: ["completion", "wholeness", "arrival"],
     coreMeaning: "A cycle reaching completion. An arrival, not only an ending.",
+    exploration:
+      "A dancer moves inside a wreath of laurel, holding a wand in each hand. In the four corners, a man, an eagle, a lion and a bull watch from clouds. The image is about completion. The wreath is closed. The dancer is in motion inside it, so the ending is alive rather than still. The four figures stand for the fixed signs and the four elements: the whole picture, present at once. The card's theme is arrival: a cycle finished and recognised. Wholeness includes what it took to get here.",
     position: {
       situation:
         "Completion. Pieces coming together, a phase finishing, something arriving at its whole shape. Something in your question may be close to complete, and completions are easy to walk past.",

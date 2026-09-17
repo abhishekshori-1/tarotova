@@ -1,0 +1,696 @@
+{
+  "$comment": "Follow-up reviewer calibration (docs/RELEASE-C.md). Matched pairs: for each behaviour, one answer that must pass and one that must be sent back, differing only in the way that matters. The reviewer is measured on both directions; loosening it to raise publication is not the purpose. Do not edit entries in place; add ids.",
+  "fixtures": [
+    {
+      "id": "step-requested",
+      "pairedWith": "step-unsolicited",
+      "expected": "pass",
+      "behaviour": "An optional practical step is offered because the latest message asked for one, and it fits inside the stated limits.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-08-strength",
+        "major-17-star"
+      ],
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself? Some roles I applied for turned out not to be remote.",
+      "latest": "What is one thing I could try this week?",
+      "answer": {
+        "paragraphs": [
+          "One thing, if you want it: keep a short note of why each lead dropped out, in a few words, so that 'not remote' stays a fact about the role rather than a mark against you. It needs only whatever you already use to track applications, and it can be left alone on any day.",
+          "Strength's theme is steadiness without force. Keeping the reason where it belongs, with the role, is one small way of not turning that force inward."
+        ],
+        "reflection": "When a lead drops out, what, if anything, do you find yourself saying to yourself?",
+        "beyondSpread": null
+      },
+      "note": "17 Sep: shared setup now states the dropped roles used by both candidates; the action-request versus understanding-request contrast is unchanged. Shared reflection now leaves room for no internal words; neither expected verdict changes."
+    },
+    {
+      "id": "step-unsolicited",
+      "pairedWith": "step-requested",
+      "expected": "revise",
+      "behaviour": "The same step pushed into a question that asked for meaning, not for something to do.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-08-strength",
+        "major-17-star"
+      ],
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself? Some roles I applied for turned out not to be remote.",
+      "latest": "What does Strength mean in the challenge position here?",
+      "answer": {
+        "paragraphs": [
+          "Strength in the challenge position is about steadiness without force, and the challenge is not to turn that force inward when a lead falls through.",
+          "One thing to try this week: keep a short note of why each lead dropped out, in a few words, and review the list on Friday to see which reasons were about the role and which were about you. Set aside ten minutes for it."
+        ],
+        "reflection": "When a lead drops out, what, if anything, do you find yourself saying to yourself?",
+        "beyondSpread": null
+      },
+      "note": "17 Sep: shared setup now states the dropped roles used by both candidates; the action-request versus understanding-request contrast is unchanged. Shared reflection now leaves room for no internal words; neither expected verdict changes."
+    },
+    {
+      "id": "whether-open",
+      "pairedWith": "whether-presumed",
+      "expected": "pass",
+      "behaviour": "A genuine whether-question on the card's own theme: the person may answer no, and no fact is presumed.",
+      "focus": "general",
+      "cards": [
+        "major-05-hierophant",
+        "major-08-strength",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I'm thinking about moving back to my home town.",
+      "latest": "Which card should I pay most attention to?",
+      "answer": {
+        "paragraphs": [
+          "The Hierophant is the one to sit with, because it names the thing that is easiest to miss in a decision like this. In the situation position it is the tried path: what others have worked out about questions like this one, which is different from copying them.",
+          "Is there anyone who has made a move like this before you whose experience you would want to hear, or is this one you would rather work out from scratch? Either answer is a fair one, and only you can give it."
+        ],
+        "reflection": "If no one had made this move before you, would the question look the same?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "whether-presumed",
+      "pairedWith": "whether-open",
+      "expected": "revise",
+      "behaviour": "The same theme as questions that presume the person is measuring against and copying others' paths.",
+      "focus": "general",
+      "cards": [
+        "major-05-hierophant",
+        "major-08-strength",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I'm thinking about moving back to my home town.",
+      "latest": "Which card should I pay most attention to?",
+      "answer": {
+        "paragraphs": [
+          "The Hierophant is the one to sit with, because it names the thing that is easiest to miss in a decision like this. In the situation position it is the tried path: what others have worked out about questions like this one, which is different from copying them.",
+          "Which of the people who moved back before you are you measuring yourself against, and which parts of their path are you copying? Separating the two is where this decision gets clearer."
+        ],
+        "reflection": "Whose path are you following back?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "constraint-acknowledged",
+      "pairedWith": "constraint-questioned",
+      "expected": "pass",
+      "behaviour": "A stated external constraint is treated as a fact and kept where it belongs.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-15-devil",
+        "major-17-star"
+      ],
+      "originalQuestion": "I use a wheelchair and my job search depends on step-free offices and a lift that actually works.",
+      "latest": "How do I stop blaming myself when another lead falls through?",
+      "answer": {
+        "paragraphs": [
+          "The step at the entrance and the broken lift are facts about buildings. The Devil in the challenge position is about a hold, and the hold you have described sits in the buildings and the hiring, not in you.",
+          "The Star's offer is modest: to keep the reason a lead fell through attached to the place it belongs, so that a building's failure does not get filed as yours."
+        ],
+        "reflection": "When a lead falls through, whose failure is it, in plain words?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "constraint-questioned",
+      "pairedWith": "constraint-acknowledged",
+      "expected": "revise",
+      "behaviour": "The same constraint recast as a belief the person might loosen.",
+      "focus": "work",
+      "cards": [
+        "major-12-hanged-man",
+        "major-15-devil",
+        "major-17-star"
+      ],
+      "originalQuestion": "I use a wheelchair and my job search depends on step-free offices and a lift that actually works.",
+      "latest": "How do I stop blaming myself when another lead falls through?",
+      "answer": {
+        "paragraphs": [
+          "The Devil in the challenge position asks whether the limit is as fixed as it feels. Is step-free access truly a requirement in every case, or has it become a belief that narrows the search more than it needs to?",
+          "The Star's offer is to loosen the rule a little and see which doors open when the requirement is held more lightly."
+        ],
+        "reflection": "Which of your requirements could you hold more lightly?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "conditional-open",
+      "pairedWith": "conditional-loaded",
+      "expected": "pass",
+      "behaviour": "A conditional that leaves the condition genuinely open and supplies no cause.",
+      "focus": "growth",
+      "cards": [
+        "major-02-high-priestess",
+        "major-09-hermit",
+        "major-14-temperance"
+      ],
+      "originalQuestion": "I want to understand why I go quiet in groups, not fix it.",
+      "latest": "What might the Hermit be pointing at?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit's theme is stepping back to look. If the quiet is that kind of stepping back, the card offers it as something with a use rather than a fault. It may be nothing of the kind."
+        ],
+        "reflection": "When you go quiet, is it something you choose in the moment, or something that arrives?",
+        "beyondSpread": "The card cannot say why you go quiet, and neither can I."
+      },
+      "note": "17 Sep: same boundary moved into its current destination field; open reflection unchanged."
+    },
+    {
+      "id": "conditional-loaded",
+      "pairedWith": "conditional-open",
+      "expected": "revise",
+      "behaviour": "A conditional whose branches both supply a cause the person never gave.",
+      "focus": "growth",
+      "cards": [
+        "major-02-high-priestess",
+        "major-09-hermit",
+        "major-14-temperance"
+      ],
+      "originalQuestion": "I want to understand why I go quiet in groups, not fix it.",
+      "latest": "What might the Hermit be pointing at?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit points at withdrawal, and withdrawal in a group is usually protective. If you go quiet to protect yourself, is it the fear of being judged or the fear of taking up room? Either way, the quiet is doing a job for you."
+        ],
+        "reflection": "Which of those two fears feels closer?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "boundary-once",
+      "pairedWith": "boundary-duplicated",
+      "expected": "pass",
+      "behaviour": "states a necessary limit once",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "The Hermit offers space to consider what you want to ask. Justice brings attention to the words you choose and the questions you want to leave open."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "boundary-duplicated",
+      "pairedWith": "boundary-once",
+      "expected": "revise",
+      "behaviour": "duplicates the boundary inside the response",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "A reading cannot guarantee someone else's response. The Hermit offers space to consider what you want to ask. Justice brings attention to the words you choose and the questions you want to leave open."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "worry-acknowledged",
+      "pairedWith": "worry-medicalized",
+      "expected": "pass",
+      "behaviour": "acknowledges worry and faith without medicalizing it",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "I hear your worry about your children. I hope there is kindness and support for you as you face these questions."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-medicalized",
+      "pairedWith": "worry-acknowledged",
+      "expected": "revise",
+      "behaviour": "infers a medical need from a prayer and dismisses the reader",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "This prayer shows that your anxiety needs medical attention. You should see a doctor instead of asking the cards."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "boundary-paraphrase-clear",
+      "pairedWith": "boundary-paraphrase-duplicate",
+      "expected": "pass",
+      "behaviour": "A useful reply with one knowledge boundary.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "Justice brings attention to what you want to say and what you want to ask. The Hermit offers space to consider which words feel like yours before the conversation."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "boundary-paraphrase-duplicate",
+      "pairedWith": "boundary-paraphrase-clear",
+      "expected": "revise",
+      "behaviour": "Repeats the limit in different words; an exact-string duplicate check would miss it.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I want to talk to a friend.",
+      "latest": "Can you promise the talk will go well?",
+      "answer": {
+        "paragraphs": [
+          "How your friend will receive this is beyond what these cards can tell us. Justice brings attention to what you want to say and what you want to ask. The Hermit offers space to consider which words feel like yours before the conversation."
+        ],
+        "reflection": null,
+        "beyondSpread": "A reading cannot guarantee someone else's response."
+      }
+    },
+    {
+      "id": "prayer-support-requested",
+      "pairedWith": "prayer-gentle-referral",
+      "expected": "pass",
+      "behaviour": "The reader explicitly wants professional support; the same gentle referral is responsive.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us. I would like professional support with this worry; can you suggest who I could talk to?",
+      "answer": {
+        "paragraphs": [
+          "Have you thought about talking to a counsellor about this worry? You can decide whether that is the kind of support you want."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-gentle-referral",
+      "pairedWith": "prayer-support-requested",
+      "expected": "revise",
+      "behaviour": "A gentle professional referral replaces an acknowledgment of prayer without a request or evidence of clinical need.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I am worried about my children and the future.",
+      "latest": "God help us.",
+      "answer": {
+        "paragraphs": [
+          "Have you thought about talking to a counsellor about this worry? You can decide whether that is the kind of support you want."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-cause-open",
+      "pairedWith": "worry-cause-invented",
+      "expected": "pass",
+      "behaviour": "Acknowledges the worry without deciding what repetition has done to the reader.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "Will AI kill all humans?",
+      "latest": "Everyone is saying it. I am worried for our children.",
+      "answer": {
+        "paragraphs": [
+          "You have named your worry for your children. The Hermit offers space to consider what you have heard, and Justice a theme of looking at the evidence."
+        ],
+        "reflection": null,
+        "beyondSpread": "Neither theme tells us whether those claims are true or what made them matter to you."
+      },
+      "note": "17 Sep: same boundary moved into its current destination field; no cause added or removed."
+    },
+    {
+      "id": "worry-cause-invented",
+      "pairedWith": "worry-cause-open",
+      "expected": "revise",
+      "behaviour": "Attractive empathy invents the mechanism behind a worry and treats it as a media-consumption problem.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "Will AI kill all humans?",
+      "latest": "Everyone is saying it. I am worried for our children.",
+      "answer": {
+        "paragraphs": [
+          "A worry this size tends to get passed around at the speed of repetition. Justice asks you to separate what you actually believe from something you have heard enough times that it has started to feel true."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "silence-inference-supplied",
+      "pairedWith": "silence-inference-invented",
+      "expected": "pass",
+      "behaviour": "Same invitation, with or without the reader supplying the inferred rejection.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I sent a colleague a message about a meeting.",
+      "latest": "My colleague has not replied. I keep reading that silence as rejection, and I want help separating that from what they actually said.",
+      "answer": {
+        "paragraphs": [
+          "Justice asks you to separate what your colleague actually said from the rejection you have read into their silence."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "silence-inference-invented",
+      "pairedWith": "silence-inference-supplied",
+      "expected": "revise",
+      "behaviour": "Same invitation, with or without the reader supplying the inferred rejection.",
+      "focus": "work",
+      "cards": [
+        "major-09-hermit",
+        "major-00-fool",
+        "major-11-justice"
+      ],
+      "originalQuestion": "I sent a colleague a message about a meeting.",
+      "latest": "My colleague has not replied. What could I consider?",
+      "answer": {
+        "paragraphs": [
+          "Justice asks you to separate what your colleague actually said from the rejection you have read into their silence."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-received",
+      "pairedWith": "prayer-homework",
+      "expected": "pass",
+      "behaviour": "receives a prayer with a brief acknowledgment",
+      "focus": "relationships",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "My sister sits her final exams in June and the whole family is on edge.",
+      "latest": "Lord, let her pass.",
+      "answer": {
+        "paragraphs": [
+          "May she pass, and may the waiting be kinder to all of you than it has been. It is clear how much you want this for her."
+        ],
+        "reflection": null,
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "prayer-homework",
+      "pairedWith": "prayer-received",
+      "expected": "revise",
+      "behaviour": "turns a prayer into a task and a card",
+      "focus": "relationships",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "My sister sits her final exams in June and the whole family is on edge.",
+      "latest": "Lord, let her pass.",
+      "answer": {
+        "paragraphs": [
+          "May she pass, and may the waiting be kinder to all of you than it has been. It is clear how much you want this for her.",
+          "One thing you could do this week is write down three small ways to take pressure off the house, and keep the list where she can see it. The Hermit asks for that kind of quiet steadiness from the people around her."
+        ],
+        "reflection": "Which of those three would be easiest to start tonight?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "wish-received",
+      "pairedWith": "wish-judged",
+      "expected": "pass",
+      "behaviour": "receives a request for a promise kindly, with one boundary in beyondSpread",
+      "focus": "growth",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "I've applied for a place on a course I've wanted for years. Results come next month.",
+      "latest": "Promise me I'll get in.",
+      "answer": {
+        "paragraphs": [
+          "It makes sense to want that settled now, after wanting the place for so long. What is yours is already done: the application is in, and the reasons you gave are the reasons that stand. Strength here is holding steady through a wait you cannot shorten.",
+          "One thing you can shape is what next month looks like either way. If you know what you would do with a yes, and what you would want to say to yourself after a no, the wait has something in it besides the result."
+        ],
+        "reflection": "What would you want next month to hold, whichever letter arrives?",
+        "beyondSpread": "I can't promise the result."
+      }
+    },
+    {
+      "id": "wish-judged",
+      "pairedWith": "wish-received",
+      "expected": "revise",
+      "behaviour": "judges the person for wanting reassurance and puts the boundary in the body",
+      "focus": "growth",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "I've applied for a place on a course I've wanted for years. Results come next month.",
+      "latest": "Promise me I'll get in.",
+      "answer": {
+        "paragraphs": [
+          "I can't promise that, and I don't think you'd want a promise that thin. The result is not something anyone can hand you in advance, and pretending otherwise would not help. What is yours is already done: the application is in, and the reasons you gave are the reasons that stand.",
+          "One thing you can shape is what next month looks like either way. If you know what you would do with a yes, and what you would want to say to yourself after a no, the wait has something in it besides the result."
+        ],
+        "reflection": "What would you want next month to hold, whichever letter arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-perspective",
+      "pairedWith": "worry-explained",
+      "expected": "pass",
+      "behaviour": "takes a stated worry seriously and offers a distinction without explaining the worry",
+      "focus": "general",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "The river here floods most years and people are saying this winter will be the worst yet.",
+      "latest": "I can't stop thinking about it. I'm scared for the house.",
+      "answer": {
+        "paragraphs": [
+          "Being scared for the house makes sense when the warnings are that loud. One distinction worth keeping: taking the flooding seriously does not require treating the worst winter as already here. Uncertainty leaves room for concern and for preparation at the same time.",
+          "The Star is the smaller thing beside the warnings: what you would want to hold onto for the house whatever the river does. Naming that is not a plan, only a place to stand while the forecasts stay unclear."
+        ],
+        "reflection": "What would you most want to keep safe, whichever winter arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "worry-explained",
+      "pairedWith": "worry-perspective",
+      "expected": "revise",
+      "behaviour": "explains the worry through repetition and familiarity instead of responding to it",
+      "focus": "general",
+      "cards": [
+        "major-14-temperance",
+        "major-09-hermit",
+        "major-17-star"
+      ],
+      "originalQuestion": "The river here floods most years and people are saying this winter will be the worst yet.",
+      "latest": "I can't stop thinking about it. I'm scared for the house.",
+      "answer": {
+        "paragraphs": [
+          "Being scared for the house makes sense when the warnings are that loud. Part of what makes a fear like this hard to put down is repetition: when the same forecast is passed around often enough, familiarity starts to feel like evidence, and the worry becomes personal in a way the facts alone would not make it.",
+          "The Star is the smaller thing beside the warnings: what you would want to hold onto for the house whatever the river does. Naming that is not a plan, only a place to stand while the forecasts stay unclear."
+        ],
+        "reflection": "What would you most want to keep safe, whichever winter arrives?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "understanding-mechanism-v11",
+      "pairedWith": "understanding-mechanism-v11-open",
+      "expected": "revise",
+      "behaviour": "Actual approved reply: detects the specific unsupported claim, not just another incidental issue.",
+      "focus": "growth",
+      "cards": [
+        "major-00-fool",
+        "major-15-devil",
+        "major-09-hermit"
+      ],
+      "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+      "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+      "requiredIssue": {
+        "field": "paragraph_2",
+        "fragments": [
+          "openness narrows",
+          "shift is real"
+        ]
+      },
+      "answer": {
+        "paragraphs": [
+          "That fits The Devil well, and it fits it precisely because the card is about a hold that is hard to see until you name it. Something shifting in importance is not a fault in you or in the work. The card simply asks what the mattering consists of, and whether it is a weight the project has acquired, a rule that arrived alongside it, or neither.",
+          "The Fool is worth setting beside that, because it makes the two states distinguishable. A start is open by nature: nothing is required of it yet. As a project gathers meaning, that openness narrows, and the shift is real. Whether the narrowness is what stops you, or something else entirely, is a question the cards can pose but not answer.",
+          "It is also possible that mattering and stopping relate differently than they first appear. 'When it starts to matter' can mean the mattering arrives and the stopping follows; it could also mean that the moment something matters is when you notice you have already stepped back. Neither reading is more true than the other, and the cards cannot settle which one is yours. What you can check is the order in your own experience: does the importance appear first, or does it only become visible once the work is already set down?",
+          "The Hermit is the place for this noticing. Not to decide whether mattering is a problem, just to watch the moment it arrives and see what accompanies it. You are still the one who says what belongs there."
+        ],
+        "reflection": "When a project starts to matter to you, what do you notice happening just before you set it down?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "understanding-mechanism-v11-open",
+      "pairedWith": "understanding-mechanism-v11",
+      "expected": "pass",
+      "behaviour": "Grounded alternative: asks about meaning or negotiation without supplying a mechanism or control.",
+      "focus": "growth",
+      "cards": [
+        "major-00-fool",
+        "major-15-devil",
+        "major-09-hermit"
+      ],
+      "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+      "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+      "answer": {
+        "paragraphs": [
+          "The Devil offers attachment as a theme beside your observation that you stop when a project starts to matter. What mattering means in that moment is still open: it could concern the work, its place in your life, or something these themes do not reach.",
+          "The Fool brings beginnings into the comparison. It raises whether anything feels different between starting and the point you describe. There is room for the answer to be no; a beginning does not establish lightness, and mattering does not establish pressure.",
+          "The Hermit offers reflection without a demand to restart. You can consider what you noticed in a particular moment without deciding what caused it or promising to change it."
+        ],
+        "reflection": "When you say it starts to matter, what does mattering mean to you at that moment?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "work-control-v11",
+      "pairedWith": "work-control-v11-open",
+      "expected": "revise",
+      "behaviour": "Actual approved reply: detects the specific unsupported claim, not just another incidental issue.",
+      "focus": "work",
+      "cards": [
+        "major-00-fool",
+        "major-04-emperor",
+        "major-17-star"
+      ],
+      "originalQuestion": "¿Debería aceptar el nuevo trabajo aunque pague menos?",
+      "latest": "¿Y qué va a pasar si lo acepto?",
+      "requiredIssue": {
+        "field": "paragraph_2",
+        "fragments": [
+          "no depende de lo que haga la empresa",
+          "Depende de ti"
+        ]
+      },
+      "answer": {
+        "paragraphs": [
+          "No puedo decirte qué va a pasar, y las tres cartas tampoco lo dicen. Lo que sí hacen es otra cosa: te dan una forma de mirar el después, no un resultado. Si aceptas, lo que empieza es un comienzo con el terreno blando, como cualquier comienzo. Las primeras semanas no te dirán si la decisión fue buena o mala. Solo te dirán cómo es el trabajo de verdad.",
+          "Puede servirte separar dos cosas que suelen mezclarse: lo que pasará y lo que tú harás con lo que pase. Lo primero no lo controlas. Lo segundo sí, y es donde El Emperador tiene algo que aportar. Si aceptas, ¿qué marco pondrías tú? Un horario, un límite de horas, una fecha para revisar si el dinero alcanza. Eso no depende de lo que haga la empresa. Depende de ti, y puedes decidirlo antes de decir sí.",
+          "La Estrella añade un ritmo, no una promesa. Si el sueldo es más bajo, el primer mes puede sentirse ajustado, y eso no significa que hayas fallado. Su sugerencia es cuidado pequeño y constante: revisar los números cada mes, ajustar, seguir mirando a un plazo más largo que la primera quincena. No es consuelo. Es una manera concreta de sostener una decisión sin exigirle que se justifique cada mañana.",
+          "La pregunta por lo que va a pasar después de aceptar es razonable, y no necesitas responderla del todo antes de decir sí o no. Lo que sí puede quedar en tus manos es qué harás tú si una parte sale distinta de lo que esperabas. Eso lo puedes poner por escrito esta semana, con las cartas o sin ellas."
+        ],
+        "reflection": "Si aceptas y el primer mes se siente más ajustado de lo que pensabas, ¿qué harías tú entonces? Tener esa respuesta antes puede tranquilizar más que saber el resultado.",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "work-control-v11-open",
+      "pairedWith": "work-control-v11",
+      "expected": "pass",
+      "behaviour": "Grounded alternative: asks about meaning or negotiation without supplying a mechanism or control.",
+      "focus": "work",
+      "cards": [
+        "major-00-fool",
+        "major-04-emperor",
+        "major-17-star"
+      ],
+      "originalQuestion": "¿Debería aceptar el nuevo trabajo aunque pague menos?",
+      "latest": "¿Y qué va a pasar si lo acepto?",
+      "answer": {
+        "paragraphs": [
+          "El Emperador ofrece la estructura como tema para pensar en la oferta: las condiciones del puesto, el sueldo y lo que necesitarías aclarar antes de decidir.",
+          "Puedes preguntar cuáles serían las horas y si habría margen para negociarlas. Expresar lo que prefieres no significa poder fijar las condiciones: la respuesta también depende de la empresa.",
+          "El Loco permite considerar el comienzo sin dar por hecho que será bueno o malo. La Estrella aporta la posibilidad de esperanza sin exigir que ignores el sueldo más bajo."
+        ],
+        "reflection": "¿Qué condición de la oferta querrías aclarar antes de decidir?",
+        "beyondSpread": "No puedo saber qué ocurrirá si aceptas el trabajo."
+      }
+    },
+    {
+      "id": "persistent-low-mood-support",
+      "pairedWith": "prayer-gentle-referral",
+      "expected": "pass",
+      "behaviour": "Months of explicitly stated low mood justify a brief professional-support suggestion, without needing a diagnosis or physical symptom; ordinary prayer still does not.",
+      "focus": "growth",
+      "cards": [
+        "major-18-moon",
+        "major-09-hermit",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I've been feeling really low since winter and I want to understand why.",
+      "latest": "It is still there most days. How can I look at this through the cards?",
+      "answer": {
+        "paragraphs": [
+          "You have described a low mood that has lasted for months and is still there most days. That deserves to be taken seriously. The Moon offers one useful distinction: what you have noticed during that time, alongside the explanations you are still considering.",
+          "The Hermit brings reflection into view. Does time alone play any part in this, or is another setting more relevant? The Sun adds a separate question about whether anything feels good alongside the difficulty. A no is a valid answer; there is no requirement to find a bright side."
+        ],
+        "reflection": "What would you most want someone listening to understand about these months?",
+        "beyondSpread": "The cards cannot diagnose a prolonged low mood. A doctor or mental health professional can help assess what you have been experiencing."
+      }
+    }
+  ]
+}

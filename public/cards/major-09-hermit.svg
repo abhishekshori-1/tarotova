@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Hermit">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">IX</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="120" y1="170" x2="120" y2="250"/>
-    <path d="M 98 150 l 22 -25 l 22 25 z" stroke="#b8955a"/>
-    <circle cx="120" cy="135" r="6" fill="#b8955a" stroke="none"/>
+  <title>The Hermit</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">IX</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#sky)" stroke="none"/><path d="M40 78 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M190 73 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M68 113 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M201 153 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M37 179 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M18 224 L58 174 L88 202 L135 143 L184 202 L208 182 L222 200 V330 H18 Z" fill="#564663" stroke="none"/><path d="M18 258 L82 220 L120 237 L163 199 L222 237 V330 H18 Z" fill="#3b304d" stroke="none"/><path d="M18 309 l53-24 l43 12 l43-28 l65 37 v24 H18 Z" fill="#d9d5df" /><path d="M116 173 Q86 202 83 283 L150 286 Q147 222 134 176 Z" fill="#9994a4" /><path d="M119 160 q-26 5-19 32 l17-5 l22 7 q7-28-20-34 Z" fill="#b8b0bf" /><path d="M110 184 q-5-22 10-22 q15 0 11 23 Z" fill="#b8b0bf" /><circle cx="120" cy="181" r="10" fill="#f5ebdd" /><path d="M115 179 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M112 187 q8 28 15 2 l-4 30 Z" fill="#f5ebdd" /><path d="M112 202 L88 216 L72 195 L65 201 L82 229 L118 220 Z" fill="#f5ebdd" /><path d="M142 192 v113" fill="none" stroke="#b8955a" stroke-width="4"/><rect x="44" y="175" width="29" height="37" fill="#211b30" rx="3" stroke="#d5b47a"/><path d="M48 175 l10-11 l11 11" fill="none" stroke="#d5b47a"/><path d="M58 183 l9 16 H49 Z M58 205 l9-16 H49 Z" fill="none" stroke="#d5b47a" stroke-width="1.3"/>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Hermit</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Hermit</text>
 </svg>

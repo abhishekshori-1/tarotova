@@ -7,18 +7,27 @@
  *   personalized section at all (Release A behaviour).
  * - GUEST_GENERATION_ENABLED: the guest-only kill switch — verified sessions
  *   keep generating while anonymous spend is paused.
- * - GENERATION_PROVIDER: an ordered, comma-separated chain. "gemini,anthropic"
- *   (the production default) prefers Gemini and falls back to Anthropic when
+ * - GENERATION_PROVIDER: an ordered, comma-separated chain. "gemini,deepseek"
+ *   (the production default) prefers Gemini and falls back to DeepSeek when
  *   Gemini fails; "stub" is the free offline provider for dev/tests. An entry
  *   whose key is missing is skipped and named in `configurationProblem`;
  *   production never falls back to the stub — with no usable provider the
  *   answer is reported "unavailable" and logged, never silently faked.
+ * - GENERATION_CLASSIFIER_PROVIDER: triage by a vendor other than the writer
+ *   chain's first (its <VENDOR>_CLASSIFIER_MODEL applies). Unset keeps the
+ *   chain's first provider. No fallback: an explicit classifier that fails
+ *   fails the attempt, like the reviewer.
+ * - GENERATION_REPAIR_PROVIDER: repairs by a vendor other than the writer
+ *   chain (its <VENDOR>_ANSWER_MODEL applies). Unset keeps the writer chain.
+ *   It replaces the repair call; the pipeline still makes at most one repair
+ *   and one fresh review under the same deadline and budget. One review
+ *   transport failure may retry the same candidate within that deadline.
  * - GENERATION_REVIEW_PROVIDER / GENERATION_REVIEW_MODEL: the grounding
  *   reviewer, configured independently of the writer chain. No vendor is
  *   assumed; unset means every generated answer is withheld after triage
- *   and the problem is logged. The evaluated configuration is Anthropic
- *   (claude-sonnet-5) reviewing Gemini 3.8 Flash; another reviewer needs
- *   its own calibration run before the flag goes on (docs/RELEASE-B.md).
+ *   and the problem is logged. Release C's cost configuration uses Gemini
+ *   review and triage, DeepSeek writing and repair, and Gemini writer fallback.
+ *   Calibration and release results are recorded in docs/RELEASE-C.md.
  */
 export const GENERATION_MAX_ATTEMPTS = 2; // bounded pipelines per reading; each may write, review, repair once, review again
 export const GENERATION_LEASE_MS = 90_000; // a request holds the row this long
@@ -39,6 +48,10 @@ export interface ProviderSpec {
   apiKey?: string;
   /** Anthropic only: required by the API when the key is organization-level rather than workspace-scoped. */
   workspaceId?: string;
+  /** Anthropic only: opt-in prompt caching of the system prompt, ANTHROPIC_PROMPT_CACHE=5m|1h. */
+  promptCache?: "5m" | "1h";
+  /** Gemini only; independently configured role effort, unset preserves the model default. */
+  thinkingLevel?: "low" | "medium" | "high";
   models: { answer: string; classifier: string };
 }
 
@@ -48,13 +61,22 @@ export interface GenerationLimits {
   globalPerDay: number;
 }
 
+/** Follow-up turns per reading (docs/RELEASE-C.md section 2); a support response or a failed turn spends one. */
+export const FOLLOWUP_ALLOWANCE = 3;
+
 export interface GenerationConfig {
   enabled: boolean;
   guestEnabled: boolean;
+  /** Release C follow-ups; requires `enabled` too. */
+  followupsEnabled: boolean;
   /** Usable providers, in preference order; empty means nothing can generate. */
   providers: ProviderSpec[];
   /** Dedicated reviewer: no fallback to a weaker model after a review failure. */
   reviewProvider?: ProviderSpec;
+  /** Repairs flagged fields when set; otherwise the writer chain repairs its own drafts. */
+  repairProvider?: ProviderSpec;
+  /** Dedicated classifier; unset means the writer chain's first provider triages. */
+  classifierProvider?: ProviderSpec;
   /** What was skipped or wrong, for the log line. */
   configurationProblem?: string;
   timeoutMs: number;
@@ -80,14 +102,19 @@ function env(...names: string[]): string | undefined {
   return undefined;
 }
 
+function thinkingLevel(name: string): ProviderSpec["thinkingLevel"] {
+  return (["low", "medium", "high"] as const).find((v) => v === env(name));
+}
+
 type Resolved = { spec: ProviderSpec; problem?: undefined } | { spec?: undefined; problem: string };
 
 /** One provider kind → its spec from the environment, or the reason it cannot be used. */
-function specFor(kind: string, production: boolean): Resolved {
+/** Exported for the evaluation harnesses that build a single vendor on purpose (a repairer to compare, say). */
+export function specFor(kind: string, production: boolean): Resolved {
   if (kind === "gemini") {
     const apiKey = env("GEMINI_API_KEY");
     if (!apiKey) return { problem: "gemini skipped: GEMINI_API_KEY is not set." };
-    return { spec: { kind, apiKey, models: { answer: env("GEMINI_MODEL") ?? "gemini-3.8-flash", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.8-flash" } } };
+    return { spec: { kind, apiKey, thinkingLevel: thinkingLevel("GEMINI_WRITER_THINKING_LEVEL"), models: { answer: env("GEMINI_MODEL") ?? "gemini-3.8-flash", classifier: env("GEMINI_CLASSIFIER_MODEL") ?? "gemini-3.8-flash" } } };
   }
   if (kind === "anthropic") {
     const apiKey = env("ANTHROPIC_API_KEY");
@@ -97,6 +124,7 @@ function specFor(kind: string, production: boolean): Resolved {
         kind,
         apiKey,
         workspaceId: env("ANTHROPIC_WORKSPACE_ID"),
+        promptCache: (["5m", "1h"] as const).find((v) => v === env("ANTHROPIC_PROMPT_CACHE")),
         models: { answer: env("ANTHROPIC_MODEL", "GENERATION_MODEL") ?? "claude-sonnet-5", classifier: env("ANTHROPIC_CLASSIFIER_MODEL", "CLASSIFIER_MODEL") ?? "claude-haiku-4-5-20251001" },
       },
     };
@@ -115,7 +143,7 @@ function specFor(kind: string, production: boolean): Resolved {
 
 export function getGenerationConfig(): GenerationConfig {
   const production = process.env.NODE_ENV === "production";
-  const requested = (env("GENERATION_PROVIDER") ?? (production ? "gemini,anthropic" : "stub"))
+  const requested = (env("GENERATION_PROVIDER") ?? (production ? "gemini,deepseek" : "stub"))
     .split(",")
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
@@ -139,15 +167,42 @@ export function getGenerationConfig(): GenerationConfig {
     problems.push("GENERATION_REVIEW_PROVIDER is not set; generated answers will be withheld after triage.");
   } else {
     const resolved = specFor(reviewKind, production);
-    if (resolved.spec) reviewProvider = { ...resolved.spec, models: { ...resolved.spec.models, answer: env("GENERATION_REVIEW_MODEL") ?? resolved.spec.models.answer } };
+    if (resolved.spec) reviewProvider = {
+      ...resolved.spec,
+      ...(resolved.spec.kind === "gemini" ? { thinkingLevel: thinkingLevel("GEMINI_REVIEW_THINKING_LEVEL") } : {}),
+      models: { ...resolved.spec.models, answer: env("GENERATION_REVIEW_MODEL") ?? resolved.spec.models.answer },
+    };
     else problems.push(`reviewer unavailable (${resolved.problem}); generated answers will be withheld after triage.`);
+  }
+
+  // The classifier can be split from the writer chain (Gemini triaging a
+  // DeepSeek writer, say). Unset keeps the writer chain's first provider.
+  let classifierProvider: ProviderSpec | undefined;
+  const classifierKind = env("GENERATION_CLASSIFIER_PROVIDER")?.toLowerCase();
+  if (classifierKind) {
+    const resolved = specFor(classifierKind, production);
+    if (resolved.spec) classifierProvider = { ...resolved.spec, ...(resolved.spec.kind === "gemini" ? { thinkingLevel: thinkingLevel("GEMINI_CLASSIFIER_THINKING_LEVEL") } : {}) };
+    else problems.push(`classifier unavailable (${resolved.problem}); the writer chain will triage instead.`);
+  }
+
+  // The repairer can be split from the writer chain too (Gemini repairing a
+  // DeepSeek draft, say). Unset keeps the writer chain.
+  let repairProvider: ProviderSpec | undefined;
+  const repairKind = env("GENERATION_REPAIR_PROVIDER")?.toLowerCase();
+  if (repairKind) {
+    const resolved = specFor(repairKind, production);
+    if (resolved.spec) repairProvider = resolved.spec;
+    else problems.push(`repairer unavailable (${resolved.problem}); the writer chain will repair instead.`);
   }
 
   return {
     enabled: flag("GENERATION_ENABLED", false),
     guestEnabled: flag("GUEST_GENERATION_ENABLED", true),
+    followupsEnabled: flag("FOLLOWUPS_ENABLED", false),
     providers,
     reviewProvider,
+    classifierProvider,
+    repairProvider,
     configurationProblem: problems.length ? problems.join(" ") : undefined,
     timeoutMs: positiveInt("GENERATION_TIMEOUT_MS", 30_000),
     limits: {

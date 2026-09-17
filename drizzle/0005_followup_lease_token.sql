@@ -1,0 +1,1 @@
+ALTER TABLE "reading_followups" ADD COLUMN "lease_token" text;

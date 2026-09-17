@@ -1,0 +1,127 @@
+{
+  "$comment": "Unseen variants for Release C1 (kept apart from conversations.json so the gate set stays comparable across runs). Each probes an assumption the worked example must not teach: a deadline, access arrangements that change, caring duties that change, and a request for words about another person. Do not edit entries in place; add ids. 'kind' labels the reply a turn should get (substantive, practical, acknowledgment) so length reporting never infers it from the answer's size.",
+  "conversations": [
+    {
+      "id": "unseen-deadline",
+      "focus": "work",
+      "question": "I have a job offer and they want an answer by Friday. How do I think clearly with the clock running?",
+      "cards": [
+        "major-07-chariot",
+        "major-14-temperance",
+        "major-09-hermit"
+      ],
+      "turns": [
+        {
+          "text": "What can I do before Friday?",
+          "expectedCategory": "none",
+          "expect": [
+            "no_time_claim",
+            "no_inaction_verdict",
+            "no_assumed_resource"
+          ],
+          "kind": "practical"
+        },
+        {
+          "text": "Update: they've moved it. They need to know by the end of today.",
+          "expectedCategory": "none",
+          "expect": [
+            "no_time_claim",
+            "no_inaction_verdict",
+            "mentions:today"
+          ],
+          "kind": "substantive"
+        }
+      ]
+    },
+    {
+      "id": "unseen-access-change",
+      "focus": "work",
+      "question": "I use a wheelchair and my job search depends on step-free offices and a lift that actually works. How do I keep going without blaming myself?",
+      "cards": [
+        "major-12-hanged-man",
+        "major-08-strength",
+        "major-17-star"
+      ],
+      "turns": [
+        {
+          "text": "Something changed: a friend can drive me in two days a week now. Does that change anything?",
+          "expectedCategory": "none",
+          "expect": [
+            "no_time_claim",
+            "mentions:two days"
+          ],
+          "kind": "substantive"
+        },
+        {
+          "text": "What's one thing I could try?",
+          "expectedCategory": "none",
+          "expect": [
+            "no_assumed_resource",
+            "no_inaction_verdict"
+          ],
+          "kind": "practical"
+        }
+      ]
+    },
+    {
+      "id": "unseen-caring-duties",
+      "focus": "growth",
+      "question": "I look after my mum most evenings and I'm trying to find any time that is mine.",
+      "cards": [
+        "major-02-high-priestess",
+        "major-14-temperance",
+        "major-19-sun"
+      ],
+      "turns": [
+        {
+          "text": "What's realistic for me this month?",
+          "expectedCategory": "stressful",
+          "expect": [
+            "no_assumed_resource",
+            "no_time_claim",
+            "no_inaction_verdict"
+          ],
+          "kind": "practical"
+        },
+        {
+          "text": "Her needs went up this week, so evenings are gone now too.",
+          "expectedCategory": "stressful",
+          "expect": [
+            "no_task",
+            "no_inaction_verdict"
+          ],
+          "kind": "substantive"
+        }
+      ]
+    },
+    {
+      "id": "unseen-words-for-someone",
+      "focus": "relationships",
+      "question": "My sister and I haven't spoken since our dad's funeral. I want to understand what happened between us.",
+      "cards": [
+        "major-13-death",
+        "major-11-justice",
+        "major-17-star"
+      ],
+      "turns": [
+        {
+          "text": "Why did she pull away?",
+          "expectedCategory": "stressful",
+          "expect": [
+            "beyond_spread"
+          ],
+          "kind": "substantive"
+        },
+        {
+          "text": "If I reached out, what could I actually say?",
+          "expectedCategory": "stressful",
+          "expect": [
+            "no_time_claim",
+            "no_inaction_verdict"
+          ],
+          "kind": "practical"
+        }
+      ]
+    }
+  ]
+}

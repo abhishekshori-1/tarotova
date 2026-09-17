@@ -1,12 +1,14 @@
 import { SAFETY_CATEGORIES, type SafetyCategory } from "@/content/safety";
-import { CLASSIFIER_SYSTEM, CLASSIFY_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierUserMessage, interpretationUserMessage } from "./prompts";
-import type { GenerationProvider, GroundingIssue, InterpretationInput, InterpretationOutput, ProviderCallOptions, ProviderOutcome } from "./types";
-import { GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, groundingUserMessage } from "./grounding-prompts";
+import { CLASSIFY_TOOL, FOLLOWUP_SYSTEM, FOLLOWUP_TOOL, INTERPRETATION_SYSTEM, READING_TOOL, classifierSystem, classifierUserMessage, followupUserMessage, interpretationUserMessage } from "./prompts";
+import { type ConversationContext, type FollowupInput, type FollowupOutput, type GenerationProvider, type GroundingIssue, type InterpretationInput, type InterpretationOutput, type ProviderCallOptions, type ProviderOutcome, type UserMessage, userMessageText } from "./types";
+import { FOLLOWUP_GROUNDING_SYSTEM, FOLLOWUP_GROUNDING_TOOL, FOLLOWUP_REPAIR_SYSTEM, FOLLOWUP_REPAIR_TOOL, GROUNDING_SYSTEM, GROUNDING_TOOL, REPAIR_SYSTEM, REPAIR_TOOL, followupGroundingUserMessage, groundingUserMessage, repairFields, repairToolFor } from "./grounding-prompts";
 
-import { callTimeout, deadlineExceeded } from "./deadline";
+import { callTimeout, deadlineExceeded, networkDetail } from "./deadline";
 
 const DEFAULT_ENDPOINT = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
+
+type CacheControl = { type: "ephemeral"; ttl?: "1h" };
 
 interface ToolCall {
   name: string;
@@ -30,20 +32,27 @@ export class AnthropicProvider implements GenerationProvider {
     private readonly workspaceId?: string,
     /** Tests only: a local server that stalls, to prove the timeout ends the call. */
     private readonly endpoint: string = DEFAULT_ENDPOINT,
+    /**
+     * Prompt caching for the (identical, long) system prompts: "5m" or
+     * "1h". Off by default. A cache write costs 1.25x (5m) or 2x (1h) the
+     * plain input price and a read 0.1x, so at low traffic caching costs
+     * more, not less; the usage fields let the eval and logs measure it.
+     */
+    private readonly promptCache?: "5m" | "1h",
   ) {}
 
-  async classify(question: string, options?: ProviderCallOptions): Promise<ProviderOutcome<SafetyCategory>> {
-    const outcome = await this.callTool(this.models.classifier, CLASSIFIER_SYSTEM, classifierUserMessage(question), CLASSIFY_TOOL, 64, options);
+  async classify(question: string, options?: ProviderCallOptions, context?: ConversationContext): Promise<ProviderOutcome<SafetyCategory>> {
+    const outcome = await this.callTool(this.models.classifier, classifierSystem(context), classifierUserMessage(question, context), CLASSIFY_TOOL, 64, options);
     if (!outcome.ok) return outcome;
     const category = (outcome.value as { category?: unknown }).category;
     if (typeof category !== "string" || !(SAFETY_CATEGORIES as readonly string[]).includes(category)) {
-      return { ok: false, reason: "classifier_invalid_output", retryable: true, uncertain: false };
+      return { ok: false, model: outcome.model, usage: outcome.usage, reason: "classifier_invalid_output", retryable: true, uncertain: false };
     }
     return { ...outcome, value: category as SafetyCategory };
   }
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 1200, options);
+    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 2400, options);
   }
 
   review(input: InterpretationInput, answer: InterpretationOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -51,10 +60,32 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), REPAIR_TOOL, 1800, options);
+    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)), 2400, options);
   }
 
-  private async callTool(model: string, system: string, user: string, tool: ToolCall, maxTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+  followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callTool(this.models.answer, FOLLOWUP_SYSTEM, followupUserMessage(input), FOLLOWUP_TOOL, 1600, options);
+  }
+
+  reviewFollowup(input: FollowupInput, answer: FollowupOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callTool(this.models.answer, FOLLOWUP_GROUNDING_SYSTEM, followupGroundingUserMessage(input, answer), FOLLOWUP_GROUNDING_TOOL, 2000, options);
+  }
+
+  repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
+    return this.callTool(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)), 1800, options);
+  }
+
+  /** With caching on, a two-part message becomes two text blocks with the breakpoint after the stable one; otherwise the parts are joined. */
+  private userContent(user: UserMessage): string | { type: "text"; text: string; cache_control?: CacheControl }[] {
+    if (typeof user === "string" || !this.promptCache) return userMessageText(user);
+    return [{ type: "text", text: user.stable, cache_control: this.cacheControl() }, { type: "text", text: user.rest }];
+  }
+
+  private cacheControl(): CacheControl {
+    return this.promptCache === "1h" ? { type: "ephemeral", ttl: "1h" } : { type: "ephemeral" };
+  }
+
+  private async callTool(model: string, system: string, user: UserMessage, tool: ToolCall, maxTokens: number, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
     const timeoutMs = callTimeout(this.timeoutMs, options);
     if (timeoutMs <= 0) return deadlineExceeded();
     const signal = AbortSignal.timeout(timeoutMs);
@@ -75,8 +106,8 @@ export class AnthropicProvider implements GenerationProvider {
         body: JSON.stringify({
           model,
           max_tokens: maxTokens,
-          system,
-          messages: [{ role: "user", content: user }],
+          system: this.promptCache ? [{ type: "text", text: system, cache_control: this.cacheControl() }] : system,
+          messages: [{ role: "user", content: this.userContent(user) }],
           tools: [tool],
           tool_choice: { type: "tool", name: tool.name },
         }),
@@ -85,7 +116,7 @@ export class AnthropicProvider implements GenerationProvider {
       // The request may have been received and billed before the timeout —
       // the caller treats this as a spent attempt.
       const timedOut = signal.aborted || (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError"));
-      return { ok: false, reason: timedOut ? "provider_timeout" : "provider_network", retryable: true, uncertain: timedOut };
+      return { ok: false, model, reason: timedOut ? "provider_timeout" : "provider_network", detail: networkDetail(err), retryable: true, uncertain: timedOut };
     }
 
     if (!res.ok) {
@@ -100,24 +131,45 @@ export class AnthropicProvider implements GenerationProvider {
       } catch {
         // No JSON body; the status alone will have to do.
       }
-      return { ok: false, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
+      return { ok: false, model, reason: `provider_http_${res.status}`, detail, retryable, uncertain: false };
     }
 
-    let body: { stop_reason?: string; content?: { type: string; name?: string; input?: unknown }[]; usage?: { input_tokens?: number; output_tokens?: number }; model?: string };
+    let body: {
+      stop_reason?: string;
+      content?: { type: string; name?: string; input?: unknown }[];
+      usage?: { input_tokens?: number; output_tokens?: number; cache_creation_input_tokens?: number; cache_read_input_tokens?: number; cache_creation?: { ephemeral_5m_input_tokens?: number; ephemeral_1h_input_tokens?: number } };
+      model?: string;
+    };
     try {
       body = await res.json();
     } catch {
-      if (signal.aborted) return { ok: false, reason: "provider_timeout", retryable: true, uncertain: true };
-      return { ok: false, reason: "provider_invalid_json", retryable: true, uncertain: false };
+      if (signal.aborted) return { ok: false, model, reason: "provider_timeout", retryable: true, uncertain: true };
+      return { ok: false, model, reason: "provider_invalid_json", retryable: true, uncertain: false };
     }
-    if (body.stop_reason === "refusal") return { ok: false, reason: "provider_refused", retryable: false, uncertain: false };
+    const metadata = {
+      model: body.model ?? model,
+      usage: body.usage
+        ? {
+            inputTokens: body.usage.input_tokens ?? 0,
+            outputTokens: body.usage.output_tokens ?? 0,
+            ...(body.usage.cache_creation_input_tokens ? { cacheWriteTokens: body.usage.cache_creation_input_tokens } : {}),
+            ...(body.usage.cache_read_input_tokens ? { cacheReadTokens: body.usage.cache_read_input_tokens } : {}),
+            ...(body.usage.cache_creation ? {
+              cacheWrite5mTokens: body.usage.cache_creation.ephemeral_5m_input_tokens ?? 0,
+              cacheWrite1hTokens: body.usage.cache_creation.ephemeral_1h_input_tokens ?? 0,
+            } : body.usage.cache_creation_input_tokens && this.promptCache ? {
+              [this.promptCache === "1h" ? "cacheWrite1hTokens" : "cacheWrite5mTokens"]: body.usage.cache_creation_input_tokens,
+            } : {}),
+          }
+        : undefined,
+    };
+    if (body.stop_reason === "refusal") return { ok: false, ...metadata, reason: "provider_refused", retryable: false, uncertain: false };
     const call = body.content?.find((block) => block.type === "tool_use" && block.name === tool.name);
-    if (!call || call.input === undefined) return { ok: false, reason: "provider_no_tool_call", retryable: true, uncertain: false };
+    if (!call || call.input === undefined) return { ok: false, ...metadata, reason: "provider_no_tool_call", retryable: true, uncertain: false };
     return {
       ok: true,
       value: call.input,
-      model: body.model ?? model,
-      usage: body.usage ? { inputTokens: body.usage.input_tokens ?? 0, outputTokens: body.usage.output_tokens ?? 0 } : undefined,
+      ...metadata,
     };
   }
 }

@@ -167,7 +167,7 @@ describe("reading quality and safety handoffs", () => {
     const session = await createSession();
     const reading = await lockedReading(session);
     expect(await requestInterpretation(reading.id, session, "1.1.1.1")).toMatchObject({ status: "failed", reason: "grounding_review:provider_http_503", classifiedCategory: "none" });
-    expect(dedicatedReview).toHaveBeenCalledOnce();
+    expect(dedicatedReview).toHaveBeenCalledTimes(2); // one bounded retry, same reviewer
     expect(primaryReview).not.toHaveBeenCalled();
     expect((await generationRow(reading.id)).output).toBeNull();
   });
@@ -190,6 +190,10 @@ describe("reading quality and safety handoffs", () => {
     const reading = await lockedReading(session, "I was laid off. What now?");
     const request = requestInterpretation(reading.id, session, "1.1.1.1");
     await vi.waitFor(() => expect(review).toHaveBeenCalledOnce());
+    expect((await generationRow(reading.id)).output).toBeNull();
+    expect((await getResult(reading.id, session)).interpretation).toEqual({ status: "pending", classifiedCategory: "stressful" });
+    finish({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    await vi.waitFor(() => expect(review).toHaveBeenCalledTimes(2));
     expect((await generationRow(reading.id)).output).toBeNull();
     expect((await getResult(reading.id, session)).interpretation).toEqual({ status: "pending", classifiedCategory: "stressful" });
     finish({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });

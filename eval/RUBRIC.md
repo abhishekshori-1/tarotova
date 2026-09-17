@@ -10,6 +10,22 @@ agreed on 14 September 2026.
 Markdown report to `eval/report/` for the human pass. Nothing in the report
 is committed.
 
+Owner decision, 17 September: the publication threshold is **85%** for initial
+readings and follow-ups, shared in `eval/thresholds.ts`. This is an availability
+threshold; it does not relax the safety-routing or editorial requirements below.
+The owner subsequently accepted **80% for the fresh conversation set only**:
+its existing 4/5 result meets that criterion. The initial, familiar conversation
+and other sets retain 85%. Historical reports keep the threshold used at run time.
+Both harnesses now use production’s shared bounded retry policy. Initial reports
+show first-pipeline success and submission success separately; every attempt is
+costed, and grounding rejection never permits a retry. Earlier initial reports
+measured a single pipeline attempt.
+
+The owner's later approval of the current generated answers is recorded, with
+the observed editorial/depth exceptions, in
+[the 85% checkpoint](../docs/READING-EXPERIENCE-85-CHECKPOINT.md). It does not
+fill blank scores, establish rubric means, or alter safety-routing assertions.
+
 From `interpretation.v9`, the same publication pipeline runs in production
 and eval: write, grounding review, at most one repair of flagged fields, and
 a fresh review of the whole repaired answer. Only approved answers appear
@@ -17,19 +33,23 @@ as readings. Collapsed audit traces retain the original draft and review
 findings, including withheld candidates. Score the final displayed answer;
 a withheld candidate counts against answer availability, not as a good
 answer. Model approval does not replace any human gate below. Answer-phase
-timing now includes review and repair; successful-call token totals include
-these stages even for withheld answers, but not failed/fallback charges.
+timing now includes review and repair; token totals include
+these stages even for withheld answers and failed/fallback calls when usage is
+reported. Calls without usage remain explicitly unpriced.
 
 ## What the answer is
 
-A four-field structured reflection for one locked reading:
+A five-field structured reflection for one locked reading. The current shared contract is `src/server/generation/lengths.ts`; earlier stored readings remain readable without synthesis:
 
 1. `perspective` — how the three cards, read together, relate to the
-   person's question (2–5 sentences).
-2. `cards[]` — for each of Situation, Challenge and Guidance, one short
-   paragraph on how that card, in that position, bears on the question.
-3. `reflection` — one practical, agency-led thing to consider or try.
-4. `beyondSpread` — optional; set only when the question asks for something
+   person's question (about 80–95 words).
+2. `cards[]` — for each of Situation, Challenge and Guidance, developed text
+   on how that card, in that position, bears on the question (110–125 words,
+   with paragraph breaks inside the relevance string).
+3. `synthesis` — how the cards connect, adding a distinction rather than a recap
+   (about 75–90 words). Required for new answers; null for older stored ones.
+4. `reflection` — one practical, agency-led thing to consider or try.
+5. `beyondSpread` — optional; set only when the question asks for something
    this spread cannot support (a date, a verdict, another person's private
    thoughts, a diagnosis), in which case it says so plainly.
 
@@ -47,8 +67,8 @@ fluent reviewer, since these phrase checks do not validate translated claims.
 
 | Check | Rule |
 | --- | --- |
-| Shape | Exactly the four fields above; three card entries in Situation, Challenge, Guidance order |
-| Length | `perspective` ≤ 900 characters; each card paragraph ≤ 600; `reflection` ≤ 320; `beyondSpread` ≤ 480 |
+| Shape | Exactly the five fields above; three card entries in Situation, Challenge, Guidance order |
+| Length | `perspective` ≤ 1,200 characters; each card relevance ≤ 1,800; `synthesis` ≤ 1,200; `reflection` ≤ 320; `beyondSpread` ≤ 480; total ≤ 7,200. Enforced bounds come from `lengths.ts`; 500–650 English words is the editorial whole-reading target |
 | Card references | Detects exact English names of undrawn deck cards, including multiword names at sentence starts; ambiguous single words at sentence starts are allowed. Does not establish semantic or position grounding |
 | Reversals | The words "reversed" / "reversal" / "inverted" must not appear (upright-only deck) |
 | Certainty and prediction | Always rejected: "definitely will", "will definitely", "will certainly", "is certain to", "the cards predict", "predicts that", "it is fate". Rejected only when asserted, not denied: "guarantee(d)", "diagnos…", "destined", "predict…" — "nothing is guaranteed" and "this isn't a diagnosis" pass (first run: 8 of 37 honest answers were tripping the blunt version) |
@@ -93,9 +113,9 @@ set and score the complete displayed reading, including optional library text.
 The evaluator follows the actual classifier result; errors stop generation
 and fail the classification gate. Missing ordinary answers count against
 answer success. It uses the configured production provider timeout. Reported
-phase timings exclude application overhead; reported successful-call tokens
-exclude failed/fallback calls and unreported reasoning usage. Verify total
-cost from provider billing, not these partial counters.
+phase timings exclude application overhead; reported token costs include failed/fallback calls when usage is reported and
+Gemini thinking tokens. Calls without usage remain unpriced. Verify total
+cost against provider billing, not these estimates.
 
 ## What is out of scope for this rubric
 

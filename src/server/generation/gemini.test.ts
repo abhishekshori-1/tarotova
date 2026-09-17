@@ -35,7 +35,7 @@ describe("toGeminiSchema", () => {
     expect(schema.additionalProperties).toBeUndefined();
     expect(schema.properties.beyondSpread).toMatchObject({ type: "string", nullable: true });
     expect(schema.properties.perspective.type).toBe("string");
-    expect(schema.required).toEqual(["perspective", "cards", "reflection", "beyondSpread"]);
+    expect(schema.required).toEqual(["perspective", "cards", "synthesis", "reflection", "beyondSpread"]);
     const items = (schema.properties.cards as unknown as { items: { additionalProperties?: unknown; properties: { position: { enum: string[] } } } }).items;
     expect(items.additionalProperties).toBeUndefined();
     expect(items.properties.position.enum).toEqual(["situation", "challenge", "guidance"]);
@@ -43,6 +43,25 @@ describe("toGeminiSchema", () => {
 });
 
 describe("GeminiProvider", () => {
+  it("sends explicitly selected thinking effort while leaving other instances at the model default", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}')));
+    vi.stubGlobal("fetch", fetchMock);
+    const reviewer = new GeminiProvider("test", { answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" }, 5000, undefined, "low");
+    await reviewer.review(INPUT, { perspective: "", cards: [], synthesis: null, reflection: "", beyondSpread: null });
+    await provider().interpret(INPUT);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
+    expect(JSON.parse(fetchMock.mock.calls[1][1].body).generationConfig.thinkingConfig).toBeUndefined();
+  });
+
+  it("prices cached input separately and includes billed thinking in output", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}', {
+      usageMetadata: { promptTokenCount: 400, cachedContentTokenCount: 300, candidatesTokenCount: 50, thoughtsTokenCount: 120 },
+    }))));
+    expect(await provider().review(INPUT, { perspective: "", cards: [], synthesis: null, reflection: "", beyondSpread: null })).toMatchObject({
+      usage: { inputTokens: 100, cacheReadTokens: 300, outputTokens: 170 },
+    });
+  });
+
   it("asks for JSON against the converted schema and parses the reply", async () => {
     const fetchMock = vi.fn().mockResolvedValue(response(200, candidate(JSON.stringify({ perspective: "..." }))));
     vi.stubGlobal("fetch", fetchMock);
@@ -72,7 +91,7 @@ describe("GeminiProvider", () => {
 
   it("maps HTTP failures, keeping Google's status and message", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(429, { error: { status: "RESOURCE_EXHAUSTED", message: "Quota exceeded" } })));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_http_429", detail: "RESOURCE_EXHAUSTED: Quota exceeded", retryable: true, uncertain: false });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_429", detail: "RESOURCE_EXHAUSTED: Quota exceeded", retryable: true, uncertain: false });
 
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(400, { error: { status: "INVALID_ARGUMENT", message: "API key not valid" } })));
     expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_http_400", retryable: false });
@@ -91,6 +110,6 @@ describe("GeminiProvider", () => {
     const timeout = new Error("aborted");
     timeout.name = "TimeoutError";
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(timeout));
-    expect(await provider().interpret(INPUT)).toEqual({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
+    expect(await provider().interpret(INPUT)).toMatchObject({ ok: false, reason: "provider_timeout", retryable: true, uncertain: true });
   });
 });

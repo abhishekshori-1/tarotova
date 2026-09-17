@@ -107,8 +107,13 @@ issuance and Resend's mail routing aren't affected by Cloudflare's proxy.
 | `CRON_SECRET` | Secret | Authorizes the cleanup route; without it the route refuses every call and the cron does nothing |
 | `GENERATION_ENABLED` | Config | Release B master flag, **on in production since 2026-09-16**. False hides the personalized section entirely, including answers already stored. A change takes effect on the next deployment, not immediately |
 | `GUEST_GENERATION_ENABLED` | Config | Optional; `false` pauses generation for email-free readings only |
-| `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,anthropic` (Gemini preferred, Anthropic on any Gemini failure). A listed provider without a key is skipped and logged |
-| `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Evaluated value: `anthropic` |
+| `FOLLOWUPS_ENABLED` | Config | Release C1: follow-up turns under a reading (three per reading, each a full triage/write/review pipeline). Needs `GENERATION_ENABLED`. **Off in production** |
+| `GENERATION_PROVIDER` | Config | Ordered chain; production default `gemini,deepseek` (Gemini preferred, DeepSeek on a Gemini failure; no implicit Anthropic spend). A listed provider without a key is skipped and logged |
+| `GENERATION_REVIEW_PROVIDER` | Config | Grounding reviewer, configured independently of the writer chain (`gemini`, `deepseek` or `anthropic`; its own key must be set). **Required for generation**: unset or unavailable withholds every generated answer after triage, logged as `[generation_configuration]`. No review fallback. Current Sonnet-free C candidate: `gemini` with `GENERATION_REVIEW_MODEL=gemini-3.8-flash`; see [cost evaluation](RELEASE-C-COST.md). The earlier B configuration used `anthropic` |
+| `GEMINI_REVIEW_THINKING_LEVEL` | Config | Optional `low`, `medium` or `high` for the Gemini reviewer only. Unset keeps the model default; other roles retain their own default. Calibrate any effort change; see [cost evaluation](RELEASE-C-COST.md) |
+| `GENERATION_CLASSIFIER_PROVIDER` | Config | Optional: triage by a vendor other than the writer chain's first (that vendor's `*_CLASSIFIER_MODEL` applies). Unset keeps the chain's first provider; a misconfigured value is logged and the chain triages |
+| `GENERATION_REPAIR_PROVIDER` | Config | Optional: repairs flagged fields by a vendor other than the writer chain (that vendor's answer-model setting applies). Unset keeps the writer chain; a misconfigured value is logged and the chain repairs. Replaces the repair call; still one repair and one fresh review per attempt. |
+| `ANTHROPIC_PROMPT_CACHE` | Config | Optional `5m` or `1h`: caches Anthropic system prompts and, on follow-up reviews, the frozen reading block (cards, original question, initial answer) that repeats across a conversation. Runtime default remains off; unused in the Sonnet-free C configuration; opt-in Anthropic users should verify reuse. One hit repays a 5m write premium; 1h needs two hits. Isolated cold writes cost more. Usage includes cache reads and write-TTL breakdown; eval reports estimate both cached cost and the same calls without Anthropic caching |
 | `GENERATION_REVIEW_MODEL` | Config | Optional override for the review model, otherwise the selected provider's answer model. Changing reviewer requires re-running calibration and the full quality gate |
 | `GEMINI_API_KEY` | Secret | Google AI Studio key (Gemini Developer API). Set a budget/quota on the Google Cloud project it belongs to |
 | `GEMINI_MODEL`, `GEMINI_CLASSIFIER_MODEL` | Config | Optional overrides; default `gemini-3.8-flash` for both |
@@ -209,3 +214,77 @@ database in Tokyo — fixed by the `hnd1` pin; ~2.2 s → ~0.3 s) and missing
 emails (Resend domain verification had never been started, then an empty
 API-key value — fixed operationally; the code changes made both failures
 visible instead of silent).
+
+
+## Guided journeys (C2, not enabled by this change)
+
+Migration `0006_guided_journeys.sql` follows `0005`; deploy both SQL and Drizzle
+metadata. `JOURNEYS_ENABLED=true` exposes new starts. Setting it false stops new
+runs but retains owned resume/completion, subject to reading expiry and safety
+state. Follow-ups and generation retain their independent existing switches.
+Template previews are `/journeys` and `/journeys/[slug]` (both 404 while disabled); private runs are
+`/journey/[id]`. Templates are frozen per run. Run expiry is derived from the
+reading's grant/draft TTL; cleanup removes runs and their transition ledger.
+The same browser and existing verification continuation are required.
+
+No provider call is made by journey creation, GET, stage transition or completion.
+Keep the DeepSeek/Gemini configuration from RELEASE-C-COST.md; do not add Sonnet.
+The new prompt versions need their own editorial review; older approvals do not
+transfer automatically. See RELEASE-C-COMPANION-JOURNEYS.md for actual evidence.
+
+### C1/C2 readiness verification
+
+The current working-tree evidence and cost profile are in
+[READING-EXPERIENCE-85-CHECKPOINT.md](READING-EXPERIENCE-85-CHECKPOINT.md);
+RELEASE-C-READINESS.md retains earlier C1/C2 evidence.
+New Gemini effort settings are role-specific: `GEMINI_WRITER_THINKING_LEVEL` and
+`GEMINI_CLASSIFIER_THINKING_LEVEL`; the latter applies to the explicit Gemini
+classifier. `GEMINI_REVIEW_THINKING_LEVEL` remains independent. Unset preserves
+the model default. Never infer production values from a local eval.
+
+The editorially approved reading-experience candidate is evaluated with these
+explicit model-role values. This is a deployment checklist, **not verification
+that Preview or Production currently has them**:
+
+```dotenv
+GENERATION_PROVIDER=deepseek,gemini
+GENERATION_CLASSIFIER_PROVIDER=gemini
+GENERATION_REPAIR_PROVIDER=gemini
+GENERATION_REVIEW_PROVIDER=gemini
+GENERATION_REVIEW_MODEL=gemini-3.8-flash
+DEEPSEEK_MODEL=deepseek-flash
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_CLASSIFIER_MODEL=gemini-3.8-flash
+GEMINI_REVIEW_THINKING_LEVEL=low
+GEMINI_WRITER_THINKING_LEVEL=low
+GEMINI_CLASSIFIER_THINKING_LEVEL=low
+GENERATION_TIMEOUT_MS=30000
+```
+
+Both provider keys must be configured as secrets. No Anthropic role is in this
+configuration. Compare deployed role values and configuration logs with this
+list; the production writer default has a different order. Keep the shared
+request deadline and budgets; the 85% figure is an eval acceptance threshold,
+not a production bypass or a reason to publish an unapproved answer.
+
+The owner has accepted the fresh set's 4/5 publication at an 80% threshold.
+Production is still pending cost acceptance (about $2.45 per 100 complete
+conversations, above the $2.20 review threshold) and hosted verification. See the
+[current checkpoint](READING-EXPERIENCE-85-CHECKPOINT.md) before enabling it.
+
+After committing the reviewed tree to `feat/release-c`, verify its immutable
+Preview deployment URL and source commit before using `preview.tarotova.com`.
+The branch-domain assignment was previously documented as `feat/release-b`;
+check the Vercel project's domain branch assignment and set it to the intended
+release branch. The alias must resolve to the same tested deployment. This is
+an account setting, not something `vercel.json` proves.
+
+On Preview, verify `GENERATION_ENABLED=true`, `GUEST_GENERATION_ENABLED=true`,
+`FOLLOWUPS_ENABLED=true` and `JOURNEYS_ENABLED=true` with the evaluated provider
+roles. Cold-start a private API route and confirm migration 0006 applied; no
+migration error should appear. Check one guest reading, one follow-up, refresh
+persistence and a support response that remains closed after refresh. Complete
+one whole journey and confirm it keeps the same draw. Then test journeys off:
+both template routes must be unavailable, home must make no discovery API
+request, and an owned unfinished journey must still resume. Keep new production
+journeys off until the owner chooses to enable them; the three templates carry their recorded review (journeys.v1, 17 September 2026).

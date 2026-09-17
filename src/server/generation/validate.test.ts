@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { LIMITS, findAssertedCertainty, findForeignCardName, validateInterpretation } from "./validate";
+import { LIMITS, findAssertedCertainty, findForeignCardName, validateFollowup, validateInterpretation } from "./validate";
 
 const DRAWN = ["major-00-fool", "major-07-chariot", "major-09-hermit"];
 
@@ -12,6 +12,7 @@ function good() {
       { position: "challenge", relevance: "The Chariot as Challenge: the pull is to force momentum before you know the direction you actually want." },
       { position: "guidance", relevance: "The Hermit as Guidance: take some deliberate time alone with the question before answering anyone else." },
     ],
+    synthesis: "Read together, the three cards separate two questions: whether to move at all, and how to move well. The Fool and The Chariot speak to the first; The Hermit to the second, and to the pause between them.",
     reflection: "Write down the three things a new role would have to give you, and check the current one against them honestly.",
     beyondSpread: null,
   };
@@ -22,6 +23,13 @@ describe("validateInterpretation", () => {
     const result = validateInterpretation({ ...good(), beyondSpread: "  " }, DRAWN);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.output.beyondSpread).toBeNull();
+  });
+
+  it("canonicalizes a serialized optional null without changing a real boundary or required reflection", () => {
+    expect(validateInterpretation({ ...good(), beyondSpread: " null " }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: null } });
+    const boundary = "A card cannot tell you whether an agreement is null or valid.";
+    expect(validateInterpretation({ ...good(), beyondSpread: boundary }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: boundary } });
+    expect(validateInterpretation({ ...good(), reflection: "null" }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
   });
 
   it("rejects the wrong shape or position order", () => {
@@ -104,5 +112,38 @@ describe("validateInterpretation", () => {
     expect(findForeignCardName("You have the strength to make this call, and justice is not the point.", DRAWN)).toBeUndefined();
     expect(findForeignCardName("Justice matters to you. Death is not on the table.", DRAWN)).toBeUndefined();
     expect(findForeignCardName("Here Justice weighs on the decision.", DRAWN)).toBe("Justice");
+  });
+});
+
+describe("validateFollowup", () => {
+  const ok = {
+    paragraphs: ["The Chariot is the card that bears on this, and its pull in two directions is the part worth looking at against what you asked."],
+    reflection: "Which of the two pulls is the one you would rather not name?",
+    beyondSpread: null,
+  };
+  it("does not publish a literal null as an optional reflection or boundary", () => {
+    const source = { ...ok, reflection: "null", beyondSpread: "null" };
+    expect(validateFollowup(source, DRAWN)).toMatchObject({ ok: true, output: { reflection: null, beyondSpread: null } });
+    expect(source.beyondSpread).toBe("null"); // normalization does not rewrite stored input
+    const boundary = "The cards cannot determine how another person will react.";
+    expect(validateFollowup({ ...ok, beyondSpread: boundary }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: boundary } });
+  });
+  it("accepts one to five paragraphs with optional reflection and limit line", () => {
+    expect(validateFollowup(ok, DRAWN).ok).toBe(true);
+    expect(validateFollowup({ ...ok, reflection: null, paragraphs: [ok.paragraphs[0], ok.paragraphs[0], ok.paragraphs[0]] }, DRAWN).ok).toBe(true);
+    expect(validateFollowup({ ...ok, reflection: null, paragraphs: Array(5).fill(ok.paragraphs[0]) }, DRAWN).ok).toBe(true);
+  });
+  it("rejects the wrong shape, too many or too short paragraphs, and over-long totals", () => {
+    expect(validateFollowup({ ...ok, paragraphs: [] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: Array(6).fill(ok.paragraphs[0]) }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: ["Too short."] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: ["x".repeat(1101)] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: ["x".repeat(1000), "y".repeat(1000), "z".repeat(1000), "w".repeat(1000)] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape", detail: "total 4063 > 3400" });
+    expect(validateFollowup({ ...ok, extra: true }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+  });
+  it("applies the shared text gates", () => {
+    expect(validateFollowup({ ...ok, paragraphs: [ok.paragraphs[0] + " The Star would help here too."] }, DRAWN)).toMatchObject({ ok: false, reason: "foreign_card", detail: "The Star" });
+    expect(validateFollowup({ ...ok, reflection: "This is guaranteed to work if you try it this week." }, DRAWN)).toMatchObject({ ok: false, reason: "asserted_certainty" });
+    expect(validateFollowup({ ...ok, paragraphs: [ok.paragraphs[0] + " Reversed, the Chariot would mean the opposite."] }, DRAWN)).toMatchObject({ ok: false, reason: "banned_phrase" });
   });
 });

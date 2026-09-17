@@ -170,3 +170,62 @@ export const readingGenerations = pgTable(
   },
   (t) => [uniqueIndex("reading_generations_reading_kind_idx").on(t.readingId, t.kind)],
 );
+
+// One row per follow-up turn (docs/RELEASE-C.md section 4). The client's
+// submission id makes a retry idempotent; the sequence is the slot. The row
+// is the lease, as in reading_generations: provider_called and attempts are
+// recorded before any paid call, at most two pipelines per turn, ever.
+export const readingFollowups = pgTable(
+  "reading_followups",
+  {
+    id: text("id").primaryKey(),
+    readingId: text("reading_id")
+      .notNull()
+      .references(() => readings.id),
+    submissionId: text("submission_id").notNull(),
+    sequence: integer("sequence").notNull(), // 1..3
+    text: text("text").notNull(), // immutable once accepted
+    status: text("status").notNull().default("pending"), // pending | provider_called | succeeded | refused | failed
+    safetyCategory: text("safety_category"),
+    output: text("output"), // JSON FollowupOutput, validated before it is stored
+    errorReason: text("error_reason"),
+    attempts: integer("attempts").notNull().default(0),
+    leaseExpiresAt: epochMs("lease_expires_at").notNull(),
+    leaseToken: text("lease_token"), // set by the claim; every later write on the row is conditioned on it
+    promptVersion: text("prompt_version").notNull(),
+    reviewVersion: text("review_version").notNull(),
+    contentVersion: text("content_version").notNull(),
+    model: text("model"),
+    createdAt: epochMs("created_at").notNull(),
+    updatedAt: epochMs("updated_at").notNull(),
+    completedAt: epochMs("completed_at"),
+  },
+  (t) => [uniqueIndex("reading_followups_submission_idx").on(t.readingId, t.submissionId), uniqueIndex("reading_followups_sequence_idx").on(t.readingId, t.sequence)],
+);
+
+// C2: a single frozen template and reading, no private reflection notes.
+export const journeyRuns = pgTable("journey_runs", {
+  id: text("id").primaryKey(),
+  browserSessionId: text("browser_session_id").notNull().references(() => browserSessions.id),
+  readingId: text("reading_id").notNull().references(() => readings.id),
+  submissionId: text("submission_id").notNull(),
+  templateSlug: text("template_slug").notNull(),
+  templateVersion: text("template_version").notNull(),
+  templateSnapshot: text("template_snapshot").notNull(),
+  initialQuestion: text("initial_question").notNull(),
+  stage: text("stage").notNull().default("frame"),
+  revision: integer("revision").notNull().default(0),
+  completedAt: epochMs("completed_at"),
+  createdAt: epochMs("created_at").notNull(),
+  updatedAt: epochMs("updated_at").notNull(),
+}, (t) => [uniqueIndex("journey_runs_submission_idx").on(t.browserSessionId, t.submissionId), uniqueIndex("journey_runs_reading_idx").on(t.readingId)]);
+
+// A durable replay ledger prevents an old acknowledged transition from being
+// applied again after back/forward navigation. Deleted with its parent run.
+export const journeyTransitions = pgTable("journey_transitions", {
+  id: text("id").primaryKey(),
+  journeyId: text("journey_id").notNull().references(() => journeyRuns.id, { onDelete: "cascade" }),
+  submissionId: text("submission_id").notNull(),
+  expectedRevision: integer("expected_revision").notNull(),
+  destination: text("destination").notNull(),
+}, (t) => [uniqueIndex("journey_transitions_submission_idx").on(t.journeyId, t.submissionId)]);

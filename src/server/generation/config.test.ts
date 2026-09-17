@@ -17,16 +17,17 @@ describe("getGenerationConfig", () => {
     expect(kinds()).toEqual(["stub"]);
   });
 
-  it("prefers Gemini and falls back to Anthropic in production by default", () => {
+  it("prefers Gemini and falls back to DeepSeek in production without implicitly spending on Anthropic", () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("GENERATION_PROVIDER", undefined);
     vi.stubEnv("GEMINI_API_KEY", "g-test");
+    vi.stubEnv("DEEPSEEK_API_KEY", "d-test");
     vi.stubEnv("ANTHROPIC_API_KEY", "sk-test");
     vi.stubEnv("ANTHROPIC_WORKSPACE_ID", "wrkspc_1");
     const config = getGenerationConfig();
-    expect(kinds()).toEqual(["gemini", "anthropic"]);
+    expect(kinds()).toEqual(["gemini", "deepseek"]);
     expect(config.providers[0].models).toEqual({ answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" });
-    expect(config.providers[1]).toMatchObject({ workspaceId: "wrkspc_1", models: { answer: "claude-sonnet-5" } });
+    expect(config.providers[1]).toMatchObject({ kind: "deepseek", models: { answer: "deepseek-flash" } });
     expect(config.reviewProvider).toBeUndefined();
     expect(config.configurationProblem).toContain("GENERATION_REVIEW_PROVIDER is not set");
   });
@@ -100,9 +101,12 @@ describe("getGenerationConfig", () => {
     vi.stubEnv("GEMINI_API_KEY", "test");
     vi.stubEnv("GENERATION_REVIEW_PROVIDER", "gemini");
     vi.stubEnv("GENERATION_REVIEW_MODEL", "review-model");
+    vi.stubEnv("GEMINI_REVIEW_THINKING_LEVEL", "low");
     const config = getGenerationConfig();
     expect(config.reviewProvider?.models.answer).toBe("review-model");
     expect(config.providers[0].models.answer).toBe("gemini-3.8-flash");
+    expect(config.reviewProvider?.thinkingLevel).toBe("low");
+    expect(config.providers[0].thinkingLevel).toBeUndefined();
   });
 
   it("reads flags leniently and falls back on bad numbers", () => {
@@ -132,4 +136,14 @@ describe("deepseek", () => {
     expect(config.reviewProvider).toMatchObject({ kind: "deepseek", models: { answer: "deepseek-v4-pro" } });
     expect(config.configurationProblem).toBeUndefined();
   });
+});
+
+it("keeps Gemini writer, classifier and reviewer effort independent", () => {
+  vi.stubEnv("GENERATION_PROVIDER", "gemini"); vi.stubEnv("GEMINI_API_KEY", "test-key");
+  vi.stubEnv("GENERATION_CLASSIFIER_PROVIDER", "gemini"); vi.stubEnv("GENERATION_REVIEW_PROVIDER", "gemini");
+  vi.stubEnv("GEMINI_WRITER_THINKING_LEVEL", "low"); vi.stubEnv("GEMINI_CLASSIFIER_THINKING_LEVEL", "high"); vi.stubEnv("GEMINI_REVIEW_THINKING_LEVEL", "medium");
+  const config = getGenerationConfig();
+  expect([config.providers[0].thinkingLevel, config.classifierProvider?.thinkingLevel, config.reviewProvider?.thinkingLevel]).toEqual(["low", "high", "medium"]);
+  vi.stubEnv("GEMINI_CLASSIFIER_THINKING_LEVEL", undefined);
+  expect(getGenerationConfig().classifierProvider?.thinkingLevel).toBeUndefined();
 });

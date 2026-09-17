@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The High Priestess">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">II</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 138 135 a 24 24 0 1 1 0 46 a 30 30 0 0 0 0 -46 z" fill="#30253b" stroke="none"/>
-    <line x1="65" y1="150" x2="65" y2="250" stroke="#b8955a"/>
-    <line x1="175" y1="150" x2="175" y2="250" stroke="#b8955a"/>
+  <title>The High Priestess</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">II</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#sky)" stroke="none"/><path d="M40 78 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M190 73 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M68 113 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M201 153 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M37 179 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><rect x="73" y="126" width="94" height="155" fill="#6e526d" /><circle cx="89" cy="149" r="6" fill="#a66d7b" /><path d="M86 143 l3-3 l3 3" fill="#d5b47a" /><circle cx="89" cy="183" r="6" fill="#a66d7b" /><path d="M86 177 l3-3 l3 3" fill="#d5b47a" /><circle cx="89" cy="217" r="6" fill="#a66d7b" /><path d="M86 211 l3-3 l3 3" fill="#d5b47a" /><circle cx="119" cy="149" r="6" fill="#a66d7b" /><path d="M116 143 l3-3 l3 3" fill="#d5b47a" /><circle cx="119" cy="183" r="6" fill="#a66d7b" /><path d="M116 177 l3-3 l3 3" fill="#d5b47a" /><circle cx="119" cy="217" r="6" fill="#a66d7b" /><path d="M116 211 l3-3 l3 3" fill="#d5b47a" /><circle cx="149" cy="149" r="6" fill="#a66d7b" /><path d="M146 143 l3-3 l3 3" fill="#d5b47a" /><circle cx="149" cy="183" r="6" fill="#a66d7b" /><path d="M146 177 l3-3 l3 3" fill="#d5b47a" /><circle cx="149" cy="217" r="6" fill="#a66d7b" /><path d="M146 211 l3-3 l3 3" fill="#d5b47a" /><rect x="41" y="117" width="24" height="154" fill="#30253b" /><rect x="38" y="109" width="30" height="9" fill="#d5b47a" /><rect x="38" y="271" width="30" height="10" fill="#d5b47a" /><path d="M48 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><rect x="175" y="117" width="24" height="154" fill="#ded4c8" /><rect x="172" y="109" width="30" height="9" fill="#d5b47a" /><rect x="172" y="271" width="30" height="10" fill="#d5b47a" /><path d="M182 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><g fill="#d5b47a" stroke="none" font-family="Georgia" font-size="18"><text x="46" y="164">B</text><text x="182" y="164">J</text></g><path d="M105 196 Q94 223 91 268 Q120 278 149 268 Q146 223 135 196 Z" fill="#8b9bb8" /><path d="M114 207 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M110 179 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="120" cy="176" r="10" fill="#f5ebdd" /><path d="M115 174 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><circle cx="120" cy="153" r="9" fill="#f5ebdd" /><path d="M106 151 q14 18 28 0" fill="none" stroke="#d5b47a" stroke-width="3"/><path d="M105 208 Q97 224 101 236 L123 240 L125 232 L111 229 L115 211 Z" fill="#f5ebdd" /><rect x="111" y="225" width="34" height="21" fill="#f5ebdd" rx="3" transform="rotate(12 111 225)"/><path d="M135 282 a19 19 0 1 1-19-25 a16 16 0 0 0 19 25 Z" fill="#d5b47a" />
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The High Priestess</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="13" fill="#30253b" letter-spacing=".3">The High Priestess</text>
 </svg>

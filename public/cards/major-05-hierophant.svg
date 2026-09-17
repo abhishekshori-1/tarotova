@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Hierophant">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">V</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="90" y1="145" x2="110" y2="235"/>
-    <circle cx="90" cy="145" r="9"/>
-    <line x1="150" y1="145" x2="130" y2="235" stroke="#b8955a"/>
-    <circle cx="150" cy="145" r="9" stroke="#b8955a"/>
+  <title>The Hierophant</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">V</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><rect x="43" y="117" width="24" height="154" fill="#ded4c8" /><rect x="40" y="109" width="30" height="9" fill="#d5b47a" /><rect x="40" y="271" width="30" height="10" fill="#d5b47a" /><path d="M50 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><rect x="174" y="117" width="24" height="154" fill="#ded4c8" /><rect x="171" y="109" width="30" height="9" fill="#d5b47a" /><rect x="171" y="271" width="30" height="10" fill="#d5b47a" /><path d="M181 123 v140 m10-140 v140" fill="none" stroke="#b8955a" opacity=".6" stroke-width=".8"/><rect x="91" y="143" width="58" height="134" fill="#b7a3b8" /><path d="M105 184 Q94 211 91 256 Q120 266 149 256 Q146 211 135 184 Z" fill="#a66d7b" /><path d="M114 195 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M110 164 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="120" cy="161" r="10" fill="#f5ebdd" /><path d="M115 159 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M108 148 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><path d="M108 139 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><path d="M103 191 L84 177 L82 154 L74 155 L75 184 L98 210 Z" fill="#f5ebdd" /><path d="M156 140 v123 m-10-108 h20 m-13 12 h26 m-16 12 h32" fill="none" stroke="#d5b47a" stroke-width="3"/><path d="M99 278 l41 27 m0-27 l-41 27" fill="none" stroke="#d5b47a" stroke-width="3"/><circle cx="98" cy="277" r="6" fill="none" /><circle cx="140" cy="277" r="6" fill="none" /><g transform="translate(0 50) scale(1 .85)"><path d="M54 282 Q43 309 40 354 Q69 364 98 354 Q95 309 84 282 Z" fill="#8b9bb8" /><path d="M63 293 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M59 271 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="69" cy="268" r="10" fill="#f5ebdd" /><path d="M64 266 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M157 282 Q146 309 143 354 Q172 364 201 354 Q198 309 187 282 Z" fill="#a66d7b" /><path d="M166 293 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M162 271 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="172" cy="268" r="10" fill="#f5ebdd" /><path d="M167 266 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/></g>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Hierophant</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Hierophant</text>
 </svg>

@@ -11,7 +11,7 @@ export function Shell({ variant, children }: Props) {
   return (
     <div className={`${surface} flex min-h-dvh flex-col`}>
       <header className="px-6 py-4">
-        <Link href="/" className="font-[var(--font-fraunces)] text-lg font-semibold tracking-tight text-[var(--fg)]">
+        <Link href="/" prefetch={false} className="font-[var(--font-fraunces)] text-lg font-semibold tracking-tight text-[var(--fg)]">
           Tarotova
         </Link>
       </header>
@@ -24,7 +24,7 @@ export function Shell({ variant, children }: Props) {
           <Link href="/terms" className="hover:underline">
             Terms
           </Link>
-          <a href="mailto:support@tarotova.example" className="hover:underline">
+          <a href="mailto:support@tarotova.com" className="hover:underline">
             Support
           </a>
         </nav>

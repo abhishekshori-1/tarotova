@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Moon">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XVIII</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 135 135 a 32 32 0 1 0 0 64 a 24 24 0 1 1 0 -64 z" fill="#30253b" stroke="none"/>
-    <path d="M 65 245 q 25 -20 50 0 q 25 20 50 0" stroke="#b8955a"/>
+  <title>The Moon</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">XVIII</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#sky)" stroke="none"/><path d="M40 78 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M190 73 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M68 113 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M201 153 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M37 179 l0.52 1.48 l1.48 0.52 l-1.48 0.52 l-0.52 1.48 l-0.52-1.48 l-1.48-0.52 l1.48-0.52 Z" fill="#f5ebdd" stroke="none"/><path d="M18 224 L58 174 L88 202 L135 143 L184 202 L208 182 L222 200 V330 H18 Z" fill="#564663" stroke="none"/><path d="M18 258 L82 220 L120 237 L163 199 L222 237 V330 H18 Z" fill="#3b304d" stroke="none"/><circle cx="120" cy="111" r="30" fill="#d5b47a" /><path d="M128 84 q-29 27 0 53 q-9-12-7-25 q-2-15 7-28 Z" fill="#f5ebdd" /><path d="M112 103 q5-4 9 0 m-8 16 q5 3 10-1" fill="none" stroke-width="1"/><rect x="35" y="174" width="25" height="91" fill="#9994a4" /><rect x="182" y="174" width="25" height="91" fill="#9994a4" /><path d="M35 173 v-9 h8 v8 h9 v-8 h8 v9 M182 173 v-9 h8 v8 h9 v-8 h8 v9" fill="#9994a4" /><path d="M18 240 Q72 214 120 242 T222 234 V330 H18 Z" fill="#4a3a5c" stroke="none"/><path d="M109 330 Q159 287 124 259 T139 216 L133 216 Q107 241 115 261 T97 330 Z" fill="#c8ac7c" stroke="none"/><path d="M58 280 l7-28 l10-6 l2-18 l9 13 l-5 22 l10 16 l-10 1 l-6-13 l-5 14 Z" fill="#f5ebdd" /><path d="M150 280 l7-28 l10-6 l2-18 l9 13 l-5 22 l10 16 l-10 1 l-6-13 l-5 14 Z" fill="#b4a1be" /><path d="M18 306 Q88 288 139 307 T222 310 V330 H18 Z" fill="#8b9bb8" stroke="none"/><path d="M115 309 q-7 10 0 16 q7-6 0-16 M112 317 l-9-8 m15 8 l9-8 m-14 16 l-9-1 m13 1 l9-1" fill="none" stroke="#b8955a" stroke-width="2"/><path d="M75 148 l-2 8 l5-2 Z" fill="#d5b47a" stroke="none"/><path d="M97 158 l-2 8 l5-2 Z" fill="#d5b47a" stroke="none"/><path d="M142 148 l-2 8 l5-2 Z" fill="#d5b47a" stroke="none"/><path d="M166 158 l-2 8 l5-2 Z" fill="#d5b47a" stroke="none"/>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Moon</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Moon</text>
 </svg>
