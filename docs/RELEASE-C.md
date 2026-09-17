@@ -1,5 +1,16 @@
 # Release C — follow-ups and guided journeys
 
+Current publication threshold: **85%**, authorized by the owner on 17 September and shared in `eval/thresholds.ts`. Historical 90% results below keep their original threshold. Safety routing and grounding requirements are unchanged.
+
+The owner subsequently accepted **80% for the fresh conversation set only**.
+Its existing 4/5 result now meets the agreed availability criterion; the main
+gate remains 85%. This does not approve the withheld reply or deployment.
+
+The owner has approved the newly generated reading-experience answers. Current
+candidate versions, reported exceptions and remaining deployment checks are in
+[the 85% checkpoint](READING-EXPERIENCE-85-CHECKPOINT.md); earlier approvals in
+this document retain their historical scope.
+
 Latest combined C1/C2 implementation: [companion and journeys review](RELEASE-C-COMPANION-JOURNEYS.md).
 Latest verification and release blockers: [readiness and cost pass](RELEASE-C-READINESS.md).
 Earlier evaluation results below describe their named prompt versions; they do not approve the new draft templates or prompts.

@@ -1,5 +1,7 @@
 # Release C readiness and cost pass — 2026-09-16, continued 2026-09-17
 
+The later uncommitted reading-experience candidate has its own [85% checkpoint](READING-EXPERIENCE-85-CHECKPOINT.md), following the owner's publication-threshold decision. Grounding, safety, depth and cost requirements remain in place. The historical approvals below do not approve that candidate. [Earlier final checks](READING-EXPERIENCE-FINAL-CHECKS.md) retain the v18 and local-browser evidence.
+
 Status 17 September: the owner approved v9 and the three templates; committed on `feat/release-c` in three commits (app, evaluation, docs) and pushed for the preview build. Not merged; nothing enabled in production. The lines below were written while the tree was uncommitted and are kept as the record.
 This record supersedes the older verification/counts in
 RELEASE-C-COMPANION-JOURNEYS.md; that document retains the implementation history.

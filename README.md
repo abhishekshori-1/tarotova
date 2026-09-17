@@ -23,6 +23,8 @@ as a working product with draft content.
 | [`docs/RELEASE-B.md`](./docs/RELEASE-B.md) | Release B from the product owner's side: what changed, what the model does and doesn't, cost, protections, the gate |
 | [`docs/IMPLEMENTATION.md`](./docs/IMPLEMENTATION.md) | What is actually built, what isn't, and known limitations |
 | [`docs/RELEASE-C-READINESS.md`](./docs/RELEASE-C-READINESS.md) | Current uncommitted C1/C2 verification, cost evidence and remaining release blockers |
+| [`docs/READING-EXPERIENCE-CHECKPOINT.md`](./docs/READING-EXPERIENCE-CHECKPOINT.md) | The richer reading and redesign at its first design checkpoint: art studies, screens, longer output, evidence, open decisions |
+| [`docs/READING-EXPERIENCE-85-CHECKPOINT.md`](./docs/READING-EXPERIENCE-85-CHECKPOINT.md) | Current uncommitted candidate: the owner's 85% publication decision, grounding checks, transport fixes and release evidence |
 | [`docs/INFRA.md`](./docs/INFRA.md) | The live deployment: domain, DNS, Vercel, Supabase, Resend, Turnstile, cron |
 | [`docs/VERSIONING.md`](./docs/VERSIONING.md) | v1→v2 transition, backups, rollback procedure, release checklist |
 | [`docs/ISSUES.md`](./docs/ISSUES.md) | Production issues found and how they were resolved |
@@ -42,12 +44,13 @@ production.
 
 | Command | What it does |
 | --- | --- |
-| `npm test` | 347 tests in 38 files; in-memory Postgres, no provider keys or paid calls. Includes local HTTP timeout tests. Release evidence: [readiness record](docs/RELEASE-C-READINESS.md) |
-| `npm run test:e2e` | 88 browser checks at 320, 390, 820 and 1440 px, using a throwaway database and stub models. Four additional disabled-discovery checks: `E2E_JOURNEYS_ENABLED=false npm run test:e2e -- e2e/journeyAvailability.spec.ts` |
+| `npm test` | 364 tests in 39 files; in-memory Postgres, no provider keys or paid calls. Includes local HTTP timeout tests. Release evidence: [85% checkpoint](docs/READING-EXPERIENCE-85-CHECKPOINT.md) |
+| `npm run test:e2e` | 104 browser checks at 320, 390, 820 and 1440 px, using a throwaway database and stub models. Four additional disabled-discovery checks: `E2E_JOURNEYS_ENABLED=false npm run test:e2e -- e2e/journeyAvailability.spec.ts` |
+| `npm run test:e2e -- --config playwright.devices.config.ts` | WebKit phone/tablet, Android Chrome emulation, Firefox and landscape reflow over local HTTPS. Install those Playwright engines first. Physical-device checks remain separate. |
 | `npm run eval` | Initial-reading gate against the configured writer, classifier and reviewer; writes reports for `eval/RUBRIC.md`. The cost configuration uses DeepSeek and Gemini keys; calls are paid. Follow-ups use `npm run eval:conversations` |
 | `npm run lint`, `npx tsc --noEmit`, `npm run build` | What CI runs on every push |
 | `npm run db:generate` | Generate a migration after editing `src/server/db/schema.ts` |
-| `npm run cards:gen` | Regenerate the placeholder card SVGs |
+| `npm run cards:gen` | Regenerate 19 illustrated card SVGs; preserve the three individually authored studies and approved back |
 
 ### Port series
 

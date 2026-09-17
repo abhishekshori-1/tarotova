@@ -5,20 +5,23 @@ What actually exists in this repo, measured against `PLAN.md` (v1) and
 Release B merged to `main` on 2026-09-16 (`a7c8ba5`) with generation off;
 `VERSIONING.md` has the markers, rollback and the release checklist.
 Working-tree Release C status and verification were updated on 2026-09-17;
-[RELEASE-C-READINESS.md](RELEASE-C-READINESS.md) records the latest conversation
+[READING-EXPERIENCE-85-CHECKPOINT.md](READING-EXPERIENCE-85-CHECKPOINT.md) records the current uncommitted candidate and the owner's 85% publication decision. Safety and editorial requirements remain in place; consult that record for production readiness. [Earlier final checks](READING-EXPERIENCE-FINAL-CHECKS.md) retain the design, browser and historical v18 results.
+
+[RELEASE-C-READINESS.md](RELEASE-C-READINESS.md) records the earlier conversation
 gate, editorial findings and the checks still needed before deployment.
 
 ## Scope this build targets
 
 `PLAN.md` section 1's contingency — 22 Major Arcana, not 78 — remains in
 force: no illustrator or RWS practitioner has been sourced (section 13).
-`CONTENT_VERSION` is `content.v8-draft` (v2: overview and reflections in the
+`CONTENT_VERSION` is `content.v9-draft` (v2: overview and reflections in the
 reader's voice; v3: core meaning frozen into snapshots; v4: all 22 cards
 rewritten as themes to consider; v5: remaining assumptions revised, with
 the overview and reflections brought into the same stance; v6: texture pass,
 declarative sentences, at most one question per text, permission language
 cut, the overview a paragraph again; v7/v8: remaining presumed facts and
-attributed promises removed). A wording test
+attributed promises removed; v9: authored image explorations for the longer
+reading). A wording test
 guards selected past verdict phrases; it does not replace editorial review.
 The copy has not had the practitioner review section 9 sets as a release gate.
 Content version is recorded again at lock, alongside the text actually used,
@@ -61,7 +64,7 @@ verification once per browser per 30 days → further readings.
 | Content | 22 cards with core meaning, 3 position texts, 4 focus notes; deterministic overview and reflection; deck/spread/content versions frozen in the result snapshot |
 | Card art | 22 generated SVG faces (parchment, ink linework, gold frame) + a night card back; `scripts/generate-card-svgs.mjs` |
 | Visual | Two surfaces via route groups — night stage (home, deck) and parchment (verify, result, policies); tokens, fluid type scale, shared controls, CSS-only star map, safe-area padding on the sticky tray, reduced-motion respected, 44 px targets, visible focus |
-| Tests | 347 unit/integration tests in 38 files; 88 browser checks across four viewports plus four separate flag-off checks. Includes transactions, ownership, provider deadlines, fallback cost accounting, journey expiry and support persistence. Types, lint and production build pass. Real-provider gates and editorial findings are recorded in RELEASE-C-READINESS.md |
+| Tests | 364 unit/integration tests in 39 files; 104 browser checks across four viewports plus four separate flag-off checks. Additional browser-engine and landscape checks use `playwright.devices.config.ts`. Includes transactions, ownership, provider deadlines, fallback cost accounting, journey expiry and support persistence. Types, lint and production build pass. Current real-provider gates and editorial findings are recorded in READING-EXPERIENCE-85-CHECKPOINT.md |
 | CI | GitHub Actions on every push: tsc, eslint, Vitest, production build, Playwright (report uploaded on failure) |
 
 ## Release B — what is built and what gates it
