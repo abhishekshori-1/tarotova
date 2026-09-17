@@ -93,6 +93,7 @@ export class StubProvider implements GenerationProvider {
           position: c.position,
           relevance: `${c.name}, ${POSITION_LABEL[c.position].toLowerCase()}. ${c.positionText.split(". ")[0]}. Against what you asked, this is the part that's yours to move.`,
         })),
+        synthesis: `Read together, ${names[0]}, ${names[1]} and ${names[2]} describe one movement rather than three separate ones: what is already under way, what stands in its path, and the slower route through. The distinction they add is between what is yours to move and what is only yours to notice.`,
         reflection: "Do the small version of the next step this week. Then notice what it told you.",
         beyondSpread: /\b(will i|when will|does he|does she|dates?)\b/i.test(q)
           ? "Three cards can't tell you what happens or what someone else is thinking. They can only show your side of the table."

@@ -110,6 +110,8 @@ export interface ResultCard {
   name: string;
   numeral: string;
   keywords: string[];
+  /** Authored image and theme (content.v9); absent on readings locked before it existed. */
+  exploration?: string;
   interpretation: string;
   focusNote: string;
 }

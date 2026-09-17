@@ -17,6 +17,7 @@ import {
   type TokenUsage,
 } from "./types";
 import { validateFollowup, validateInterpretation } from "./validate";
+import { FOLLOWUP_LENGTHS, READING_LIMITS } from "./lengths";
 import { isProviderRefusal } from "./refusal";
 import { providerCalls, sumUsage } from "./usage";
 
@@ -28,7 +29,10 @@ import { providerCalls, sumUsage } from "./usage";
 const issueSchema = z.object({ field: z.string().trim().min(1).max(40), quote: z.string().min(1).max(900), reason: z.string().trim().min(1).max(1500) });
 const reviewSchema = z.strictObject({ decision: z.enum(["pass", "revise"]), issues: z.array(issueSchema).max(12) })
   .refine((r) => (r.decision === "pass") === (r.issues.length === 0));
-const repairSchema = z.strictObject({ edits: z.array(z.strictObject({ field: z.string().trim().min(1).max(40), replacement: z.string().max(900).nullable() })).min(1).max(6) });
+// A replacement is checked against its destination field's own limit (lengths.ts) in
+// applyRepairDetailed; this schema only bounds the count and the largest field.
+const LARGEST_FIELD = Math.max(READING_LIMITS.relevance.max, READING_LIMITS.perspective.max, FOLLOWUP_LENGTHS.paragraph.max);
+const repairSchema = z.strictObject({ edits: z.array(z.strictObject({ field: z.string().trim().min(1).max(40), replacement: z.string().max(LARGEST_FIELD).nullable() })).min(1).max(Math.max(ANSWER_FIELDS.length, FOLLOWUP_FIELDS.length)) });
 
 /** Internal trace for eval diagnostics. Never expose or log the draft/review text in production. */
 export interface GroundingTrace<T = InterpretationOutput> {
@@ -48,6 +52,8 @@ export type ReviewedOutcome<T = InterpretationOutput> = ProviderOutcome<T> & { q
  */
 export interface AnswerShape<T> {
   fields: readonly string[];
+  /** The character range a replacement for this field must fit; undefined for an unknown field. */
+  fieldLimit(field: string): { min: number; max: number } | undefined;
   fieldText(answer: T, field: string): string | null;
   /** Returns undefined when the edit is structurally unsafe (null where text is required). */
   applyEdit(answer: T, field: string, replacement: string | null): T | undefined;
@@ -60,6 +66,10 @@ export interface AnswerShape<T> {
 export function readingShape(input: InterpretationInput): AnswerShape<InterpretationOutput> {
   return {
     fields: ANSWER_FIELDS,
+    fieldLimit(field) {
+      if (field === "situation" || field === "challenge" || field === "guidance") return READING_LIMITS.relevance;
+      return READING_LIMITS[field as Exclude<AnswerField, "situation" | "challenge" | "guidance">];
+    },
     fieldText(answer, field) {
       if (field === "situation" || field === "challenge" || field === "guidance") return answer.cards.find((c) => c.position === field)!.relevance;
       return answer[field as Exclude<AnswerField, "situation" | "challenge" | "guidance">];
@@ -70,7 +80,7 @@ export function readingShape(input: InterpretationInput): AnswerShape<Interpreta
       else {
         if (replacement === null) return undefined;
         if (field === "situation" || field === "challenge" || field === "guidance") result.cards.find((c) => c.position === field)!.relevance = replacement;
-        else result[field as "perspective" | "reflection"] = replacement;
+        else result[field as "perspective" | "synthesis" | "reflection"] = replacement;
       }
       return result;
     },
@@ -82,9 +92,14 @@ export function readingShape(input: InterpretationInput): AnswerShape<Interpreta
 }
 
 export function followupShape(input: FollowupInput): AnswerShape<FollowupOutput> {
-  const index = (field: string) => (field === "paragraph_1" ? 0 : field === "paragraph_2" ? 1 : field === "paragraph_3" ? 2 : -1);
+  const index = (field: string) => { const m = /^paragraph_([1-5])$/.exec(field); return m ? Number(m[1]) - 1 : -1; };
   return {
     fields: FOLLOWUP_FIELDS,
+    fieldLimit(field) {
+      if (index(field) >= 0) return FOLLOWUP_LENGTHS.paragraph;
+      if (field === "reflection" || field === "beyondSpread") return FOLLOWUP_LENGTHS[field];
+      return undefined;
+    },
     fieldText(answer, field) {
       const i = index(field);
       if (i >= 0) return answer.paragraphs[i] ?? null;
@@ -150,6 +165,9 @@ export function applyRepairDetailed<T>(shape: AnswerShape<T>, raw: unknown, answ
   if (fields.size !== allowed.size || [...fields].some((f) => !allowed.has(f))) return { ok: false, detail: `repair_fields: edited ${[...fields].join(", ") || "nothing"}; flagged ${[...allowed].join(", ")}` };
   let result: T | undefined = answer;
   for (const { field, replacement } of parsed.data.edits) {
+    // The destination field's own limit, not a universal cap: a longer card paragraph may be repaired at its full length.
+    const limit = shape.fieldLimit(field);
+    if (replacement !== null && limit && (replacement.trim().length < limit.min || replacement.trim().length > limit.max)) return { ok: false, detail: `repair_length: ${field} ${replacement.trim().length} outside ${limit.min}–${limit.max}` };
     result = shape.applyEdit(result, field, replacement);
     if (!result) return { ok: false, detail: `repair_edit: ${field} is not a field of this answer` };
   }

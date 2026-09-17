@@ -5,6 +5,8 @@ import type { Position } from "@/content/types";
 export interface InterpretationOutput {
   perspective: string;
   cards: { position: Position; relevance: string }[];
+  /** "How the cards connect". Null only for answers stored before interpretation.v14; new answers require it. */
+  synthesis: string | null;
   reflection: string;
   beyondSpread: string | null;
 }
@@ -125,9 +127,9 @@ export interface GenerationProvider {
   repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>>;
 }
 
-export const ANSWER_FIELDS = ["perspective", "situation", "challenge", "guidance", "reflection", "beyondSpread"] as const;
+export const ANSWER_FIELDS = ["perspective", "situation", "challenge", "guidance", "synthesis", "reflection", "beyondSpread"] as const;
 export type AnswerField = (typeof ANSWER_FIELDS)[number];
-export const FOLLOWUP_FIELDS = ["paragraph_1", "paragraph_2", "paragraph_3", "reflection", "beyondSpread"] as const;
+export const FOLLOWUP_FIELDS = ["paragraph_1", "paragraph_2", "paragraph_3", "paragraph_4", "paragraph_5", "reflection", "beyondSpread"] as const;
 export type FollowupField = (typeof FOLLOWUP_FIELDS)[number];
 export interface GroundingIssue {
   field: AnswerField | FollowupField;

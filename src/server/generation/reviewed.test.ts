@@ -17,6 +17,7 @@ const draft: InterpretationOutput = {
     { position: "challenge", relevance: "Temperance names pacing as the reason you stop. A week is enough to know that." },
     { position: "guidance", relevance: "The Hermit offers reflection as a way of looking without demanding a restart." },
   ],
+  synthesis: "Together the three separate the moment of stopping from what it is taken to mean afterwards, and leave the first open to be noticed before the second is decided.",
   reflection: "What do you notice at the moment you stop?",
   beyondSpread: null,
 };

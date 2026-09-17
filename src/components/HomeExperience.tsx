@@ -4,7 +4,7 @@ import { useHydrated } from "@/lib/useHydrated";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import Image from "next/image";
+import { CardBack, CardFace } from "@/components/CardArt";
 import { createReading } from "@/lib/api";
 import { verifyHref } from "@/lib/nextPath";
 import { FOCUS_META, DEFAULT_FOCUS } from "@/content/focuses";
@@ -22,8 +22,19 @@ const EXAMPLES = [
 const STEPS: [string, string][] = [
   ["Ask", "Say what's going on, in your own words. Or don't, and I'll read cold."],
   ["Pull", "Three cards, face down. Where you are, what's in the way, the way through."],
-  ["Read", "Each card in its place, then one thing to take out the door with you."],
+  ["Read", "Each card in its place, how they connect, then one thing to take out the door with you."],
 ];
+
+/**
+ * The public hero cards are illustrative studies (The Star, a card back,
+ * The Fool). They have no relationship to any visitor's private draw
+ * (docs/PLAN-EXTENDED.md section 3).
+ */
+const HERO = [
+  { id: "major-17-star", name: "The Star" },
+  null,
+  { id: "major-00-fool", name: "The Fool" },
+] as const;
 
 export function HomeExperience({ journeys }: { journeys: ReactNode }) {
   const router = useRouter();
@@ -46,21 +57,35 @@ export function HomeExperience({ journeys }: { journeys: ReactNode }) {
     }
   }
 
+  const fan = (
+    <div className="hero-fan mx-auto w-full max-w-md" aria-hidden="true">
+      <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(172,155,203,0.2),transparent_65%)]" />
+      {HERO.map((card, i) => (
+        <div key={card?.id ?? "back"} className="hero-fan-card fade-in card-frame" style={{ ["--fan-i" as string]: String(i - 1), animationDelay: `${120 + i * 90}ms`, zIndex: i === 1 ? 2 : 1 }}>
+          {card ? <CardFace id={card.id} name={card.name} alt="" sizes="160px" priority /> : <CardBack sizes="160px" priority />}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div className="mx-auto max-w-6xl px-6 pb-16 pt-10 sm:pt-16">
-      <div className="grid items-start gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)]">
+    <div className="mx-auto max-w-6xl px-5 pb-16 pt-6 sm:px-6 sm:pt-12">
+      <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:gap-14">
+        {/* On phones the composition comes first, so the first viewport has a visual identity as well as an action. */}
+        <div className="lg:hidden">{fan}</div>
+
         <section className="settle-in">
           <h1 className="display">What&apos;s on your mind?</h1>
-          <p className="prose-measure mt-5 text-lg text-[var(--fg-soft)]">Ask it plainly. Pull three cards. See what they have to say.</p>
+          <p className="prose-measure mt-5 text-lg text-[var(--fg-soft)]">Ask it plainly. Pull three cards. Spend some time with what they have to say.</p>
 
           <form
-            className="mt-10"
+            className="panel mt-8 p-5 sm:p-7"
             onSubmit={(e) => {
               e.preventDefault();
               start(true);
             }}
           >
-            <label htmlFor="question" className="block text-sm font-medium">
+            <label htmlFor="question" className="block text-base font-medium">
               Your question <span className="font-normal text-[var(--fg-soft)]">(optional)</span>
             </label>
             <textarea
@@ -68,12 +93,12 @@ export function HomeExperience({ journeys }: { journeys: ReactNode }) {
               value={question}
               disabled={!ready || busy}
               maxLength={QUESTION_MAX}
-              rows={3}
+              rows={4}
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Say it the way you'd say it to a friend…"
-              className="field mt-2 resize-y"
+              className="field mt-3 resize-y text-lg"
             />
-            <div className="mt-1 flex justify-between text-xs text-[var(--fg-soft)]">
+            <div className="mt-2 flex justify-between text-xs text-[var(--fg-soft)]">
               <span>Your words, kept with your reading.</span>
               <span aria-live="polite">
                 {question.length}/{QUESTION_MAX}
@@ -96,7 +121,7 @@ export function HomeExperience({ journeys }: { journeys: ReactNode }) {
               ))}
             </div>
 
-            <fieldset className="mt-8">
+            <fieldset className="mt-7">
               <legend className="text-sm font-medium text-[var(--fg-soft)]">What&apos;s this about?</legend>
               <div className="mt-3 flex flex-wrap gap-2">
                 {FOCUSES.map((f) => (
@@ -107,7 +132,7 @@ export function HomeExperience({ journeys }: { journeys: ReactNode }) {
               </div>
             </fieldset>
 
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
               <button type="submit" disabled={!ready || busy} className="btn-primary px-6 py-3 text-base">
                 {busy ? "One moment…" : "Pull my cards"}
               </button>
@@ -122,27 +147,10 @@ export function HomeExperience({ journeys }: { journeys: ReactNode }) {
             )}
           </form>
 
-          <p className="mt-6 text-sm text-[var(--fg-soft)]">First reading&apos;s on the house, no email. After that, one code to keep going.</p>
+          <p className="mt-5 text-sm text-[var(--fg-soft)]">First reading&apos;s on the house, no email. After that, one code to keep going.</p>
         </section>
 
-        <aside className="relative mx-auto hidden aspect-[4/3] w-full max-w-md lg:block" aria-hidden="true">
-          <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle,rgba(172,155,203,0.18),transparent_65%)]" />
-          {[-12, 0, 12].map((deg, i) => (
-            <div
-              key={deg}
-              className="card-frame settle-in absolute left-1/2 top-1/2 w-40"
-              style={{
-                transform: `translate(-50%, -50%) translateX(${(i - 1) * 84}px) rotate(${deg}deg)`,
-                animationDelay: `${120 + i * 90}ms`,
-                zIndex: i === 1 ? 2 : 1,
-              }}
-            >
-              <div className="relative aspect-[5/8] w-full">
-                <Image src="/cards/back.svg" alt="" fill sizes="160px" priority className="rounded-[0.6rem]" />
-              </div>
-            </div>
-          ))}
-        </aside>
+        <aside className="hidden lg:block">{fan}</aside>
       </div>
 
       {journeys}

@@ -35,7 +35,7 @@ describe("toGeminiSchema", () => {
     expect(schema.additionalProperties).toBeUndefined();
     expect(schema.properties.beyondSpread).toMatchObject({ type: "string", nullable: true });
     expect(schema.properties.perspective.type).toBe("string");
-    expect(schema.required).toEqual(["perspective", "cards", "reflection", "beyondSpread"]);
+    expect(schema.required).toEqual(["perspective", "cards", "synthesis", "reflection", "beyondSpread"]);
     const items = (schema.properties.cards as unknown as { items: { additionalProperties?: unknown; properties: { position: { enum: string[] } } } }).items;
     expect(items.additionalProperties).toBeUndefined();
     expect(items.properties.position.enum).toEqual(["situation", "challenge", "guidance"]);
@@ -47,7 +47,7 @@ describe("GeminiProvider", () => {
     const fetchMock = vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}')));
     vi.stubGlobal("fetch", fetchMock);
     const reviewer = new GeminiProvider("test", { answer: "gemini-3.8-flash", classifier: "gemini-3.8-flash" }, 5000, undefined, "low");
-    await reviewer.review(INPUT, { perspective: "", cards: [], reflection: "", beyondSpread: null });
+    await reviewer.review(INPUT, { perspective: "", cards: [], synthesis: null, reflection: "", beyondSpread: null });
     await provider().interpret(INPUT);
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).generationConfig.thinkingConfig).toEqual({ thinkingLevel: "low" });
     expect(JSON.parse(fetchMock.mock.calls[1][1].body).generationConfig.thinkingConfig).toBeUndefined();
@@ -57,7 +57,7 @@ describe("GeminiProvider", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response(200, candidate('{"decision":"pass","issues":[]}', {
       usageMetadata: { promptTokenCount: 400, cachedContentTokenCount: 300, candidatesTokenCount: 50, thoughtsTokenCount: 120 },
     }))));
-    expect(await provider().review(INPUT, { perspective: "", cards: [], reflection: "", beyondSpread: null })).toMatchObject({
+    expect(await provider().review(INPUT, { perspective: "", cards: [], synthesis: null, reflection: "", beyondSpread: null })).toMatchObject({
       usage: { inputTokens: 100, cacheReadTokens: 300, outputTokens: 170 },
     });
   });

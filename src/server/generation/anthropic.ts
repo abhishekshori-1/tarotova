@@ -52,7 +52,7 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   interpret(input: InterpretationInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 1200, options);
+    return this.callTool(this.models.answer, INTERPRETATION_SYSTEM, interpretationUserMessage(input), READING_TOOL, 2400, options);
   }
 
   review(input: InterpretationInput, answer: InterpretationOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -60,11 +60,11 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   repair(input: InterpretationInput, answer: InterpretationOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)), 1800, options);
+    return this.callTool(this.models.answer, REPAIR_SYSTEM, groundingUserMessage(input, answer, issues), repairToolFor(REPAIR_TOOL, repairFields(issues)), 2400, options);
   }
 
   followup(input: FollowupInput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, FOLLOWUP_SYSTEM, followupUserMessage(input), FOLLOWUP_TOOL, 900, options);
+    return this.callTool(this.models.answer, FOLLOWUP_SYSTEM, followupUserMessage(input), FOLLOWUP_TOOL, 1600, options);
   }
 
   reviewFollowup(input: FollowupInput, answer: FollowupOutput, options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
@@ -72,7 +72,7 @@ export class AnthropicProvider implements GenerationProvider {
   }
 
   repairFollowup(input: FollowupInput, answer: FollowupOutput, issues: GroundingIssue[], options?: ProviderCallOptions): Promise<ProviderOutcome<unknown>> {
-    return this.callTool(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)), 1200, options);
+    return this.callTool(this.models.answer, FOLLOWUP_REPAIR_SYSTEM, followupGroundingUserMessage(input, answer, issues), repairToolFor(FOLLOWUP_REPAIR_TOOL, repairFields(issues)), 1800, options);
   }
 
   /** With caching on, a two-part message becomes two text blocks with the breakpoint after the stable one; otherwise the parts are joined. */

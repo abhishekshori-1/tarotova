@@ -89,7 +89,7 @@ test("support replaces all card advice and links to help", async ({ page }) => {
 
 test("success gives one answer, with optional library reference", async ({ page }) => {
   await openResult(page, { status: "succeeded", model: "fixture", promptVersion: "fixture", answer: {
-    perspective: "A contextual perspective.", reflection: "A contextual reflection.", beyondSpread: "A clearly stated limit.",
+    perspective: "A contextual perspective.", synthesis: null, reflection: "A contextual reflection.", beyondSpread: "A clearly stated limit.",
     cards: ["situation", "challenge", "guidance"].map((position) => ({ position: position as "situation" | "challenge" | "guidance", relevance: `Contextual ${position} paragraph.` })),
   } });
   await expect(page.getByText("A contextual perspective.")).toBeVisible();

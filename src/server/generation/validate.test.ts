@@ -12,6 +12,7 @@ function good() {
       { position: "challenge", relevance: "The Chariot as Challenge: the pull is to force momentum before you know the direction you actually want." },
       { position: "guidance", relevance: "The Hermit as Guidance: take some deliberate time alone with the question before answering anyone else." },
     ],
+    synthesis: "Read together, the three cards separate two questions: whether to move at all, and how to move well. The Fool and The Chariot speak to the first; The Hermit to the second, and to the pause between them.",
     reflection: "Write down the three things a new role would have to give you, and check the current one against them honestly.",
     beyondSpread: null,
   };
@@ -127,15 +128,17 @@ describe("validateFollowup", () => {
     const boundary = "The cards cannot determine how another person will react.";
     expect(validateFollowup({ ...ok, beyondSpread: boundary }, DRAWN)).toMatchObject({ ok: true, output: { beyondSpread: boundary } });
   });
-  it("accepts one to three paragraphs with optional reflection and limit line", () => {
+  it("accepts one to five paragraphs with optional reflection and limit line", () => {
     expect(validateFollowup(ok, DRAWN).ok).toBe(true);
     expect(validateFollowup({ ...ok, reflection: null, paragraphs: [ok.paragraphs[0], ok.paragraphs[0], ok.paragraphs[0]] }, DRAWN).ok).toBe(true);
+    expect(validateFollowup({ ...ok, reflection: null, paragraphs: Array(5).fill(ok.paragraphs[0]) }, DRAWN).ok).toBe(true);
   });
   it("rejects the wrong shape, too many or too short paragraphs, and over-long totals", () => {
     expect(validateFollowup({ ...ok, paragraphs: [] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
-    expect(validateFollowup({ ...ok, paragraphs: [ok.paragraphs[0], ok.paragraphs[0], ok.paragraphs[0], ok.paragraphs[0]] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: Array(6).fill(ok.paragraphs[0]) }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
     expect(validateFollowup({ ...ok, paragraphs: ["Too short."] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
-    expect(validateFollowup({ ...ok, paragraphs: ["x".repeat(650), "y".repeat(650), "z".repeat(650)] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: ["x".repeat(1101)] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
+    expect(validateFollowup({ ...ok, paragraphs: ["x".repeat(1000), "y".repeat(1000), "z".repeat(1000), "w".repeat(1000)] }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape", detail: "total 4063 > 3400" });
     expect(validateFollowup({ ...ok, extra: true }, DRAWN)).toMatchObject({ ok: false, reason: "output_shape" });
   });
   it("applies the shared text gates", () => {

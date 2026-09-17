@@ -26,7 +26,7 @@ async function settleTurn(readingId: string, submissionId: string, first: Follow
  * flight; the sent text shows at once; a failed turn keeps its text and
  * retries with the same submission id; a support response ends it.
  */
-export function FollowupPanel({ readingId, focus, suggestions, onChange }: { readingId: string; focus: Focus; suggestions?: string[]; onChange?: () => void }) {
+export function FollowupPanel({ readingId, focus, suggestions, onChange, onAvailability }: { readingId: string; focus: Focus; suggestions?: string[]; onChange?: () => void; onAvailability?: (composerShown: boolean) => void }) {
   const [view, setView] = useState<FollowupsView | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,6 +48,10 @@ export function FollowupPanel({ readingId, focus, suggestions, onChange }: { rea
     load(controller.signal);
     return () => controller.abort();
   }, [load]);
+
+  // The parent's "Ask about this reading" control must point at a composer that exists: the server decides that.
+  const composerShown = !!view && view.available;
+  useEffect(() => { onAvailability?.(composerShown); }, [composerShown, onAvailability]);
 
   async function submit(submissionId: string, body: string) {
     if (busy) return;
@@ -87,18 +91,19 @@ export function FollowupPanel({ readingId, focus, suggestions, onChange }: { rea
   const closedBySupport = view.turns.some((t) => t.status === "refused");
 
   return (
-    <section className="conversation-section mt-12 border-t border-[var(--line)] pt-8" aria-labelledby="followups-heading">
-      <h2 className="text-2xl" id="followups-heading">
+    <section id="conversation" className="conversation-section reading-section mt-12 border-t border-[var(--line)] pt-8" aria-labelledby="followups-heading">
+      <p className="eyebrow">Continue</p>
+      <h2 className="mt-1 text-2xl sm:text-3xl" id="followups-heading">
         {FOLLOWUP_COPY.heading}
       </h2>
-      {view.turns.length === 0 && <p className="prose-measure mt-2 text-sm text-[var(--fg-soft)]">{FOLLOWUP_COPY.intro}</p>}
+      {view.turns.length === 0 && <p className="prose-measure mt-3 text-[var(--fg-soft)]">{FOLLOWUP_COPY.intro}</p>}
 
       <ol className="conversation-thread mt-6 space-y-8" aria-live="polite" aria-relevant="additions text">
         {view.turns.map((turn) => (
           <li key={turn.submissionId} className="conversation-turn">
             <div className="reader-message">
               <p className="eyebrow">Your words · {turn.sequence} of 3</p>
-              <p className="prose-measure mt-2 text-lg font-medium">{turn.text}</p>
+              <p className="prose-measure mt-2 font-serif text-xl leading-snug">{turn.text}</p>
             </div>
             <div className="mt-3">
               <Turn turn={turn} onRetry={() => submit(turn.submissionId, turn.text)} busy={busy} />
@@ -165,9 +170,9 @@ function Turn({ turn, onRetry, busy }: { turn: FollowupTurnView; onRetry: () => 
   }
   if (turn.status === "succeeded") {
     return (
-      <div className="answer-arrival rounded-2xl bg-[var(--raised)] p-5 sm:p-7">
-        {turn.answer.paragraphs.map((p) => (
-          <p key={p} className="prose-measure leading-relaxed [&+&]:mt-3">
+      <div className="answer-arrival reading-body rounded-2xl bg-[var(--raised)] p-5 sm:p-7">
+        {turn.answer.paragraphs.map((p, i) => (
+          <p key={`${i}-${p.slice(0, 24)}`} className="prose-measure">
             {p}
           </p>
         ))}
