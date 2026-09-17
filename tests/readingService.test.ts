@@ -179,6 +179,21 @@ describe("updateSelection locking", () => {
     }
   });
 
+  it("freezes each card's authored exploration at lock, and reads an older snapshot without one", async () => {
+    const session = await createSession();
+    const locked = await lockedReading(session);
+    const result = await getResult(locked.id, session);
+    for (const card of result.cards) expect(card.exploration, `${card.id} exploration`).toBe(CARDS.find((c) => c.id === card.id)!.exploration);
+    // A reading locked before content.v9 has no exploration field; it must still load.
+    const [row] = await db.select().from(readings).where(eq(readings.id, locked.id));
+    const snapshot = JSON.parse(row.resultSnapshot!);
+    for (const card of snapshot.cards) delete card.exploration;
+    await db.update(readings).set({ resultSnapshot: JSON.stringify(snapshot) }).where(eq(readings.id, locked.id));
+    const older = await getResult(locked.id, session);
+    expect(older.cards.every((c) => c.exploration === undefined)).toBe(true);
+    expect(older.cards.map((c) => c.id)).toEqual(result.cards.map((c) => c.id));
+  });
+
   it("preserves an earlier locked snapshot and its version on read and re-lock", async () => {
     const session = await createSession();
     const locked = await lockedReading(session);
