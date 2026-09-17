@@ -1,10 +1,88 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Star">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
+  <defs>
+    <linearGradient id="s-gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e3c68e"/>
+      <stop offset="1" stop-color="#b8955a"/>
+    </linearGradient>
+    <linearGradient id="s-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#211b30"/>
+      <stop offset="0.7" stop-color="#4a3a5c"/>
+      <stop offset="1" stop-color="#7a6790"/>
+    </linearGradient>
+    <radialGradient id="s-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#f3dca6" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#f3dca6" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="s-dots" width="5" height="5" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="0.5" fill="#f5ebdd" opacity="0.18"/>
+    </pattern>
+    <clipPath id="s-scene"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#s-gold)" stroke-width="3"/>
   <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
   <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XVII</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 120 135 l 10 24 l 26 2 l -20 17 l 7 26 l -23 -14 l -23 14 l 7 -26 l -20 -17 l 26 -2 z" stroke="#b8955a"/>
-    <path d="M 70 245 q 25 -15 50 0 q 25 15 50 0" stroke="#4f5e48"/>
+  <g clip-path="url(#s-scene)">
+    <rect x="18" y="58" width="204" height="272" fill="url(#s-sky)"/>
+    <rect x="18" y="58" width="204" height="150" fill="url(#s-dots)"/>
+    <!-- the great eight-pointed star, upper centre, one soft glow -->
+    <circle cx="120" cy="112" r="50" fill="url(#s-glow)"/>
+    <g fill="#f3dca6">
+      <path d="M120 74 l5 28 l28 10 l-28 10 l-5 28 l-5-28 l-28-10 l28-10 z"/>
+      <path d="M120 88 l17 24 l-17 24 l-17-24 z" transform="rotate(45 120 112)" opacity="0.9"/>
+    </g>
+    <path d="M120 98 l3 11 l11 3 l-11 3 l-3 11 l-3-11 l-11-3 l11-3 z" fill="#ffffff"/>
+    <!-- seven smaller eight-pointed stars, placed on a loose arc -->
+    <g fill="#f5ebdd">
+      <path d="M52 92 l2.5 7 l7 2.5 l-7 2.5 l-2.5 7 l-2.5-7 l-7-2.5 l7-2.5 z"/>
+      <path d="M188 88 l2.5 7 l7 2.5 l-7 2.5 l-2.5 7 l-2.5-7 l-7-2.5 l7-2.5 z"/>
+      <path d="M40 140 l2 5 l5 2 l-5 2 l-2 5 l-2-5 l-5-2 l5-2 z" opacity="0.85"/>
+      <path d="M200 144 l2 5 l5 2 l-5 2 l-2 5 l-2-5 l-5-2 l5-2 z" opacity="0.85"/>
+      <path d="M78 70 l2 5 l5 2 l-5 2 l-2 5 l-2-5 l-5-2 l5-2 z" opacity="0.8"/>
+      <path d="M164 68 l2 5 l5 2 l-5 2 l-2 5 l-2-5 l-5-2 l5-2 z" opacity="0.8"/>
+      <path d="M120 62 l1.6 4 l4 1.6 l-4 1.6 l-1.6 4 l-1.6-4 l-4-1.6 l4-1.6 z" opacity="0.7"/>
+    </g>
+    <!-- distant hill on the right with the tree and the bird -->
+    <path d="M118 214 C150 196 186 190 222 200 V240 H118 Z" fill="#3a4636"/>
+    <path d="M186 200 V176" stroke="#2b3129" stroke-width="3" stroke-linecap="round"/>
+    <path d="M186 178 c-8-6-14-14-10-24 c8 0 14 6 14 14 c0-10 8-16 14-14 c4 10-4 20-12 24 z" fill="#4f5e48" stroke="#2b3129" stroke-width="1.4"/>
+    <path d="M170 164 q4-6 9-2 q4-4 8 1" fill="none" stroke="#f5ebdd" stroke-width="1.4" stroke-linecap="round"/>
+    <!-- land on the left, meeting the pool -->
+    <path d="M18 226 C48 216 78 216 106 226 C118 230 124 238 126 248 C110 254 80 256 18 250 Z" fill="#4f5e48"/>
+    <path d="M18 226 C48 216 78 216 106 226" fill="none" stroke="#2b3129" stroke-width="1.6"/>
+    <!-- the pool -->
+    <path d="M18 250 C60 244 100 240 130 246 C160 252 190 250 222 244 V330 H18 Z" fill="#2e3550"/>
+    <path d="M18 250 C60 244 100 240 130 246 C160 252 190 250 222 244" fill="none" stroke="#9fb0c8" stroke-width="1" opacity="0.7"/>
+    <g stroke="#9fb0c8" stroke-width="1" opacity="0.45" fill="none" stroke-linecap="round">
+      <path d="M36 270 q24-6 48 0 M92 290 q26-8 52 0 M150 274 q22-6 44 0 M56 310 q28-8 56 0 M150 308 q20-6 40 0"/>
+    </g>
+    <!-- reflection of the great star -->
+    <path d="M120 262 l3 8 l8 3 l-8 3 l-3 8 l-3-8 l-8-3 l8-3 z" fill="#f3dca6" opacity="0.35"/>
+    <!-- A grounded kneeling pose: left knee on the bank, right foot in the pool. -->
+    <ellipse cx="99" cy="247" rx="26" ry="4" fill="#14111f" opacity=".2"/>
+    <g stroke="#30253b" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M110 215 Q95 226 84 238 Q80 244 90 249 L117 251 Q123 251 125 247 L104 242 L122 228 Z" fill="#ece0cf"/>
+      <path d="M122 216 Q139 204 151 217 Q157 228 154 253 L168 260 Q170 265 164 266 L145 264 Q141 262 142 257 L142 230 L124 238 L112 230 Z" fill="#f5ebdd"/>
+      <path d="M105 178 Q99 186 102 204 L111 226 Q121 232 133 223 Q126 209 125 194 L121 181 Z" fill="#f5ebdd"/>
+      <path d="M109 189 Q107 205 115 216" fill="none" stroke-width=".8" opacity=".4"/>
+      <path d="M108 183 Q97 190 90 203 L72 214 L75 221 Q91 217 99 208 L114 194 Z" fill="#f5ebdd"/>
+      <path d="M122 184 Q138 190 148 206 L170 214 L167 221 Q149 219 139 210 L119 195 Z" fill="#f5ebdd"/>
+      <path d="M110 182 L108 169 L117 166 L120 183" fill="#f5ebdd"/>
+      <path d="M105 149 Q118 145 121 157 Q120 171 111 174 Q103 171 101 163 L99 159 L103 157 Z" fill="#f5ebdd"/>
+      <path d="M104 150 Q98 140 111 142 Q128 143 126 157 L130 184 Q121 188 117 180 L117 164 Q120 155 113 151 Z" fill="#4a3a5c"/>
+      <path d="M102 160 h3 m-1 7 l4 1" fill="none" stroke-width=".8"/>
+      <path d="M62 210 Q66 201 75 207 Q82 213 77 221 Q71 226 62 219 L57 218 L55 213 Z" fill="#e3c68e" stroke="#b8955a"/>
+      <path d="M70 208 q-6-8-9 0" fill="none" stroke="#b8955a"/>
+      <path d="M166 209 Q171 201 178 208 Q186 214 181 221 Q174 226 167 220 L164 218 Z" fill="#e3c68e" stroke="#b8955a"/>
+      <path d="M175 207 q8-5 9 4 m-3 8 l6 2" fill="none" stroke="#b8955a"/>
+    </g>
+    <g fill="none" stroke="#9fb0c8" stroke-width="1.5" stroke-linecap="round">
+      <path d="M55 215 Q45 232 60 241 M51 235 l-17 5 m20-1 l-3 9 m10-6 l11 4"/>
+      <path d="M187 221 Q198 249 184 268"/>
+      <ellipse cx="181" cy="272" rx="13" ry="4" opacity=".6"/>
+      <ellipse cx="181" cy="272" rx="20" ry="7" opacity=".3"/>
+      <path d="M135 267 q16 6 33 0" opacity=".6"/>
+    </g>
   </g>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" stroke-width="1" opacity="0.8"/>
   <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Star</text>
 </svg>

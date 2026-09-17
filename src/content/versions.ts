@@ -4,7 +4,7 @@
 // version, and content version when the draw is locked").
 export const DECK_VERSION = "major-22.v1";
 export const SPREAD_VERSION = "situation-challenge-guidance.v1";
-export const CONTENT_VERSION = "content.v8-draft"; // v8: the last two attributed verdicts (Empress "outlasts", Hierophant "has been worked out") removed outright
+export const CONTENT_VERSION = "content.v9-draft"; // v9: authored card explorations and a connecting overview for general readings; still not practitioner-reviewed
 
 /**
  * This build ships PLAN.md's section-1 scope contingency: 22 Major Arcana

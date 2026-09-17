@@ -76,8 +76,30 @@ describe("CARDS deck composition", () => {
       /outlasts|has (likely )?been worked out by someone|the card's view is that/i,
     ];
     for (const card of CARDS) {
-      const texts = [card.coreMeaning, ...Object.values(card.position), ...Object.values(card.focus)];
+      const texts = [card.coreMeaning, card.exploration, ...Object.values(card.position), ...Object.values(card.focus)];
       for (const text of texts) for (const v of verdicts) expect(text, `${card.id}: ${text.slice(0, 60)}`).not.toMatch(v);
+    }
+  });
+
+  it("gives every card an exploration in the library's stance (content.v9)", () => {
+    // 80–110 words about the RWS image and theme; at most one question; no
+    // permission language, no reversal, no other card's name. Wording
+    // checks, not a semantic guarantee: the copy still needs editorial review.
+    const permission = [/\bif it fits\b/i, /\byours to weigh\b/i, /\bone option is\b/i, /\bif that fits\b/i, /\byours to judge\b/i];
+    for (const card of CARDS) {
+      const text = card.exploration;
+      const words = text.trim().split(/\s+/).length;
+      expect(words, `${card.id} exploration words`).toBeGreaterThanOrEqual(80);
+      expect(words, `${card.id} exploration words`).toBeLessThanOrEqual(110);
+      expect((text.match(/\?/g) ?? []).length, `${card.id} questions`).toBeLessThanOrEqual(1);
+      expect(text.toLowerCase(), `${card.id} reversal`).not.toMatch(/revers/);
+      for (const p of permission) expect(text, `${card.id} permission language`).not.toMatch(p);
+      expect(text, `${card.id} addresses the reader`).not.toMatch(/\byou\b/i);
+      for (const other of CARDS) {
+        if (other.id === card.id) continue;
+        // Case-sensitive: "the sun" as an object in the sky is fine, "The Sun" is a card.
+        expect(text, `${card.id} names ${other.name}`).not.toMatch(new RegExp(`(^|[^A-Za-z])${other.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?![A-Za-z])`));
+      }
     }
   });
 

@@ -11,6 +11,8 @@ export interface CardContent {
   numeral: string;
   keywords: string[];
   coreMeaning: string;
+  /** The RWS image and its symbolism, 80–110 words, in the library's stance (content.v9). */
+  exploration: string;
   position: Record<Position, string>;
   focus: Record<Focus, string>;
 }

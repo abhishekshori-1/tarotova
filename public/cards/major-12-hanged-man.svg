@@ -1,12 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Hanged Man">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">XII</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="80" y1="145" x2="160" y2="145"/>
-    <line x1="120" y1="145" x2="120" y2="180"/>
-    <circle cx="120" cy="195" r="14" stroke="#b8955a"/>
-    <line x1="120" y1="209" x2="120" y2="245" stroke="#b8955a"/>
+  <title>The Hanged Man</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">XII</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><path d="M18 240 Q72 214 120 242 T222 234 V330 H18 Z" fill="#4f5e48" stroke="none"/><path d="M51 329 v-220 M45 112 h150" fill="none" stroke="#746447" stroke-width="11"/><path d="M65 109 q-10-19 3-24 q12 13-3 24 Z" fill="#4f5e48" /><path d="M93 109 q-10-19 3-24 q12 13-3 24 Z" fill="#4f5e48" /><path d="M154 109 q-10-19 3-24 q12 13-3 24 Z" fill="#4f5e48" /><path d="M181 109 q-10-19 3-24 q12 13-3 24 Z" fill="#4f5e48" /><path d="M127 111 l-3 39" fill="none" stroke="#d5b47a" stroke-width="3"/><path d="M119 143 L131 144 L125 197 L115 218 L96 212 L89 196 L104 182 L113 187 L104 198 L113 204 Z" fill="#a66d7b" /><path d="M99 210 L123 211 L137 255 L93 255 Z" fill="#8b9bb8" /><path d="M98 219 l-15 15 l15 15 m25-30 l19 14 l-13 20" fill="none" stroke="#f5ebdd" stroke-width="7"/><circle cx="115" cy="273" r="25" fill="#d5b47a" opacity=".4" stroke="none"/><path d="M105 274 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="115" cy="271" r="10" fill="#f5ebdd" /><path d="M110 269 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Hanged Man</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Hanged Man</text>
 </svg>

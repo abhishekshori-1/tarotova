@@ -1,10 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Emperor">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">IV</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M 85 245 l 0 -70 l 70 0 l 0 70" />
-    <path d="M 100 175 l 20 -30 l 20 30 z" stroke="#b8955a"/>
+  <title>The Emperor</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">IV</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><path d="M18 224 L58 174 L88 202 L135 143 L184 202 L208 182 L222 200 V330 H18 Z" fill="#b4a1be" stroke="none"/><path d="M18 258 L82 220 L120 237 L163 199 L222 237 V330 H18 Z" fill="#d4c4d3" stroke="none"/><rect x="74" y="134" width="92" height="160" fill="#98919b" /><rect x="65" y="181" width="17" height="112" fill="#bbb0b8" /><rect x="158" y="181" width="17" height="112" fill="#bbb0b8" /><circle cx="80" cy="143" r="9" fill="#d6c7c1" /><path d="M72 144 q-14-22-8-23 q16 0 11 17 m13 6 q14-22 8-23 q-16 0-11 17" fill="none" stroke="#b8955a" stroke-width="2"/><circle cx="160" cy="143" r="9" fill="#d6c7c1" /><path d="M152 144 q-14-22-8-23 q16 0 11 17 m13 6 q14-22 8-23 q-16 0-11 17" fill="none" stroke="#b8955a" stroke-width="2"/><path d="M105 198 Q94 225 91 270 Q120 280 149 270 Q146 225 135 198 Z" fill="#9c5960" /><path d="M114 209 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M110 182 q-5-22 10-22 q15 0 11 23 Z" fill="#d0c6c0" /><circle cx="120" cy="179" r="10" fill="#f5ebdd" /><path d="M115 177 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M108 166 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><path d="M108 185 q12 32 24 0 l-4 29 h-16 Z" fill="#d0c6c0" /><path d="M108 268 l-7 33 h16 l6-31 M130 269 l5 33 h17 l-9-35" fill="#95949e" /><path d="M85 203 v66" fill="none" stroke="#d5b47a" stroke-width="3"/><circle cx="85" cy="198" r="6" fill="none" /><path d="M76 210 h18" fill="none" stroke="#d5b47a" stroke-width="3"/><circle cx="151" cy="227" r="10" fill="#d5b47a" />
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Emperor</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Emperor</text>
 </svg>

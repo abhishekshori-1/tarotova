@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Chariot">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">VII</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="85" y="170" width="70" height="45"/>
-    <circle cx="90" cy="235" r="16" stroke="#b8955a"/>
-    <circle cx="150" cy="235" r="16" stroke="#b8955a"/>
+  <title>The Chariot</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">VII</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><path d="M18 213 v-36 h18 v-18 h20 v42 h15 v-29 h20 v44 h44 v-39 h22 v-26 h17 v54 h22 v-42 h20 v50 Z" fill="#b4a1be" /><rect x="64" y="98" width="112" height="30" fill="#4a3a5c" /><path d="M79 106 l1.3 3.7 l3.7 1.3 l-3.7 1.3 l-1.3 3.7 l-1.3-3.7 l-3.7-1.3 l3.7-1.3 Z" fill="#d5b47a" stroke="none"/><path d="M108 106 l1.3 3.7 l3.7 1.3 l-3.7 1.3 l-1.3 3.7 l-1.3-3.7 l-3.7-1.3 l3.7-1.3 Z" fill="#d5b47a" stroke="none"/><path d="M137 106 l1.3 3.7 l3.7 1.3 l-3.7 1.3 l-1.3 3.7 l-1.3-3.7 l-3.7-1.3 l3.7-1.3 Z" fill="#d5b47a" stroke="none"/><path d="M164 106 l1.3 3.7 l3.7 1.3 l-3.7 1.3 l-1.3 3.7 l-1.3-3.7 l-3.7-1.3 l3.7-1.3 Z" fill="#d5b47a" stroke="none"/><path d="M67 127 v122 m106-122 v122" fill="none" stroke="#b8955a" stroke-width="4"/><path d="M105 166 Q94 193 91 238 Q120 248 149 238 Q146 193 135 166 Z" fill="#8b9bb8" /><path d="M114 177 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M110 150 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="120" cy="147" r="10" fill="#f5ebdd" /><path d="M115 145 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M108 136 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><rect x="70" y="216" width="100" height="58" fill="#c6c0c5" /><circle cx="120" cy="239" r="13" fill="#d5b47a" /><path d="M120 230 l2.34 6.66 l6.66 2.34 l-6.66 2.34 l-2.34 6.66 l-2.34-6.66 l-6.66-2.34 l6.66-2.34 Z" fill="#f5ebdd" stroke="none"/><g fill="#30253b" stroke="#b8955a"><path d="M53 312 q-10-21 0-30 l15-7 l18 2 l15 35 Z" fill="#30253b" /><circle cx="75" cy="275" r="13" fill="#30253b" /><path d="M61 275 l5-17 h18 l5 17 Z" fill="#30253b" /><path d="M55 315 h38" fill="none" stroke-width="3"/></g><g fill="#f5ebdd" stroke="#b8955a"><path d="M144 312 q-10-21 0-30 l15-7 l18 2 l15 35 Z" fill="#f5ebdd" /><circle cx="166" cy="275" r="13" fill="#f5ebdd" /><path d="M152 275 l5-17 h18 l5 17 Z" fill="#f5ebdd" /><path d="M146 315 h38" fill="none" stroke-width="3"/></g>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Chariot</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Chariot</text>
 </svg>

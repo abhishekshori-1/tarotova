@@ -1,11 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 384" role="img" aria-label="The Empress">
-  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="#b8955a" stroke-width="3"/>
-  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" stroke-width="1" opacity="0.7"/>
-  <text x="120" y="46" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="22" fill="#b8955a">III</text>
-  <g stroke="#30253b" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="120" cy="160" r="10" fill="#b8955a" stroke="none"/>
-    <path d="M 80 245 q 40 -70 80 0" />
-    <path d="M 95 210 q 25 -35 50 0" stroke="#4f5e48"/>
+  <title>The Empress</title>
+  <defs>
+    <linearGradient id="gold" x2="0" y2="1"><stop stop-color="#e3c68e"/><stop offset="1" stop-color="#b8955a"/></linearGradient>
+    <linearGradient id="sky" x2="0" y2="1"><stop stop-color="#211b30"/><stop offset="1" stop-color="#625173"/></linearGradient>
+    <linearGradient id="day" x2="0" y2="1"><stop stop-color="#f5e7c8"/><stop offset="1" stop-color="#e5d6cf"/></linearGradient>
+    <pattern id="engraving" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 7 L7 0" stroke="#30253b" opacity=".045" stroke-width=".6"/></pattern>
+    <clipPath id="picture"><rect x="18" y="58" width="204" height="272" rx="6"/></clipPath>
+  </defs>
+  <rect x="1" y="1" width="238" height="382" rx="14" fill="#f6f0e7" stroke="url(#gold)" stroke-width="3"/>
+  <rect x="12" y="12" width="216" height="360" rx="8" fill="none" stroke="#ac9bcb" opacity=".7"/>
+  <text x="120" y="46" text-anchor="middle" font-family="Georgia,serif" font-size="22" fill="#b8955a">III</text>
+  <g clip-path="url(#picture)" stroke="#30253b" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+    <rect x="18" y="58" width="204" height="272" fill="url(#day)" stroke="none"/><path d="M39 145 v65 m0-48 l-14-15 m14 29 l19-23" fill="none" stroke="#4f5e48" stroke-width="4"/><circle cx="29" cy="143" r="18" fill="#4f5e48" stroke="none"/><circle cx="51" cy="152" r="21" fill="#4f5e48" stroke="none"/><path d="M201 138 v65 m0-48 l-14-15 m14 29 l19-23" fill="none" stroke="#4f5e48" stroke-width="4"/><circle cx="191" cy="136" r="18" fill="#4f5e48" stroke="none"/><circle cx="213" cy="145" r="21" fill="#4f5e48" stroke="none"/><path d="M18 240 Q72 214 120 242 T222 234 V330 H18 Z" fill="#4f5e48" stroke="none"/><path d="M185 192 Q154 226 178 255 T185 330 H164 Q186 286 159 260 T169 192 Z" fill="#9fb0c8" stroke="none"/><path d="M68 211 q42-38 78 3 l12 65 H58 Z" fill="#a66d7b" /><path d="M100 203 Q89 230 86 275 Q115 285 144 275 Q141 230 130 203 Z" fill="#f5ebdd" /><path d="M109 214 l-8 53 m22-48 l8 46" fill="none" stroke-width=".8" opacity=".45"/><path d="M105 187 q-5-22 10-22 q15 0 11 23 Z" fill="#30253b" /><circle cx="115" cy="184" r="10" fill="#f5ebdd" /><path d="M110 182 h2 m6 0 h2 m-7 7 q3 2 6 0" fill="none" stroke-width=".8"/><path d="M103 172 l-3-12 l10 6 l5-11 l5 11 l10-6 l-3 12 Z" fill="#d5b47a" /><path d="M128 214 Q153 224 159 249 L150 256 L124 232 Z" fill="#f5ebdd" /><path d="M93 215 l-20-3 l-12-34" fill="none" stroke="#d5b47a" stroke-width="4"/><circle cx="59" cy="173" r="7" fill="#d5b47a" /><path d="M164 268 c-22-24-39 6 0 30 c39-24 22-54 0-30 Z" fill="#d5b47a" /><circle cx="164" cy="278" r="6" fill="none" /><path d="M164 284 v9 m-4-3 h8" fill="none" /><path d="M29 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M42 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M57 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M73 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M192 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/><path d="M208 330 q-4-20 0-37 m0 13 l-6-8 m6 2 l7-8 m-7 20 l-6-6 m6 1 l7-7" fill="none" stroke="#d5b47a" stroke-width="2"/>
+    <rect x="18" y="58" width="204" height="272" fill="url(#engraving)" stroke="none"/>
   </g>
-  <text x="120" y="362" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="15" fill="#30253b" letter-spacing="0.5">The Empress</text>
+  <rect x="18" y="58" width="204" height="272" rx="6" fill="none" stroke="#b8955a" opacity=".8"/>
+  <text x="120" y="362" text-anchor="middle" font-family="Georgia,serif" font-size="15" fill="#30253b" letter-spacing=".3">The Empress</text>
 </svg>
