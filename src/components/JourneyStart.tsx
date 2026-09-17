@@ -8,7 +8,7 @@ import { verifyHref } from "@/lib/nextPath";
 export function JourneyStart({ template }: { template: JourneyTemplate }) {
   const router = useRouter();
   const ready = useHydrated();
-  const [question, setQuestion] = useState(template.starter);
+  const [question, setQuestion] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const pending = useRef<{ question: string; id: string } | null>(null);
@@ -24,7 +24,7 @@ export function JourneyStart({ template }: { template: JourneyTemplate }) {
     } catch { setError(true); setBusy(false); }
   }}>
     <label htmlFor="journey-question" className="block font-medium">Make the question yours</label><p className="mt-2 text-sm text-[var(--fg-soft)]">{template.clarification}</p>
-    <textarea id="journey-question" className="field mt-4" rows={3} maxLength={500} value={question} disabled={!ready || busy} onChange={(e) => setQuestion(e.target.value)}/>
+    <textarea id="journey-question" className="field mt-4" rows={3} maxLength={500} placeholder={template.starter} value={question} disabled={!ready || busy} onChange={(e) => setQuestion(e.target.value)}/>
     <p className="mt-2 text-xs text-[var(--fg-soft)]">Your question is saved with this reading. {question.length}/500</p>
     <button disabled={!ready || busy || !question.trim()} className="btn-primary mt-5 px-6 py-3">{busy ? "Opening your journey…" : "Begin this journey"}</button>
     {error && <p role="alert" className="mt-3 text-sm">Your journey could not be opened. Your question is still here; try again.</p>}

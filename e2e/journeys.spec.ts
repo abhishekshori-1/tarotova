@@ -2,9 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { JOURNEYS } from "../src/content/journeys";
 test.beforeEach(async ({ page }) => { await page.setExtraHTTPHeaders({ "x-forwarded-for": crypto.randomUUID() }); });
 
-async function openJourney(page: Page, slug: string, question?: string) {
+async function openJourney(page: Page, slug: string, question: string) {
   await page.goto(`/journeys/${slug}`);
-  if (question) await page.getByLabel("Make the question yours").fill(question);
+  await page.getByLabel("Make the question yours").fill(question);
   await page.getByRole("button", { name: "Begin this journey" }).click();
   await expect(page).toHaveURL(/\/journey\/[^/]+$/);
   await page.getByRole("link", { name: "Choose your three cards" }).click();
@@ -17,7 +17,7 @@ async function openJourney(page: Page, slug: string, question?: string) {
 for (const template of JOURNEYS) test(`${template.title}: complete, resume, keep one draw, no mandatory follow-ups`, async ({ page }) => {
   let draws = 0;
   page.on("request", (r) => { if (r.method() === "POST" && r.url().endsWith("/api/journeys")) draws++; });
-  await openJourney(page, template.slug);
+  await openJourney(page, template.slug, template.starter);
   await expect(page.getByText(/Here's the short of it for what you asked/)).toBeVisible();
   const cards = await page.getByRole("list", { name: "Your three cards" }).locator("img").evaluateAll((els) => els.map((e) => e.getAttribute("alt")));
   await page.reload();
@@ -42,7 +42,7 @@ test("a generation outage keeps the library and allows completion", async ({ pag
 });
 
 test("support replaces journey prompts and remains after refresh", async ({ page }) => {
-  await openJourney(page, JOURNEYS[1].slug);
+  await openJourney(page, JOURNEYS[1].slug, JOURNEYS[1].starter);
   await page.getByLabel("Your follow-up").fill("He hits me when he is angry.");
   await page.getByRole("button", { name: "Explore this", exact: true }).click();
   await expect(page.getByRole("button", { name: "Continue to reflection" })).toHaveCount(0);
@@ -54,6 +54,7 @@ test("support replaces journey prompts and remains after refresh", async ({ page
 
 test("home resumes a saved journey without a discovery API request", async ({ page }) => {
   await page.goto(`/journeys/${JOURNEYS[0].slug}`);
+  await page.getByLabel("Make the question yours").fill(JOURNEYS[0].starter);
   await page.getByRole("button", { name: "Begin this journey" }).click();
   await expect(page).toHaveURL(/\/journey\/[^/]+$/);
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
