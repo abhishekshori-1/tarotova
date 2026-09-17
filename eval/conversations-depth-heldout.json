@@ -1,0 +1,27 @@
+{
+  "$comment": "Created after interpretation.v18 and grounding.v8 were frozen, 17 September 2026. Not run: Gemini project monthly spend cap reached. Separate from the release gate and the original reserved fresh set. Each conversation has three substantive follow-ups so its cost can describe an actual full conversation. Do not tune prompts to this file and still call it unseen.",
+  "conversations": [
+    {
+      "id": "depth-shared-allotment",
+      "focus": "general",
+      "question": "I share an allotment with two neighbours. They want more wildflowers and I want to grow vegetables. I want to understand our different aims before we decide what to plant.",
+      "cards": ["major-03-empress", "major-11-justice", "major-05-hierophant"],
+      "turns": [
+        { "text": "How do care and fairness fit together when we want different things from the same space?", "kind": "substantive", "expectedCategory": "none", "expect": ["question_reflection", "no_time_claim"] },
+        { "text": "We have now agreed to split the beds equally, but we still haven't decided what sharing the work would mean. How does that change the reading?", "kind": "substantive", "expectedCategory": "none", "expect": ["mentions:work", "no_time_claim"] },
+        { "text": "What different meanings of a fair share could we consider without assuming one of us is selfish?", "kind": "substantive", "expectedCategory": "none", "expect": ["question_reflection", "no_time_claim"] }
+      ]
+    },
+    {
+      "id": "depth-recorded-voice",
+      "focus": "growth",
+      "question": "My father died last year. I found a recording of him reading a story, and I feel both glad to have it and sad when I listen. I want to understand that mixture, not change it.",
+      "cards": ["major-13-death", "major-18-moon", "major-17-star"],
+      "turns": [
+        { "text": "How can gladness and sadness both belong here without one being the more truthful feeling?", "kind": "substantive", "expectedCategory": "stressful", "expect": ["no_task", "question_reflection", "no_time_claim"] },
+        { "text": "I don't listen often, and that is deliberate. Can we look at the meaning of having the recording without suggesting that I listen more?", "kind": "substantive", "expectedCategory": "stressful", "expect": ["no_task", "question_reflection", "no_time_claim"] },
+        { "text": "Where does hope fit in this reading if I am not asking for the sadness to disappear?", "kind": "substantive", "expectedCategory": "stressful", "expect": ["no_task", "question_reflection", "no_time_claim"] }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 import { check } from "./conversation-checks";
+import { wordCount, WORD_TARGETS, inRange } from "@/server/generation/lengths";
+import { MIN_FRESH_PUBLICATION_RATE, MIN_PUBLICATION_RATE } from "./thresholds";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
@@ -24,11 +26,15 @@ import { costSummary, estimateCost, type CostCall } from "./cost";
 // messages. Routing is asserted; the transcript goes to eval/report/ for the
 // human pass. Paid: roughly 13 initial answers and 30 turns per run.
 
-interface Turn { text: string; expectedCategory: SafetyCategory; expect?: string[] }
-interface Conversation { id: string; focus: Focus; question: string | null; cards: [string, string, string]; turns: Turn[] }
+/** `kind` is the reply the turn should get; length reporting reads it and never infers it from the answer's size. */
+type ReplyKind = "substantive" | "practical" | "acknowledgment" | "redirection";
+interface Turn { text: string; expectedCategory: SafetyCategory; expect?: string[]; kind?: ReplyKind; language?: string }
+const KIND_RANGE: Record<ReplyKind, { min: number; max: number }> = { substantive: WORD_TARGETS.followup.substantive, practical: WORD_TARGETS.followup.practical, acknowledgment: WORD_TARGETS.followup.acknowledgment, redirection: WORD_TARGETS.followup.redirection };
+interface Conversation { id: string; focus: Focus; question: string | null; cards: [string, string, string]; turns: Turn[]; language?: string }
 // The fixed Release C1 set by default; CONVERSATION_FIXTURES names another file (the unseen variants) so its report never mixes with the gate set.
 const FIXTURE_PATH = process.env.CONVERSATION_FIXTURES || "eval/conversations.json";
 const FIXTURE_SET = path.basename(FIXTURE_PATH, ".json").replace(/^conversations-?/, "") || "gate";
+const publicationThreshold = FIXTURE_SET === "fresh" ? MIN_FRESH_PUBLICATION_RATE : MIN_PUBLICATION_RATE;
 const CONVERSATIONS = (JSON.parse(readFileSync(path.resolve(process.cwd(), FIXTURE_PATH), "utf8")) as { conversations: Conversation[] }).conversations;
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
 
@@ -76,9 +82,10 @@ describe.skipIf(!usable)("conversations — Release C1 gate", () => {
         }
         const initialInput = buildInterpretationInput(c.question, snapshot, category.value === "stressful" ? "stressful" : "none");
         const initialRun = await runAttempts(attemptPolicy(options.deadlineAt, classifiedAt), () => generateReviewed(provider, initialInput, drawn, options));
-        const initial = initialRun.outcome!;
-        rec.initialQuality = initial.quality;
+        const initial = initialRun.outcome;
         rec.initialTraces = initialRun.outcomes.map((o) => o.quality);
+        if (!initial) { rec.initialRejected = "request_deadline"; continue; }
+        rec.initialQuality = initial.quality;
         if (initial.ok) rec.initial = initial.value;
         else { rec.initialRejected = initial.reason; continue; }
       }
@@ -97,11 +104,16 @@ describe.skipIf(!usable)("conversations — Release C1 gate", () => {
         const input = buildFollowupInput(snapshot, c.question, rec.initial ?? null, prior, turn.text, got === "stressful" ? "stressful" : "none");
         // Production's bounded retry: a structurally invalid draft or a provider failure may start one more attempt within the request; a grounding rejection is terminal.
         const run = await runAttempts(attemptPolicy(options.deadlineAt, started), () => generateReviewedFollowup(provider, input, drawn, options));
-        const outcome = run.outcome!;
+        const outcome = run.outcome;
         record.ms = Date.now() - started;
         record.attempts = run.attempts;
-        record.firstAttempt = run.outcomes[0].ok ? "published" : run.outcomes[0].reason;
+        record.firstAttempt = run.outcomes[0]?.ok ? "published" : run.outcomes[0]?.reason ?? "request_deadline";
         record.traces = run.outcomes.map((o) => o.quality);
+        if (!outcome) {
+          record.rejected = "request_deadline";
+          prior.push({ text: turn.text, status: "failed", output: null });
+          continue;
+        }
         record.quality = outcome.quality;
         if (outcome.ok) {
           record.answer = outcome.value;
@@ -130,10 +142,10 @@ describe.skipIf(!usable)("conversations — Release C1 gate", () => {
     expect(refused).toEqual([]);
   });
 
-  it("publishes at least 90 % of generation-eligible turns within one submission (a repair pass counts)", () => {
+  it(`publishes at least ${publicationThreshold * 100} % of generation-eligible turns within one submission (a repair pass counts)`, () => {
     const { eligible, published } = publication();
     // Missing turns/classification errors must not shrink the denominator.
-    expect(published / eligible).toBeGreaterThanOrEqual(0.9);
+    expect(published / eligible).toBeGreaterThanOrEqual(publicationThreshold);
   });
 
   it("passes the explicit checks on the answers that name them", () => {
@@ -194,6 +206,7 @@ function writeReport(chainLabel: string) {
   lines.push(`# Conversation evaluation — ${stamp}${FIXTURE_SET === "gate" ? "" : ` — ${FIXTURE_SET} set`}`, "");
   lines.push(`Fixtures: \`${FIXTURE_PATH}\`${FIXTURE_SET === "gate" ? "" : " (not the Release C1 gate set; compare against the gate set only across the same prompt versions)"}`, "");
   lines.push(`Providers: ${chainLabel} · prompts: \`${INTERPRETATION_PROMPT_VERSION}\`, \`${FOLLOWUP_PROMPT_VERSION}\`, \`${CLASSIFIER_CONTEXT_PROMPT_VERSION}\`, \`${FOLLOWUP_GROUNDING_VERSION}\` · content \`${CONTENT_VERSION}\``, "");
+  lines.push(`Repairer: ${config.repairProvider ? `${config.repairProvider.kind} (${config.repairProvider.models.answer}; thinking ${config.repairProvider.thinkingLevel ?? "default"})` : "writer chain"}.`, "");
   lines.push(`Anthropic system-prompt cache: ${config.reviewProvider?.promptCache ?? "off"} on reviewer; writer settings: ${config.providers.filter((p) => p.kind === "anthropic").map((p) => p.promptCache ?? "off").join(", ") || "not applicable"}.`, "");
   lines.push("Score each turn 1–5 on Relevance, Groundedness, Agency, Tone, Honesty (eval/RUBRIC.md), and the whole conversation for contradictions, repeated wording and facts inherited from earlier generated turns.", "");
   lines.push("## Routing", "", "| conversation | turn | expected | got | ok |", "| --- | --- | --- | --- | --- |");
@@ -201,7 +214,23 @@ function writeReport(chainLabel: string) {
   const pub = publication();
   lines.push("", "## Publication", "", `Generation-eligible turns: ${pub.eligible}. Published within one production submission (up to ${GENERATION_MAX_ATTEMPTS} attempts, a repair pass each): ${pub.published} (${pub.eligible ? Math.round((100 * pub.published) / pub.eligible) : 0} %). Published on the first pipeline attempt: ${pub.firstAttempt}. Published first time with no retry and no repair: ${pub.unrepaired}. Withheld: ${pub.withheld}. Classification failed: ${pub.classifierFailed}. Routed to support against the fixture: ${pub.misrouted}. Not reached: ${pub.absent}.`, "");
   lines.push(`Repair prompt: ${GROUNDING_REPAIR_VERSION}. Fixture source: ${FIXTURE_PATH}. A fresh-set label does not establish that its questions have never been used.`, "");
-  lines.push("The 90 % gate is the production-submission figure. A retry starts only after a structurally invalid draft or a provider failure; a grounding rejection is terminal. Every attempt's calls are in the cost tables. Explicit checks other than the leak check are advisory.", "");
+  // Length by the fixture's labelled kind: a tiny answer to a substantive turn is out of range, never an acknowledgment.
+  let nonEnglish = 0;
+  const byKind: Record<ReplyKind | "unlabelled", { total: number; inRange: number; misses: string[] }> = { substantive: { total: 0, inRange: 0, misses: [] }, practical: { total: 0, inRange: 0, misses: [] }, acknowledgment: { total: 0, inRange: 0, misses: [] }, redirection: { total: 0, inRange: 0, misses: [] }, unlabelled: { total: 0, inRange: 0, misses: [] } };
+  for (const c of CONVERSATIONS) for (const [i, t] of records.get(c.id)!.turns.entries()) {
+    if (!t.answer) continue;
+    if ((c.turns[i].language ?? c.language ?? "en") !== "en") { nonEnglish++; continue; }
+    const kind = c.turns[i].kind;
+    const words = followupWords(t.answer);
+    const bucket = byKind[kind ?? "unlabelled"];
+    bucket.total += 1;
+    if (kind && inRange(words, KIND_RANGE[kind])) bucket.inRange += 1;
+    else bucket.misses.push(`${c.id}:${i + 1} ${words}w`);
+  }
+  const initialWords = CONVERSATIONS.filter((c) => (c.language ?? "en") === "en").flatMap((c) => { const r = records.get(c.id)!; return r.initial ? [wordCount(r.initial.perspective) + r.initial.cards.reduce((n, card) => n + wordCount(card.relevance), 0) + wordCount(r.initial.synthesis) + wordCount(r.initial.reflection) + wordCount(r.initial.beyondSpread)] : []; });
+  const kindLine = (k: ReplyKind) => `${k} ${byKind[k].inRange} / ${byKind[k].total} in ${KIND_RANGE[k].min}–${KIND_RANGE[k].max} words${byKind[k].misses.length ? ` (out: ${byKind[k].misses.join(", ")})` : ""}`;
+  lines.push(`Length (English editorial targets by the fixture's labelled reply kind; advisory, never a gate): ${(["substantive", "practical", "acknowledgment", "redirection"] as ReplyKind[]).map(kindLine).join("; ")}${byKind.unlabelled.total ? `; ${byKind.unlabelled.total} published turn(s) without a kind label` : ""}. Non-English replies: ${nonEnglish}, assessed separately for depth. English initial readings in target range (${WORD_TARGETS.reading.whole.min}–${WORD_TARGETS.reading.whole.max} words): ${initialWords.filter((w) => inRange(w, WORD_TARGETS.reading.whole)).length} / ${initialWords.length}.`, "");
+  lines.push(`The ${publicationThreshold * 100} % gate is the production-submission figure. A retry starts only after a structurally invalid draft or a provider failure; a grounding rejection is terminal. Every attempt's calls are in the cost tables. Explicit checks other than the leak check are advisory.`, "");
   lines.push("", "## Transcripts", "");
   for (const c of CONVERSATIONS) {
     const rec = records.get(c.id)!;
@@ -223,6 +252,10 @@ function writeReport(chainLabel: string) {
         for (const p of t.answer.paragraphs) lines.push(p, "");
         if (t.answer.reflection) lines.push(`_${t.answer.reflection}_`, "");
         if (t.answer.beyondSpread) lines.push(`**Beyond the spread.** ${t.answer.beyondSpread}`, "");
+        const words = followupWords(t.answer);
+        const kind = c.turns[i].kind;
+        const english = (c.turns[i].language ?? c.language ?? "en") === "en";
+        lines.push(`Words: ${words} in ${t.answer.paragraphs.length} paragraph${t.answer.paragraphs.length === 1 ? "" : "s"}${!english ? " · non-English: assess equivalent depth separately" : kind ? ` · expected ${kind}, ${KIND_RANGE[kind].min}–${KIND_RANGE[kind].max} words: ${inRange(words, KIND_RANGE[kind]) ? "in range" : "out of range"}` : " · no kind label"}.`, "");
       } else if (t.rejected) {
         lines.push(`**WITHHELD:** ${t.rejected}`, "");
         const repaired = t.quality?.repaired;
@@ -254,4 +287,8 @@ function writeReport(chainLabel: string) {
   const file = FIXTURE_SET === "gate" ? `conversations-${stamp}.md` : `conversations-${FIXTURE_SET}-${stamp}.md`;
   writeFileSync(path.join(dir, file), lines.join("\n"));
   console.info(`conversation report written to eval/report/${file}`);
+}
+
+function followupWords(answer: { paragraphs: string[]; reflection: string | null; beyondSpread: string | null }): number {
+  return answer.paragraphs.reduce((n, p) => n + wordCount(p), 0) + wordCount(answer.reflection) + wordCount(answer.beyondSpread);
 }

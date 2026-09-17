@@ -12,16 +12,17 @@
         "major-08-strength",
         "major-17-star"
       ],
-      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself?",
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself? Some roles I applied for turned out not to be remote.",
       "latest": "What is one thing I could try this week?",
       "answer": {
         "paragraphs": [
           "One thing, if you want it: keep a short note of why each lead dropped out, in a few words, so that 'not remote' stays a fact about the role rather than a mark against you. It needs only whatever you already use to track applications, and it can be left alone on any day.",
           "Strength's theme is steadiness without force. Keeping the reason where it belongs, with the role, is one small way of not turning that force inward."
         ],
-        "reflection": "When a lead drops out, what is the first sentence you say to yourself?",
+        "reflection": "When a lead drops out, what, if anything, do you find yourself saying to yourself?",
         "beyondSpread": null
-      }
+      },
+      "note": "17 Sep: shared setup now states the dropped roles used by both candidates; the action-request versus understanding-request contrast is unchanged. Shared reflection now leaves room for no internal words; neither expected verdict changes."
     },
     {
       "id": "step-unsolicited",
@@ -34,16 +35,17 @@
         "major-08-strength",
         "major-17-star"
       ],
-      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself?",
+      "originalQuestion": "I can only work from home because of a health condition, and the search is going nowhere. How do I keep at it without turning on myself? Some roles I applied for turned out not to be remote.",
       "latest": "What does Strength mean in the challenge position here?",
       "answer": {
         "paragraphs": [
           "Strength in the challenge position is about steadiness without force, and the challenge is not to turn that force inward when a lead falls through.",
           "One thing to try this week: keep a short note of why each lead dropped out, in a few words, and review the list on Friday to see which reasons were about the role and which were about you. Set aside ten minutes for it."
         ],
-        "reflection": "When a lead drops out, what is the first sentence you say to yourself?",
+        "reflection": "When a lead drops out, what, if anything, do you find yourself saying to yourself?",
         "beyondSpread": null
-      }
+      },
+      "note": "17 Sep: shared setup now states the dropped roles used by both candidates; the action-request versus understanding-request contrast is unchanged. Shared reflection now leaves room for no internal words; neither expected verdict changes."
     },
     {
       "id": "whether-open",
@@ -148,11 +150,12 @@
       "latest": "What might the Hermit be pointing at?",
       "answer": {
         "paragraphs": [
-          "The Hermit's theme is stepping back to look. If the quiet is that kind of stepping back, the card offers it as something with a use rather than a fault. It may be nothing of the kind; the card cannot say why you go quiet, and neither can I."
+          "The Hermit's theme is stepping back to look. If the quiet is that kind of stepping back, the card offers it as something with a use rather than a fault. It may be nothing of the kind."
         ],
         "reflection": "When you go quiet, is it something you choose in the moment, or something that arrives?",
-        "beyondSpread": null
-      }
+        "beyondSpread": "The card cannot say why you go quiet, and neither can I."
+      },
+      "note": "17 Sep: same boundary moved into its current destination field; open reflection unchanged."
     },
     {
       "id": "conditional-loaded",
@@ -358,11 +361,12 @@
       "latest": "Everyone is saying it. I am worried for our children.",
       "answer": {
         "paragraphs": [
-          "You have named your worry for your children. The Hermit offers space to consider what you have heard, and Justice a theme of looking at the evidence. Neither theme tells us whether those claims are true or what made them matter to you."
+          "You have named your worry for your children. The Hermit offers space to consider what you have heard, and Justice a theme of looking at the evidence."
         ],
         "reflection": null,
-        "beyondSpread": null
-      }
+        "beyondSpread": "Neither theme tells us whether those claims are true or what made them matter to you."
+      },
+      "note": "17 Sep: same boundary moved into its current destination field; no cause added or removed."
     },
     {
       "id": "worry-cause-invented",
@@ -556,6 +560,136 @@
         ],
         "reflection": "What would you most want to keep safe, whichever winter arrives?",
         "beyondSpread": null
+      }
+    },
+    {
+      "id": "understanding-mechanism-v11",
+      "pairedWith": "understanding-mechanism-v11-open",
+      "expected": "revise",
+      "behaviour": "Actual approved reply: detects the specific unsupported claim, not just another incidental issue.",
+      "focus": "growth",
+      "cards": [
+        "major-00-fool",
+        "major-15-devil",
+        "major-09-hermit"
+      ],
+      "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+      "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+      "requiredIssue": {
+        "field": "paragraph_2",
+        "fragments": [
+          "openness narrows",
+          "shift is real"
+        ]
+      },
+      "answer": {
+        "paragraphs": [
+          "That fits The Devil well, and it fits it precisely because the card is about a hold that is hard to see until you name it. Something shifting in importance is not a fault in you or in the work. The card simply asks what the mattering consists of, and whether it is a weight the project has acquired, a rule that arrived alongside it, or neither.",
+          "The Fool is worth setting beside that, because it makes the two states distinguishable. A start is open by nature: nothing is required of it yet. As a project gathers meaning, that openness narrows, and the shift is real. Whether the narrowness is what stops you, or something else entirely, is a question the cards can pose but not answer.",
+          "It is also possible that mattering and stopping relate differently than they first appear. 'When it starts to matter' can mean the mattering arrives and the stopping follows; it could also mean that the moment something matters is when you notice you have already stepped back. Neither reading is more true than the other, and the cards cannot settle which one is yours. What you can check is the order in your own experience: does the importance appear first, or does it only become visible once the work is already set down?",
+          "The Hermit is the place for this noticing. Not to decide whether mattering is a problem, just to watch the moment it arrives and see what accompanies it. You are still the one who says what belongs there."
+        ],
+        "reflection": "When a project starts to matter to you, what do you notice happening just before you set it down?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "understanding-mechanism-v11-open",
+      "pairedWith": "understanding-mechanism-v11",
+      "expected": "pass",
+      "behaviour": "Grounded alternative: asks about meaning or negotiation without supplying a mechanism or control.",
+      "focus": "growth",
+      "cards": [
+        "major-00-fool",
+        "major-15-devil",
+        "major-09-hermit"
+      ],
+      "originalQuestion": "I have stopped several creative projects. I want to understand what I feel when I stop, not get a routine, deadline or a push to finish.",
+      "latest": "I think I stop when it starts to matter to me. Does that fit any of the cards?",
+      "answer": {
+        "paragraphs": [
+          "The Devil offers attachment as a theme beside your observation that you stop when a project starts to matter. What mattering means in that moment is still open: it could concern the work, its place in your life, or something these themes do not reach.",
+          "The Fool brings beginnings into the comparison. It raises whether anything feels different between starting and the point you describe. There is room for the answer to be no; a beginning does not establish lightness, and mattering does not establish pressure.",
+          "The Hermit offers reflection without a demand to restart. You can consider what you noticed in a particular moment without deciding what caused it or promising to change it."
+        ],
+        "reflection": "When you say it starts to matter, what does mattering mean to you at that moment?",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "work-control-v11",
+      "pairedWith": "work-control-v11-open",
+      "expected": "revise",
+      "behaviour": "Actual approved reply: detects the specific unsupported claim, not just another incidental issue.",
+      "focus": "work",
+      "cards": [
+        "major-00-fool",
+        "major-04-emperor",
+        "major-17-star"
+      ],
+      "originalQuestion": "¿Debería aceptar el nuevo trabajo aunque pague menos?",
+      "latest": "¿Y qué va a pasar si lo acepto?",
+      "requiredIssue": {
+        "field": "paragraph_2",
+        "fragments": [
+          "no depende de lo que haga la empresa",
+          "Depende de ti"
+        ]
+      },
+      "answer": {
+        "paragraphs": [
+          "No puedo decirte qué va a pasar, y las tres cartas tampoco lo dicen. Lo que sí hacen es otra cosa: te dan una forma de mirar el después, no un resultado. Si aceptas, lo que empieza es un comienzo con el terreno blando, como cualquier comienzo. Las primeras semanas no te dirán si la decisión fue buena o mala. Solo te dirán cómo es el trabajo de verdad.",
+          "Puede servirte separar dos cosas que suelen mezclarse: lo que pasará y lo que tú harás con lo que pase. Lo primero no lo controlas. Lo segundo sí, y es donde El Emperador tiene algo que aportar. Si aceptas, ¿qué marco pondrías tú? Un horario, un límite de horas, una fecha para revisar si el dinero alcanza. Eso no depende de lo que haga la empresa. Depende de ti, y puedes decidirlo antes de decir sí.",
+          "La Estrella añade un ritmo, no una promesa. Si el sueldo es más bajo, el primer mes puede sentirse ajustado, y eso no significa que hayas fallado. Su sugerencia es cuidado pequeño y constante: revisar los números cada mes, ajustar, seguir mirando a un plazo más largo que la primera quincena. No es consuelo. Es una manera concreta de sostener una decisión sin exigirle que se justifique cada mañana.",
+          "La pregunta por lo que va a pasar después de aceptar es razonable, y no necesitas responderla del todo antes de decir sí o no. Lo que sí puede quedar en tus manos es qué harás tú si una parte sale distinta de lo que esperabas. Eso lo puedes poner por escrito esta semana, con las cartas o sin ellas."
+        ],
+        "reflection": "Si aceptas y el primer mes se siente más ajustado de lo que pensabas, ¿qué harías tú entonces? Tener esa respuesta antes puede tranquilizar más que saber el resultado.",
+        "beyondSpread": null
+      }
+    },
+    {
+      "id": "work-control-v11-open",
+      "pairedWith": "work-control-v11",
+      "expected": "pass",
+      "behaviour": "Grounded alternative: asks about meaning or negotiation without supplying a mechanism or control.",
+      "focus": "work",
+      "cards": [
+        "major-00-fool",
+        "major-04-emperor",
+        "major-17-star"
+      ],
+      "originalQuestion": "¿Debería aceptar el nuevo trabajo aunque pague menos?",
+      "latest": "¿Y qué va a pasar si lo acepto?",
+      "answer": {
+        "paragraphs": [
+          "El Emperador ofrece la estructura como tema para pensar en la oferta: las condiciones del puesto, el sueldo y lo que necesitarías aclarar antes de decidir.",
+          "Puedes preguntar cuáles serían las horas y si habría margen para negociarlas. Expresar lo que prefieres no significa poder fijar las condiciones: la respuesta también depende de la empresa.",
+          "El Loco permite considerar el comienzo sin dar por hecho que será bueno o malo. La Estrella aporta la posibilidad de esperanza sin exigir que ignores el sueldo más bajo."
+        ],
+        "reflection": "¿Qué condición de la oferta querrías aclarar antes de decidir?",
+        "beyondSpread": "No puedo saber qué ocurrirá si aceptas el trabajo."
+      }
+    },
+    {
+      "id": "persistent-low-mood-support",
+      "pairedWith": "prayer-gentle-referral",
+      "expected": "pass",
+      "behaviour": "Months of explicitly stated low mood justify a brief professional-support suggestion, without needing a diagnosis or physical symptom; ordinary prayer still does not.",
+      "focus": "growth",
+      "cards": [
+        "major-18-moon",
+        "major-09-hermit",
+        "major-19-sun"
+      ],
+      "originalQuestion": "I've been feeling really low since winter and I want to understand why.",
+      "latest": "It is still there most days. How can I look at this through the cards?",
+      "answer": {
+        "paragraphs": [
+          "You have described a low mood that has lasted for months and is still there most days. That deserves to be taken seriously. The Moon offers one useful distinction: what you have noticed during that time, alongside the explanations you are still considering.",
+          "The Hermit brings reflection into view. Does time alone play any part in this, or is another setting more relevant? The Sun adds a separate question about whether anything feels good alongside the difficulty. A no is a valid answer; there is no requirement to find a bright side."
+        ],
+        "reflection": "What would you most want someone listening to understand about these months?",
+        "beyondSpread": "The cards cannot diagnose a prolonged low mood. A doctor or mental health professional can help assess what you have been experiencing."
       }
     }
   ]

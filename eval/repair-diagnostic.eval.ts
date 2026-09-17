@@ -7,6 +7,7 @@ import { FOLLOWUP_GROUNDING_VERSION } from "@/server/generation/grounding-prompt
 import { applyRepairDetailed, followupShape, parseReviewFor } from "@/server/generation/reviewed";
 import { getGenerationProvider, providerByKind } from "@/server/generation/service";
 import type { FollowupInput, FollowupOutput, GenerationProvider, GroundingIssue, GroundingReview, TokenUsage } from "@/server/generation/types";
+import { FOLLOWUP_FIELDS } from "@/server/generation/types";
 import { validateFollowup } from "@/server/generation/validate";
 import { readFileSync } from "node:fs";
 import { costSummary, type CostCall } from "./cost";
@@ -86,7 +87,7 @@ describe.skipIf(!usable)("repair diagnostic — fixed candidates", () => {
             else {
               run.applied = true;
               run.candidate = applied.value;
-              run.fields = (["paragraph_1", "paragraph_2", "paragraph_3", "reflection", "beyondSpread"] as const).filter((f) => shape.fieldText(applied.value, f) !== shape.fieldText(c.draft, f));
+              run.fields = FOLLOWUP_FIELDS.filter((f) => shape.fieldText(applied.value, f) !== shape.fieldText(c.draft, f));
               for (let i = 0; i < REPAIR_REVIEWS; i++) run.reviews.push(await review(c.input, applied.value));
             }
           }

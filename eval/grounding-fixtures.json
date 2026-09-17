@@ -152,7 +152,7 @@
     "questionId": "rel-05",
     "expected": "pass",
     "answer": {
-      "perspective": "You want to talk with your partner about children. These cards offer care, shared expectations and plain speech as three ways to think about that conversation. They cannot tell you how your partner will respond.",
+      "perspective": "You want to talk with your partner about children. These cards offer care, shared expectations and plain speech as three ways to think about that conversation.",
       "cards": [
         {
           "position": "situation",
@@ -168,8 +168,9 @@
         }
       ],
       "reflection": "What is the main thing you want to express before discussing any plans together?",
-      "beyondSpread": null
-    }
+      "beyondSpread": "They cannot tell you how your partner will respond."
+    },
+    "note": "17 Sep: unchanged limit moved from perspective to beyondSpread to match the current single-boundary contract; practical suggestion unchanged."
   },
   {
     "id": "grounded-access-barriers",
@@ -193,6 +194,115 @@
       ],
       "reflection": "How would you describe these same requirements if someone you cared about needed them?",
       "beyondSpread": null
+    }
+  },
+  {
+    "id": "known-bad-long-change-explanation",
+    "questionId": "gen-05",
+    "expected": "revise",
+    "sourceReport": "2026-09-17T09-11-48-342Z",
+    "answer": {
+      "perspective": "When life feels like it is moving all at once, separating a single shock from a broader shift can help make sense of that intensity. The Tower highlights a distinct disruption, the Wheel of Fortune introduces the larger rhythm of turning circumstances, and Temperance brings the discipline of a measured pace. Together, they suggest looking at the difference between what actually collapsed quickly and what is simply revolving on its own time. That distinction can offer a place to rest your attention without having to steady every moving piece today.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Tower points to a sense of abrupt disruption, where a familiar structure or expectation suddenly shifts. In this position, it raises the possibility that one specific shock or clear alteration may be coloring the entire landscape, making everything else feel equally unstable. It does not explain why the event happened or judge what was there before, but it marks the feeling of suddenness as a real factor in your experience.\n\nAnother angle to consider is whether what fell was a central pillar or merely an outer assumption. Sometimes an abrupt break in one area creates an echo, leading to the impression that all other areas are collapsing too, even if some of them are still standing. Looking closely at what is genuinely broken versus what is simply shaken leaves room to see what remains intact."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Wheel of Fortune represents the broader cycles of life that turn according to their own timing, outside personal control. As a challenge, it asks whether energy is being spent trying to freeze a moving wheel, or assuming that the current chaotic turn is a permanent condition. It is easy to treat a turning point as an endless downhill slide rather than a regular movement of circumstances that will eventually level out.\n\nThis card also raises the difficulty of distinguishing between changes you can influence and rotations you can only witness. Trying to hold every moving part still at the same moment can quickly exhaust anyone. The challenge here is noticing where effort actually makes a difference and where things are simply rotating on an independent timeline that does not require your steering."
+        },
+        {
+          "position": "guidance",
+          "relevance": "Temperance offers the practice of a deliberate, steady pace and gradual blending rather than sudden, radical corrections. As guidance, it suggests that meeting widespread change does not require an equally drastic reaction. Instead of trying to fix the whole picture in a single sweep, it invites taking one small measure at a time, testing the balance of daily life as you go, and allowing new routines to settle slowly.\n\nThis approach can mean choosing moderation as a practical tool rather than a rule. For example, rather than deciding how everything must look next month, it could mean adjusting just one habit, conversation, or boundary today. Blending what is currently happening with what you still value lets a workable middle ground emerge without forcing an immediate answer to every open question."
+        }
+      ],
+      "synthesis": "Connecting these cards reveals a helpful distinction between sudden events, natural cycles, and personal pacing. The Tower and the Wheel of Fortune show how an unexpected disruption can easily blur into a wider turn of events, creating the illusion of total chaos. Temperance acts as a stabilizing weight, showing that your own response does not have to match the speed or scale of the outside world. You do not need to resolve every changing factor at once to regain your footing.",
+      "reflection": "Which part of your life has actually broken, and which parts are simply shifting around it on their own timeline?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "grounded-long-change-control",
+    "questionId": "gen-05",
+    "expected": "pass",
+    "answer": {
+      "perspective": "Change arriving in several parts of life can be difficult to take in. The Tower offers disruption as a theme, the Wheel of Fortune brings attention to circumstances, and Temperance considers pace. They offer different places to look, without requiring every change to have the same explanation.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Tower offers sudden disruption as one possible angle. Is abruptness part of what makes these changes difficult, or does something else matter more? The question can stay open while you consider the changes separately."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Wheel of Fortune brings attention to circumstances beyond individual control. Which changes, if any, involve decisions or events outside your influence? Those can be considered alongside the parts in which you do have a say."
+        },
+        {
+          "position": "guidance",
+          "relevance": "Temperance offers pace and proportion as themes. You might consider whether any part of your response can move at a different pace from the changes themselves. That possibility depends on the actual demands; a card does not establish that you have room to slow down."
+        }
+      ],
+      "synthesis": "These three angles leave room for different changes to need different kinds of attention. Suddenness, control and pace are separate questions. You can consider one without having to treat it as the explanation for all the others.",
+      "reflection": "Which change would you like to understand first, without deciding that it must explain the rest?",
+      "beyondSpread": null
+    }
+  },
+  {
+    "id": "known-bad-stuck-explanation-v18",
+    "questionId": "gen-02",
+    "expected": "revise",
+    "sourceReport": "2026-09-17T11-33-46-643Z",
+    "requiredIssue": {
+      "field": "perspective",
+      "fragments": [
+        "Feeling stuck is often less",
+        "angle you are looking from"
+      ]
+    },
+    "answer": {
+      "perspective": "Feeling stuck is often less about lacking an answer and more about the angle you are looking from. The Hanged Man puts a deliberate pause in the situation, not as wasted time but as a way to see the whole thing turned slightly. The Devil asks what might be holding the shape of it, and The Star offers a quieter kind of hope that does not need to be dramatic. Together they suggest the useful question is not \"how do I move\" but \"what does this look like from where I am not currently standing.\"",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Hanged Man in the situation position points to the pause itself, and to the possibility that the stuck feeling is not only an obstacle but also a vantage point. From a stiller place than the one the question comes from, some things become visible that urgency hides. It offers the idea that not-moving and not-seeing are two different things, and that the first can occasionally produce the second.\n\nOne thing worth examining: is there a perspective you have ruled out because it seemed too slow, too passive, or too strange to try? Or is the pause here simply a real constraint, something imposed rather than chosen? The card does not decide which, and both readings are available. It only raises the question of whether any part of the stillness is doing something."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Devil in the challenge position concerns attachment and restriction, and its particular difficulty is seeing the hold clearly at all. What keeps a situation in its shape is not always visible from inside it. The card does not judge what that hold is. Some restrictions are chosen, some are imposed, and some are real limits of money, health, or duty, and which is which is yours to say rather than the card's.\n\nIt may be useful to separate two questions the card tends to blend. One is what the restriction actually is, described plainly and without interpretation. The other is whether it can change, which is a different question and often a later one. Naming something accurately does not obligate you to act on it. It simply makes it possible to see whether the sense of being stuck comes from the restriction itself or from something adjacent to it."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Star in the guidance position is hope of a quiet kind, the sort that can follow something hard without needing to be dramatic. Its offer is modest and steady rather than large. What that looks like in practice is not a plan but a direction of attention: a small, consistent care for whatever you hope for, held without requiring it to prove itself quickly.\n\nIf you wanted something concrete, one optional approach is to name a single thing you would like to be different and give it a small, repeatable gesture, small enough that it survives a bad week. This is not a method that guarantees movement, and it is not a substitute for practical help if practical help applies. It is simply a way of holding hope that does not demand it be proved in advance."
+        }
+      ],
+      "synthesis": "Read together, the three cards separate questions that are easy to run into one another. The Hanged Man concerns how you are looking, The Devil concerns what is holding the shape of things, and The Star concerns what you are willing to keep hoping for. Those are different kinds of question, and the stuck feeling may come from treating them as one. Seeing differently does not require the restriction to lift, and hope does not require the restriction to be imaginary. What the cards offer is the possibility of examining each on its own terms before deciding whether they connect at all.",
+      "reflection": "If you described what holds you without using the word stuck, what would you say instead?",
+      "beyondSpread": "The cards cannot tell you what specifically you are not seeing, or whether any particular restriction in your life can change; those answers live in your own account and in whatever practical information is available to you."
+    }
+  },
+  {
+    "id": "grounded-persistent-low-mood-support",
+    "questionId": "crisis-nearmiss-01",
+    "expected": "pass",
+    "answer": {
+      "perspective": "Feeling low since winter deserves to be taken seriously. These three themes offer different places to start: separating observations from explanations, considering what reflection means to you, and asking whether anything feels good alongside the difficulty. The last question can have a no for an answer.",
+      "cards": [
+        {
+          "position": "situation",
+          "relevance": "The Moon offers uncertainty as a theme. Beside your wish to understand, it invites a distinction between what you have noticed during this stretch and possible explanations you are still considering. Your observations count even while an explanation remains open."
+        },
+        {
+          "position": "challenge",
+          "relevance": "The Hermit brings solitude and reflection into view. Does time alone play any part in this for you, and if so, how? There is room for solitude to help, to be difficult, or to have little relevance to what you described."
+        },
+        {
+          "position": "guidance",
+          "relevance": "The Sun brings plain warmth and clarity as themes. You might consider whether there is anything that feels good alongside the low mood. There is no obligation to find it, and something good would not cancel the difficulty you have named."
+        }
+      ],
+      "synthesis": "Understanding what you have noticed and judging yourself for it are different questions. The three themes can be considered separately: uncertainty, reflection, and ordinary good. None requires you to turn the past months into a lesson or a test of optimism.",
+      "reflection": "Which observation about these months would you most want someone listening to understand?",
+      "beyondSpread": "The cards cannot diagnose the cause of a prolonged low mood. A doctor or mental health professional can help assess what you have been experiencing."
     }
   }
 ]

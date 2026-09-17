@@ -11,12 +11,13 @@ import { getGenerationProvider } from "@/server/generation/service";
 import type { FollowupOutput, TokenUsage } from "@/server/generation/types";
 import fixtures from "./followup-review-fixtures.json";
 import { costSummary, type CostCall } from "./cost";
+import { caughtRequiredIssue, type RequiredIssue } from "./calibration";
 
 // Reviewer-only calibration for follow-ups (docs/RELEASE-C.md): matched pairs
 // where one answer must pass and its twin must be sent back. Measures false
 // rejections as well as misses. Cheap: one review call per fixture.
 
-interface Fixture { id: string; pairedWith: string; expected: "pass" | "revise"; behaviour: string; focus: Focus; cards: [string, string, string]; originalQuestion: string; latest: string; answer: FollowupOutput }
+interface Fixture { id: string; pairedWith: string; expected: "pass" | "revise"; behaviour: string; focus: Focus; cards: [string, string, string]; originalQuestion: string; latest: string; answer: FollowupOutput; requiredIssue?: RequiredIssue }
 const FIXTURES = fixtures.fixtures as Fixture[];
 const POSITIONS: Position[] = ["situation", "challenge", "guidance"];
 
@@ -49,6 +50,7 @@ describe.skipIf(!usable)("follow-up reviewer calibration", () => {
 
   it("sends back every answer that breaks the rule its pair keeps", () => {
     expect(FIXTURES.filter((f) => f.expected === "revise" && results.get(f.id)?.decision !== "revise").map((f) => `${f.id}: got ${results.get(f.id)?.decision}`)).toEqual([]);
+    expect(FIXTURES.filter((f) => !caughtRequiredIssue(f.requiredIssue, results.get(f.id)?.issues)).map((f) => `${f.id}: missed the required claim`)).toEqual([]);
   });
 });
 
@@ -62,6 +64,7 @@ function writeReport() {
     "Matched pairs: the answer that must pass and the twin that must be sent back differ only in the behaviour named. Both directions count.", "",
     "| Fixture | Behaviour | Expected | Got | ms |", "| --- | --- | --- | --- | ---: |"];
   for (const f of FIXTURES) { const r = results.get(f.id); lines.push(`| ${f.id} | ${f.behaviour} | ${f.expected} | ${r?.decision ?? "not run"}${r && r.decision === f.expected ? " ✓" : " ✗"} | ${r?.ms ?? ""} |`); }
+  for (const f of FIXTURES.filter((f) => f.requiredIssue)) lines.push(`Required claim — ${f.id}: ${caughtRequiredIssue(f.requiredIssue, results.get(f.id)?.issues) ? "caught" : "MISSED"}.`);
   lines.push("", "## Reviewer reasons", "");
   for (const f of FIXTURES) { const r = results.get(f.id); if (r?.issues?.length) { lines.push(`### ${f.id} (expected ${f.expected}, got ${r.decision})`, ""); for (const i of r.issues) lines.push(`- **${i.field}** "${i.quote}": ${i.reason}`); lines.push(""); } }
   const calls: CostCall[] = FIXTURES.map((f) => ({ phase: "review", model: results.get(f.id)?.model, usage: results.get(f.id)?.usage }));
